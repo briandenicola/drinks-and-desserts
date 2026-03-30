@@ -1,6 +1,6 @@
 services:
   aspire-dashboard:
-    image: mcr.microsoft.com/dotnet/aspire-dashboard:10.0
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:9.0    
     container_name: whiskey-and-smokes-aspire-dashboard
     ports:
       - "18888:18888"

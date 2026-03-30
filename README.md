@@ -96,7 +96,7 @@ task local:output
 Verifies that all 3 agent model deployments are accessible:
 
 ```bash
-task app:run:agent-init
+task app:agent-init
 ```
 
 ### 5. Run the application
@@ -118,9 +118,9 @@ This starts both the Aspire AppHost (API + OpenTelemetry dashboard) and the Vue 
 To run services individually:
 
 ```bash
-task app:run:apphost  # API via Aspire (with dashboard)
-task app:run:api      # API standalone (no Aspire)
-task app:run:web      # Frontend only
+task app:apphost  # API via Aspire (with dashboard)
+task app:api      # API standalone (no Aspire)
+task app:web      # Frontend only
 ```
 
 ### 6. Build
@@ -130,25 +130,7 @@ task app:build        # Full .NET solution (API + AppHost + ServiceDefaults + Ag
 task app:build:web    # Vue frontend only (npm ci + vite build)
 ```
 
-### 7. Test
-
-```bash
-task app:test         # All tests
-task app:test:api     # .NET tests (dotnet test)
-task app:test:web     # Vue TypeScript type checking (vue-tsc)
-```
-
-### 8. Docker Compose (optional)
-
-Run services as containers, including CosmosDB emulator and Azurite.
-
-```bash
-task app:docker:up    # Build and start containers
-task app:docker:logs  # Tail logs
-task app:docker:down  # Stop and remove containers
-```
-
-### 9. Tear down Azure resources
+### 7. Tear down Azure resources
 
 When you're done, destroy the AI Foundry resources to avoid charges:
 

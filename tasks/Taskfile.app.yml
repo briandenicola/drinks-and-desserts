@@ -16,6 +16,7 @@ tasks:
     desc: Builds the full solution (API, AppHost, ServiceDefaults)
     cmds:
       - dotnet build {{.SLN}}
+      - build:web
 
   build:web:
     desc: Builds the Vue frontend
@@ -27,16 +28,18 @@ tasks:
   run:
     desc: Runs Aspire AppHost (API with dashboard) and Vue frontend
     deps:
-      - run:apphost
-      - run:web
+      - docker:up
+      - apphost
+      - web
 
-  run:apphost:
+  apphost:
     desc: Runs the Aspire AppHost (orchestrates API with OpenTelemetry dashboard)
     dir: "{{.APPHOST_DIR}}"
     cmds:
       - >-
         AiFoundry__Endpoint={{.FOUNDRY_ENDPOINT}}
         APPLICATIONINSIGHTS_CONNECTION_STRING={{.APPINSIGHTS_CONN}}
+        ASPIRE_DASHBOARD_OTLP_HTTP_ENDPOINT_URL=http://localhost:18889
         dotnet run
     vars:
       FOUNDRY_ENDPOINT:
@@ -44,7 +47,7 @@ tasks:
       APPINSIGHTS_CONN:
         sh: terraform -chdir=./infrastructure/local output -raw APPLICATION_INSIGHTS_CONNECTION_STRING 2>/dev/null || echo ""
 
-  run:api:
+  api:
     desc: Runs the .NET API standalone (without Aspire)
     dir: "{{.API_DIR}}"
     cmds:
@@ -59,14 +62,14 @@ tasks:
       APPINSIGHTS_CONN:
         sh: terraform -chdir=./infrastructure/local output -raw APPLICATION_INSIGHTS_CONNECTION_STRING 2>/dev/null || echo ""
 
-  run:web:
+  web:
     desc: Runs the Vue frontend dev server
     dir: "{{.WEB_DIR}}"
     cmds:
       - npm install --silent
       - npm run dev
 
-  run:agent-init:
+  agent-init:
     desc: Validates agent configuration against AI Foundry
     cmds:
       - >-
@@ -80,7 +83,7 @@ tasks:
     desc: Starts all services via Docker Compose
     dir: ./tasks
     cmds:
-      - docker compose up -d --build
+      - docker compose up -d
 
   docker:down:
     desc: Stops all Docker Compose services
