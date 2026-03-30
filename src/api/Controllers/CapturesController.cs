@@ -28,7 +28,7 @@ public class CapturesController : ControllerBase
 
     private string GetUserId() => User.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new UnauthorizedAccessException();
 
-    [HttpPost("upload-url")]
+    [HttpGet("upload-url")]
     public async Task<ActionResult<UploadUrlResponse>> GetUploadUrl([FromQuery] string fileName)
     {
         using var activity = Diagnostics.Captures.StartActivity("CaptureGetUploadUrl");
