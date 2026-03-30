@@ -27,7 +27,7 @@ module "project_1" {
         format  = "OpenAI"
       },
       {
-        name    = "gpt-5.1-mini"
+        name    = "gpt-5-mini"
         version = "2025-08-07"
         format  = "OpenAI"
       }
