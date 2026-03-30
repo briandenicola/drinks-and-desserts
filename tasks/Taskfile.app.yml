@@ -13,10 +13,10 @@ tasks:
       - task --list
 
   build:
-    desc: Builds the full solution (API, AppHost, ServiceDefaults)
+    desc: Builds the full solution (API, AppHost, ServiceDefaults, AgentInitiator) and Vue frontend
     cmds:
       - dotnet build {{.SLN}}
-      - build:web
+      - task: build:web
 
   build:web:
     desc: Builds the Vue frontend
