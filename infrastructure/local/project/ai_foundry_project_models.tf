@@ -14,7 +14,7 @@ resource "azapi_resource" "model_deployments" {
     }
     sku = {
       name     = "GlobalStandard"
-      capacity = 250
+      capacity = 100
     }
   }
 }
