@@ -1,4 +1,4 @@
-namespace SipPuff.Api.Services;
+namespace WhiskeyAndSmokes.Api.Services;
 
 public class LocalBlobStorageService : IBlobStorageService
 {
@@ -10,7 +10,7 @@ public class LocalBlobStorageService : IBlobStorageService
     {
         _storagePath = config["LocalStorage:Path"] ?? Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "sippuff", "uploads");
+            "whiskey-and-smokes", "uploads");
         _baseUrl = config["LocalStorage:BaseUrl"] ?? "http://localhost:5062/uploads";
         _logger = logger;
 

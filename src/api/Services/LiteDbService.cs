@@ -3,7 +3,7 @@ using System.Text.Json;
 using LiteDB;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
-namespace SipPuff.Api.Services;
+namespace WhiskeyAndSmokes.Api.Services;
 
 public class LiteDbService : ICosmosDbService, IDisposable
 {
@@ -14,7 +14,7 @@ public class LiteDbService : ICosmosDbService, IDisposable
     {
         var dbPath = config["LiteDb:Path"] ?? Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "sippuff", "sippuff.db");
+            "whiskey-and-smokes", "whiskey-and-smokes.db");
 
         Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);
         _db = new LiteDatabase(dbPath);

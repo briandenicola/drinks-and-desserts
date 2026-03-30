@@ -1,9 +1,11 @@
+using System.Diagnostics;
 using System.Text.Json;
 using Azure.AI.Agents.Persistent;
 using Azure.Identity;
-using SipPuff.Api.Models;
+using WhiskeyAndSmokes.Api;
+using WhiskeyAndSmokes.Api.Models;
 
-namespace SipPuff.Api.Services;
+namespace WhiskeyAndSmokes.Api.Services;
 
 public interface IAgentService
 {
@@ -13,13 +15,15 @@ public interface IAgentService
 public class AgentService : IAgentService
 {
     private readonly ICosmosDbService _cosmosDb;
+    private readonly IPromptService _promptService;
     private readonly ILogger<AgentService> _logger;
     private readonly IConfiguration _config;
     private readonly PersistentAgentsClient? _agentsClient;
 
-    public AgentService(ICosmosDbService cosmosDb, ILogger<AgentService> logger, IConfiguration config)
+    public AgentService(ICosmosDbService cosmosDb, IPromptService promptService, ILogger<AgentService> logger, IConfiguration config)
     {
         _cosmosDb = cosmosDb;
+        _promptService = promptService;
         _logger = logger;
         _config = config;
 
@@ -32,41 +36,60 @@ public class AgentService : IAgentService
 
     public async Task ProcessCaptureAsync(Capture capture)
     {
-        _logger.LogInformation("Processing capture {CaptureId} for user {UserId}", capture.Id, capture.UserId);
+        using var activity = Diagnostics.Agent.StartActivity("ProcessCapture");
+        activity?.SetTag("capture.id", capture.Id);
+        activity?.SetTag("capture.user_id", capture.UserId);
+        activity?.SetTag("capture.photo_count", capture.Photos.Count);
+
+        _logger.LogInformation(
+            "Processing capture {CaptureId} for user {UserId} with {PhotoCount} photos, note length {NoteLength}, hasLocation={HasLocation}",
+            capture.Id, capture.UserId, capture.Photos.Count,
+            capture.UserNote?.Length ?? 0, capture.Location != null);
 
         try
         {
             capture.Status = CaptureStatus.Processing;
             capture.UpdatedAt = DateTime.UtcNow;
             await _cosmosDb.UpsertAsync("captures", capture, capture.PartitionKey);
+            _logger.LogDebug("Capture {CaptureId} status set to Processing", capture.Id);
 
             List<Item> items;
 
             if (_agentsClient != null)
             {
+                _logger.LogInformation("AI Foundry client available — processing capture {CaptureId} with agent", capture.Id);
                 items = await ProcessWithAiFoundryAsync(capture);
             }
             else
             {
-                _logger.LogWarning("AI Foundry not configured — using local extraction for capture {CaptureId}", capture.Id);
+                _logger.LogWarning("AI Foundry not configured — using local extraction fallback for capture {CaptureId}", capture.Id);
                 items = await ProcessWithLocalExtractionAsync(capture);
             }
 
+            activity?.SetTag("items.count", items.Count);
+
+            _logger.LogDebug("Persisting {ItemCount} extracted items for capture {CaptureId}", items.Count, capture.Id);
             foreach (var item in items)
             {
                 await _cosmosDb.CreateAsync("items", item, item.PartitionKey);
                 capture.ItemIds.Add(item.Id);
+                _logger.LogDebug("Persisted item {ItemId} (type={ItemType}, name={ItemName}) for capture {CaptureId}",
+                    item.Id, item.Type, item.Name, capture.Id);
             }
 
             capture.Status = CaptureStatus.Completed;
             capture.UpdatedAt = DateTime.UtcNow;
             await _cosmosDb.UpsertAsync("captures", capture, capture.PartitionKey);
 
-            _logger.LogInformation("Capture {CaptureId} processed: created {ItemCount} items", capture.Id, items.Count);
+            _logger.LogInformation(
+                "Capture {CaptureId} processing completed successfully: created {ItemCount} items, types=[{ItemTypes}]",
+                capture.Id, items.Count, string.Join(", ", items.Select(i => i.Type).Distinct()));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to process capture {CaptureId}", capture.Id);
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            _logger.LogError(ex, "Failed to process capture {CaptureId} for user {UserId}: {ErrorMessage}",
+                capture.Id, capture.UserId, ex.Message);
             capture.Status = CaptureStatus.Failed;
             capture.ProcessingError = ex.Message;
             capture.UpdatedAt = DateTime.UtcNow;
@@ -76,14 +99,30 @@ public class AgentService : IAgentService
 
     private async Task<List<Item>> ProcessWithAiFoundryAsync(Capture capture)
     {
+        using var activity = Diagnostics.Agent.StartActivity("ProcessWithAiFoundry");
+        activity?.SetTag("capture.id", capture.Id);
+
         var admin = _agentsClient!.Administration;
 
+        var prompt = await _promptService.GetAsync(PromptIds.AgentInstructions);
+        var instructions = prompt?.Content ?? DefaultPrompts.AgentInstructions;
+        _logger.LogDebug("Loaded agent instructions for capture {CaptureId}: promptFound={PromptFound}, instructionLength={InstructionLength}",
+            capture.Id, prompt != null, instructions.Length);
+
+        var modelDeployment = _config["AiFoundry:ModelDeployment"] ?? "gpt-4o";
+        activity?.SetTag("agent.model", modelDeployment);
+
+        _logger.LogInformation("Creating AI agent for capture {CaptureId} with model={Model}, deployment=whiskey-and-smokes-capture-processor",
+            capture.Id, modelDeployment);
+
         var agent = await admin.CreateAgentAsync(
-            model: _config["AiFoundry:ModelDeployment"] ?? "gpt-4o",
-            name: "sippuff-capture-processor",
-            instructions: GetAgentInstructions());
+            model: modelDeployment,
+            name: "whiskey-and-smokes-capture-processor",
+            instructions: instructions);
+        _logger.LogDebug("Agent created: agentId={AgentId} for capture {CaptureId}", agent.Value.Id, capture.Id);
 
         var thread = await _agentsClient.Threads.CreateThreadAsync();
+        _logger.LogDebug("Thread created: threadId={ThreadId} for capture {CaptureId}", thread.Value.Id, capture.Id);
 
         var contentBlocks = new List<MessageInputContentBlock>();
 
@@ -109,6 +148,10 @@ public class AgentService : IAgentService
                 "No photos or notes were provided. Create a placeholder item."));
         }
 
+        _logger.LogInformation(
+            "Sending message to agent for capture {CaptureId}: {BlockCount} content blocks ({PhotoCount} photos, noteLength={NoteLength}, hasLocation={HasLocation})",
+            capture.Id, contentBlocks.Count, capture.Photos.Count, capture.UserNote?.Length ?? 0, capture.Location != null);
+
         await _agentsClient.Messages.CreateMessageAsync(
             thread.Value.Id,
             MessageRole.User,
@@ -116,20 +159,35 @@ public class AgentService : IAgentService
 
         var run = await _agentsClient.Runs.CreateRunAsync(
             thread.Value.Id, agent.Value.Id);
+        _logger.LogDebug("Agent run started: runId={RunId}, threadId={ThreadId} for capture {CaptureId}",
+            run.Value.Id, thread.Value.Id, capture.Id);
 
+        var previousStatus = run.Value.Status.ToString();
         do
         {
             await Task.Delay(1000);
             run = await _agentsClient.Runs.GetRunAsync(thread.Value.Id, run.Value.Id);
+            var currentStatus = run.Value.Status.ToString();
+            if (currentStatus != previousStatus)
+            {
+                _logger.LogDebug("Agent run status changed: {PreviousStatus} -> {CurrentStatus} for capture {CaptureId}, runId={RunId}",
+                    previousStatus, currentStatus, capture.Id, run.Value.Id);
+                previousStatus = currentStatus;
+            }
         } while (run.Value.Status == RunStatus.InProgress
               || run.Value.Status == RunStatus.Queued);
 
+        activity?.SetTag("agent.run_status", run.Value.Status.ToString());
+
         if (run.Value.Status != RunStatus.Completed)
         {
-            _logger.LogError("Agent run failed with status {Status} for capture {CaptureId}",
-                run.Value.Status, capture.Id);
+            _logger.LogError("Agent run failed with status {Status} for capture {CaptureId}, runId={RunId} — falling back to local extraction",
+                run.Value.Status, capture.Id, run.Value.Id);
             return await ProcessWithLocalExtractionAsync(capture);
         }
+
+        _logger.LogDebug("Agent run completed successfully for capture {CaptureId}, runId={RunId} — retrieving response",
+            capture.Id, run.Value.Id);
 
         PersistentThreadMessage? assistantMessage = null;
         await foreach (var message in _agentsClient.Messages.GetMessagesAsync(thread.Value.Id))
@@ -143,6 +201,8 @@ public class AgentService : IAgentService
 
         if (assistantMessage == null)
         {
+            _logger.LogWarning("No assistant message found in thread {ThreadId} for capture {CaptureId} — falling back to local extraction",
+                thread.Value.Id, capture.Id);
             return await ProcessWithLocalExtractionAsync(capture);
         }
 
@@ -150,6 +210,10 @@ public class AgentService : IAgentService
             .OfType<MessageTextContent>()
             .Select(c => c.Text));
 
+        _logger.LogDebug("Agent raw response for capture {CaptureId}: length={ResponseLength}, preview={ResponsePreview}",
+            capture.Id, responseText.Length, responseText.Length > 200 ? responseText[..200] + "..." : responseText);
+
+        _logger.LogDebug("Cleaning up agent {AgentId} for capture {CaptureId}", agent.Value.Id, capture.Id);
         await admin.DeleteAgentAsync(agent.Value.Id);
 
         return ParseAgentResponse(responseText, capture);
@@ -167,13 +231,23 @@ public class AgentService : IAgentService
                 jsonText = responseText[jsonStart..(jsonEnd + 1)];
             }
 
+            _logger.LogDebug("Parsing agent JSON response for capture {CaptureId}: extractedJsonLength={JsonLength}",
+                capture.Id, jsonText.Length);
+
             var parsed = JsonSerializer.Deserialize<List<AgentItemResult>>(jsonText, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             });
 
             if (parsed == null || parsed.Count == 0)
+            {
+                _logger.LogWarning("Agent returned empty/null parsed result for capture {CaptureId} — falling back to local extraction",
+                    capture.Id);
                 return ProcessWithLocalExtractionFallback(capture);
+            }
+
+            _logger.LogInformation("Agent response parsed successfully for capture {CaptureId}: {ParsedCount} items extracted, types=[{Types}]",
+                capture.Id, parsed.Count, string.Join(", ", parsed.Select(p => p.Type ?? "null").Distinct()));
 
             return parsed.Select(p => new Item
             {
@@ -198,23 +272,29 @@ public class AgentService : IAgentService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to parse agent response, falling back to local extraction");
+            _logger.LogWarning(ex, "Failed to parse agent response for capture {CaptureId}: {ErrorMessage} — falling back to local extraction",
+                capture.Id, ex.Message);
             return ProcessWithLocalExtractionFallback(capture);
         }
     }
 
     private List<Item> ProcessWithLocalExtractionFallback(Capture capture)
     {
+        _logger.LogDebug("Triggering synchronous local extraction fallback for capture {CaptureId}", capture.Id);
         return ProcessWithLocalExtractionAsync(capture).GetAwaiter().GetResult();
     }
 
     private Task<List<Item>> ProcessWithLocalExtractionAsync(Capture capture)
     {
+        _logger.LogInformation("Running local extraction for capture {CaptureId}: noteLength={NoteLength}, photoCount={PhotoCount}",
+            capture.Id, capture.UserNote?.Trim().Length ?? 0, capture.Photos.Count);
+
         var items = new List<Item>();
         var note = capture.UserNote?.Trim() ?? "";
 
         if (string.IsNullOrEmpty(note) && capture.Photos.Count == 0)
         {
+            _logger.LogDebug("Empty capture {CaptureId} — creating placeholder item", capture.Id);
             items.Add(CreatePlaceholderItem(capture, "Empty Capture", "No photos or notes provided."));
             return Task.FromResult(items);
         }
@@ -222,6 +302,8 @@ public class AgentService : IAgentService
         var extracted = ExtractItemsFromNote(note, capture);
         if (extracted.Count > 0)
         {
+            _logger.LogInformation("Local extraction for capture {CaptureId}: matched {ExtractedCount} items from note keywords",
+                capture.Id, extracted.Count);
             items.AddRange(extracted);
         }
         else if (capture.Photos.Count > 0 || !string.IsNullOrEmpty(note))
@@ -358,34 +440,6 @@ public class AgentService : IAgentService
             "cigar" => ItemType.Cigar,
             _ => type?.ToLowerInvariant() ?? "unknown"
         };
-    }
-
-    private static string GetAgentInstructions()
-    {
-        return """
-            You are an expert sommelier, mixologist, and tobacconist assistant. Your job is to analyze photos 
-            and user notes about drinks (whiskey, wine, cocktails) and cigars, then extract structured data.
-
-            For each distinct item you identify, extract:
-            - type: "whiskey", "wine", "cocktail", or "cigar"
-            - name: The specific product name (e.g., "Lagavulin 16 Year Old")
-            - brand: The brand/producer (e.g., "Lagavulin")
-            - category: Sub-category (e.g., "Single Malt Scotch", "Napa Valley Cabernet", "Robusto")
-            - details: An object with type-specific fields:
-              - For whiskey: region, age, abv, mashBill, flavorNotes[]
-              - For wine: grape, vintage, region, winery, flavorNotes[]
-              - For cocktail: baseSpirit, ingredients[], recipe, flavorProfile
-              - For cigar: wrapper, binder, filler, size, strength, flavorNotes[]
-            - venue: { name, address } if you can determine from context
-            - confidence: 0.0-1.0 how confident you are in the identification
-            - summary: A 1-2 sentence tasting note or description
-            - tags: relevant tags like ["smoky", "peaty", "full-bodied"]
-
-            If there are multiple items, return an array. Always respond with valid JSON array only, no markdown.
-            
-            If you can't identify a specific product, make your best guess and set confidence lower.
-            If the photo shows a menu, extract all visible items of interest.
-            """;
     }
 }
 

@@ -18,8 +18,8 @@ export interface AuthResponse {
   user: User
 }
 
-const TOKEN_KEY = 'sippuff_token'
-const USER_KEY = 'sippuff_user'
+const TOKEN_KEY = 'whiskey_and_smokes_token'
+const USER_KEY = 'whiskey_and_smokes_user'
 
 export function getStoredToken(): string | null {
   return localStorage.getItem(TOKEN_KEY)

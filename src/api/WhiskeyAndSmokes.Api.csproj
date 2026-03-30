@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ServiceDefaults\SipPuff.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\ServiceDefaults\WhiskeyAndSmokes.ServiceDefaults.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace SipPuff.Api.Models;
+namespace WhiskeyAndSmokes.Api.Models;
 
 // Capture submission
 public class CreateCaptureRequest
@@ -144,4 +144,16 @@ public class ChangePasswordRequest
 
     [JsonPropertyName("newPassword")]
     public string NewPassword { get; set; } = string.Empty;
+}
+
+public class AdminResetPasswordRequest
+{
+    [JsonPropertyName("newPassword")]
+    public string NewPassword { get; set; } = string.Empty;
+}
+
+public class UpdatePromptRequest
+{
+    [JsonPropertyName("content")]
+    public string Content { get; set; } = string.Empty;
 }

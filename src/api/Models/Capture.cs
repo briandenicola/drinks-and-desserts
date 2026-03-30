@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace SipPuff.Api.Models;
+namespace WhiskeyAndSmokes.Api.Models;
 
 public class Capture
 {

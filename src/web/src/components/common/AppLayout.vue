@@ -17,7 +17,7 @@ const navItems = [
   <div class="min-h-screen flex flex-col">
     <!-- Header -->
     <header class="bg-stone-900 border-b border-stone-800 px-4 py-3 flex items-center justify-between">
-      <h1 class="text-lg font-bold text-amber-500">SipPuff</h1>
+      <h1 class="text-lg font-bold text-amber-500">Whiskey & Smokes</h1>
       <button
         v-if="auth.isAuthenticated"
         @click="auth.logout()"

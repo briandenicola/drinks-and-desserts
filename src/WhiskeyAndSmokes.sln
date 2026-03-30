@@ -5,15 +5,15 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AppHost", "AppHost", "{90DCE71B-4939-B80A-CE8C-85DE2210C7AC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SipPuff.AppHost", "AppHost\SipPuff.AppHost.csproj", "{BC0617F8-9693-433F-8D90-BBB7F038BBDC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WhiskeyAndSmokes.AppHost", "AppHost\WhiskeyAndSmokes.AppHost.csproj", "{BC0617F8-9693-433F-8D90-BBB7F038BBDC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "api", "api", "{D82C56D6-B2CD-F611-9E31-04638F7EC30E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SipPuff.Api", "api\SipPuff.Api.csproj", "{30230DD0-9620-4633-9E33-2E5BAF9039DF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WhiskeyAndSmokes.Api", "api\WhiskeyAndSmokes.Api.csproj", "{30230DD0-9620-4633-9E33-2E5BAF9039DF}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ServiceDefaults", "ServiceDefaults", "{74AAC13F-230C-588C-5568-D96188CD79F4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SipPuff.ServiceDefaults", "ServiceDefaults\SipPuff.ServiceDefaults.csproj", "{33ED75B4-561F-4630-A7F0-749AC2D5BD8F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WhiskeyAndSmokes.ServiceDefaults", "ServiceDefaults\WhiskeyAndSmokes.ServiceDefaults.csproj", "{33ED75B4-561F-4630-A7F0-749AC2D5BD8F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,4 +1,4 @@
-# SipPuff 🥃💨
+# Whiskey & Smokes 🥃💨
 
 Track your whiskey, wine, cocktails & cigars. Snap a photo at the bar, let AI do the rest, refine later.
 
@@ -6,9 +6,11 @@ Track your whiskey, wine, cocktails & cigars. Snap a photo at the bar, let AI do
 
 - **Frontend**: Vue 3 + TypeScript + TailwindCSS (mobile-first PWA)
 - **Backend**: .NET 10 Web API
+- **Orchestration**: .NET Aspire AppHost (OpenTelemetry dashboard)
 - **Database**: Azure CosmosDB (prod) / LiteDB (local dev)
 - **Storage**: Azure Blob Storage (prod) / local filesystem (local dev)
-- **AI**: Azure AI Foundry Agent Service
+- **AI**: Azure AI Foundry Agent Service (image analysis & item categorization)
+- **Observability**: OpenTelemetry → Azure Application Insights + Aspire Dashboard
 - **Auth**: JWT (local dev) / Azure Entra ID (prod)
 - **Infra**: Terraform → Azure Container Apps
 - **CI/CD**: GitHub Actions
@@ -33,7 +35,7 @@ git clone <repo-url> && cd whiskey-and-smokes
 
 ### 2. Sign in to Azure
 
-The only Azure dependency for local dev is AI Foundry (for the AI agent features).
+The only Azure dependency for local dev is AI Foundry (for AI agent features).
 Authentication uses your Azure CLI credentials via `DefaultAzureCredential`.
 
 ```bash
@@ -58,52 +60,51 @@ task local:output
 ### 4. Run the application
 
 The API starts with LiteDB (file-based database) and local filesystem storage — no
-CosmosDB or Blob Storage emulators needed. The AI Foundry endpoint is automatically
-injected from your Terraform state.
+CosmosDB or Blob Storage emulators needed. AI Foundry and Application Insights endpoints
+are automatically injected from your Terraform state.
 
 ```bash
 task app:run
 ```
 
-This starts both services concurrently:
-- **API**: http://localhost:5062 (.NET 10, Swagger at `/openapi/v1.json`)
-- **Web**: http://localhost:5173 (Vue 3 + Vite dev server with hot reload)
+This starts both the Aspire AppHost (API + OpenTelemetry dashboard) and the Vue dev server:
 
-To run them individually:
+- **API**: http://localhost:5062 (.NET 10, OpenAPI at `/openapi/v1.json`)
+- **Web**: http://localhost:5173 (Vue 3 + Vite dev server with hot reload)
+- **Aspire Dashboard**: http://localhost:18888 (traces, metrics, logs)
+
+To run services individually:
 
 ```bash
-task app:run:api    # API only — auto-configures AiFoundry__Endpoint from Terraform
-task app:run:web    # Frontend only
+task app:run:apphost  # API via Aspire (with dashboard)
+task app:run:api      # API standalone (no Aspire)
+task app:run:web      # Frontend only
 ```
 
 ### 5. Build
 
 ```bash
-task app:build          # Both API and web
-task app:build:api      # .NET API only
-task app:build:web      # Vue frontend only (npm ci + vite build)
+task app:build        # Full .NET solution (API + AppHost + ServiceDefaults)
+task app:build:web    # Vue frontend only (npm ci + vite build)
 ```
 
 ### 6. Test
 
 ```bash
-task app:test           # All tests
-task app:test:api       # .NET tests (dotnet test)
-task app:test:web       # Vue TypeScript type checking (vue-tsc)
+task app:test         # All tests
+task app:test:api     # .NET tests (dotnet test)
+task app:test:web     # Vue TypeScript type checking (vue-tsc)
 ```
 
 ### 7. Docker Compose (optional)
 
-Run both services as containers. This builds Docker images and runs them together.
+Run services as containers, including CosmosDB emulator and Azurite.
 
 ```bash
-task app:docker:up      # Build and start containers
-task app:docker:logs    # Tail logs
-task app:docker:down    # Stop and remove containers
+task app:docker:up    # Build and start containers
+task app:docker:logs  # Tail logs
+task app:docker:down  # Stop and remove containers
 ```
-
-- **API container**: http://localhost:5062
-- **Web container**: http://localhost:8080
 
 ### 8. Tear down Azure resources
 
@@ -113,6 +114,46 @@ When you're done, destroy the AI Foundry resources to avoid charges:
 task local:down
 ```
 
+## Observability
+
+The application uses OpenTelemetry for distributed tracing, metrics, and structured logging.
+
+### Exporters
+
+| Exporter | Env Var | Purpose |
+|----------|---------|---------|
+| OTLP | `OTEL_EXPORTER_OTLP_ENDPOINT` | Aspire Dashboard (local dev) |
+| Azure Monitor | `APPLICATIONINSIGHTS_CONNECTION_STRING` | Azure Application Insights (prod + optional local) |
+
+Both exporters can run simultaneously. The Aspire AppHost auto-configures the OTLP endpoint.
+Application Insights is auto-injected from Terraform when available.
+
+### Custom trace sources
+
+All key operations produce traces under these ActivitySources:
+- `WhiskeyAndSmokes.Api` — general operations
+- `WhiskeyAndSmokes.Api.Auth` — authentication & authorization
+- `WhiskeyAndSmokes.Api.Captures` — photo capture workflow
+- `WhiskeyAndSmokes.Api.Agent` — AI Foundry agent interactions
+- `WhiskeyAndSmokes.Api.Storage` — CosmosDB & blob storage
+- `WhiskeyAndSmokes.Api.Admin` — admin operations
+
+### Runtime log level configuration
+
+Log levels are configurable at runtime from the **Admin Panel → Logging** tab.
+Changes take effect immediately without restart and are persisted to the database.
+
+## Admin Features
+
+Access the admin panel at `/admin` (requires admin role — the first registered user is
+automatically promoted to admin).
+
+| Feature | Description |
+|---------|-------------|
+| **User Management** | List users, toggle roles, reset passwords, delete accounts |
+| **AI Prompts** | Edit the instructions sent to the AI agent for image analysis |
+| **Logging** | Configure per-category log levels at runtime |
+
 ## How Local Dev Works
 
 | Concern | Local | Production |
@@ -120,6 +161,7 @@ task local:down
 | Database | LiteDB (file-based, zero config) | Azure CosmosDB |
 | Blob Storage | Local filesystem (`uploads/`) | Azure Blob Storage |
 | AI Agent | Azure AI Foundry (`DefaultAzureCredential`) | Azure AI Foundry (Managed Identity) |
+| Observability | Aspire Dashboard (OTLP) | Azure Application Insights |
 | Auth | JWT with dev secret | Azure Entra ID |
 
 The API auto-detects the environment: when `CosmosDb:Endpoint` and `CosmosDb:ConnectionString`
@@ -133,42 +175,44 @@ Run `task --list` to see all available tasks.
 ### App Tasks (`task app:*`)
 | Task | Description |
 |------|-------------|
-| `task app:build` | Builds both API and web frontend |
-| `task app:build:api` | Builds the .NET API |
-| `task app:build:web` | Builds the Vue frontend |
-| `task app:run` | Runs API and web frontend concurrently |
-| `task app:run:api` | Runs the .NET API (auto-configures AI Foundry endpoint) |
-| `task app:run:web` | Runs the Vue dev server |
-| `task app:test` | Runs all tests |
-| `task app:test:api` | Runs .NET API tests |
-| `task app:test:web` | Runs Vue type checking |
-| `task app:docker:up` | Starts all services via Docker Compose |
-| `task app:docker:down` | Stops Docker Compose services |
-| `task app:docker:logs` | Tails Docker Compose logs |
+| `app:build` | Builds the full .NET solution |
+| `app:build:web` | Builds the Vue frontend |
+| `app:run` | Runs Aspire AppHost + Vue frontend |
+| `app:run:apphost` | Runs the Aspire AppHost (API + dashboard) |
+| `app:run:api` | Runs the .NET API standalone |
+| `app:run:web` | Runs the Vue dev server |
+| `app:test` | Runs all tests |
+| `app:test:api` | Runs .NET API tests |
+| `app:test:web` | Runs Vue type checking |
+| `app:docker:up` | Starts all services via Docker Compose |
+| `app:docker:down` | Stops Docker Compose services |
+| `app:docker:logs` | Tails Docker Compose logs |
 
 ### Local Infrastructure (`task local:*`)
 | Task | Description |
 |------|-------------|
-| `task local:up` | Provisions Azure AI Foundry for local dev |
-| `task local:apply` | Applies Terraform changes |
-| `task local:output` | Shows Terraform outputs (including AI Foundry endpoint) |
-| `task local:down` | Destroys local Azure resources |
+| `local:up` | Provisions Azure AI Foundry for local dev |
+| `local:apply` | Applies Terraform changes |
+| `local:output` | Shows Terraform outputs (AI Foundry endpoint, App Insights) |
+| `local:down` | Destroys local Azure resources |
 
 ### Azure Infrastructure (`task azure:*`)
 | Task | Description |
 |------|-------------|
-| `task azure:up` | Creates full Azure environment |
-| `task azure:plan` | Plans Terraform changes |
-| `task azure:output` | Shows Terraform outputs |
-| `task azure:down` | Destroys all Azure resources |
+| `azure:up` | Creates full Azure environment |
+| `azure:plan` | Plans Terraform changes |
+| `azure:output` | Shows Terraform outputs |
+| `azure:down` | Destroys all Azure resources |
 
 ## Project Structure
 
 ```
 ├── src/
-│   ├── api/                    # .NET 10 Web API
-│   │   └── SipPuff.Api/
-│   └── web/                    # Vue 3 Frontend
+│   ├── api/                    # .NET 10 Web API (WhiskeyAndSmokes.Api)
+│   ├── AppHost/                # .NET Aspire orchestrator
+│   ├── ServiceDefaults/        # Shared OpenTelemetry, health checks, resilience
+│   ├── web/                    # Vue 3 Frontend
+│   └── WhiskeyAndSmokes.sln    # Solution file
 ├── infrastructure/
 │   ├── local/                  # Terraform — local dev (AI Foundry only)
 │   ├── azure/                  # Terraform — full Azure environment

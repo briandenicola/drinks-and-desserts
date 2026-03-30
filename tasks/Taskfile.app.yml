@@ -1,11 +1,11 @@
 version: "3"
 
 vars:
-  TITLE: SipPuff
+  TITLE: Whiskey & Smokes
   API_DIR: ./src/api
   WEB_DIR: ./src/web
   APPHOST_DIR: ./src/AppHost
-  SLN: ./src/SipPuff.sln
+  SLN: ./src/WhiskeyAndSmokes.sln
 
 tasks:
   default:
@@ -34,20 +34,30 @@ tasks:
     desc: Runs the Aspire AppHost (orchestrates API with OpenTelemetry dashboard)
     dir: "{{.APPHOST_DIR}}"
     cmds:
-      - AiFoundry__Endpoint={{.FOUNDRY_ENDPOINT}} dotnet run
+      - >-
+        AiFoundry__Endpoint={{.FOUNDRY_ENDPOINT}}
+        APPLICATIONINSIGHTS_CONNECTION_STRING={{.APPINSIGHTS_CONN}}
+        dotnet run
     vars:
       FOUNDRY_ENDPOINT:
-        sh: terraform -chdir=./infrastructure/local output -raw OPENAI_ENDPOINT 2>/dev/null || echo ""
+        sh: terraform -chdir=./infrastructure/local output -raw OPENAI_ENDPOINT
+      APPINSIGHTS_CONN:
+        sh: terraform -chdir=./infrastructure/local output -raw APPINSIGHTS_CONNECTION_STRING
 
   run:api:
     desc: Runs the .NET API standalone (without Aspire)
     dir: "{{.API_DIR}}"
     cmds:
       - dotnet restore --quiet
-      - AiFoundry__Endpoint={{.FOUNDRY_ENDPOINT}} dotnet run
+      - >-
+        AiFoundry__Endpoint={{.FOUNDRY_ENDPOINT}}
+        APPLICATIONINSIGHTS_CONNECTION_STRING={{.APPINSIGHTS_CONN}}
+        dotnet run
     vars:
       FOUNDRY_ENDPOINT:
-        sh: terraform -chdir=./infrastructure/local output -raw OPENAI_ENDPOINT 2>/dev/null || echo ""
+        sh: terraform -chdir=./infrastructure/local output -raw OPENAI_ENDPOINT 
+      APPINSIGHTS_CONN:
+        sh: terraform -chdir=./infrastructure/local output -raw APPINSIGHTS_CONNECTION_STRING
 
   run:web:
     desc: Runs the Vue frontend dev server
@@ -55,24 +65,6 @@ tasks:
     cmds:
       - npm install --silent
       - npm run dev
-
-  test:
-    desc: Runs all tests
-    cmds:
-      - task: test:api
-      - task: test:web
-
-  test:api:
-    desc: Runs .NET API tests
-    dir: "{{.API_DIR}}"
-    cmds:
-      - dotnet test || echo "No test projects found"
-
-  test:web:
-    desc: Runs Vue frontend type check
-    dir: "{{.WEB_DIR}}"
-    cmds:
-      - npx vue-tsc --noEmit
 
   docker:up:
     desc: Starts all services via Docker Compose

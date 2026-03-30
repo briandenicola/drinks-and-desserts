@@ -4,16 +4,23 @@ using Azure.Storage.Blobs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Azure.Cosmos;
 using Microsoft.IdentityModel.Tokens;
-using SipPuff.Api.Services;
+using WhiskeyAndSmokes.Api;
+using WhiskeyAndSmokes.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Dynamic log level service — created before DI so the filter lambda can capture it
+var logLevelService = new DynamicLogLevelService();
+
+builder.Logging.AddFilter((provider, category, logLevel) =>
+    logLevelService.IsEnabled(category, logLevel));
 
 builder.AddServiceDefaults();
 
 // JWT Authentication
 var jwtSecret = builder.Configuration["Jwt:Secret"] ?? "dev-secret-key-change-in-production-min-32-chars!!";
-var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "sippuff";
-var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "sippuff";
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "whiskey-and-smokes";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "whiskey-and-smokes";
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -102,7 +109,9 @@ else
 }
 
 // Auth & AI services
+builder.Services.AddSingleton(logLevelService);
 builder.Services.AddSingleton<IAuthService, AuthService>();
+builder.Services.AddSingleton<IPromptService, PromptService>();
 builder.Services.AddSingleton<IAgentService, AgentService>();
 
 // API
@@ -131,6 +140,16 @@ if (!useLocalStorage)
     await InitializeCosmosDb(app);
 }
 
+// Seed default prompts
+var promptService = app.Services.GetRequiredService<IPromptService>();
+await promptService.SeedDefaultsAsync();
+
+// Load persisted log level settings
+var cosmosDb = app.Services.GetRequiredService<ICosmosDbService>();
+await logLevelService.LoadFromStoreAsync(cosmosDb);
+
+app.Logger.LogInformation("Whiskey & Smokes API starting — log levels loaded from store");
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -153,7 +172,7 @@ static async Task InitializeCosmosDb(WebApplication app)
     {
         var client = app.Services.GetRequiredService<CosmosClient>();
         var config = app.Services.GetRequiredService<IConfiguration>();
-        var dbName = config["CosmosDb:DatabaseName"] ?? "sippuff";
+        var dbName = config["CosmosDb:DatabaseName"] ?? "whiskey-and-smokes";
 
         var database = await client.CreateDatabaseIfNotExistsAsync(dbName);
 

@@ -31,7 +31,7 @@ async function uploadPhotos(): Promise<string[]> {
       headers['x-ms-blob-type'] = 'BlockBlob'
     } else {
       // Local dev upload — needs JWT auth
-      const token = localStorage.getItem('sippuff_token')
+      const token = localStorage.getItem('whiskey_and_smokes_token')
       if (token) {
         headers['Authorization'] = `Bearer ${token}`
       }

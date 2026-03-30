@@ -1,3 +1,4 @@
+using Azure.Monitor.OpenTelemetry.Exporter;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
@@ -44,8 +45,21 @@ public static class Extensions
             .WithTracing(tracing =>
             {
                 tracing.AddSource(builder.Environment.ApplicationName)
-                       .AddAspNetCoreInstrumentation()
-                       .AddHttpClientInstrumentation();
+                       // Whiskey & Smokes app-specific activity sources
+                       .AddSource("WhiskeyAndSmokes.Api")
+                       .AddSource("WhiskeyAndSmokes.Api.Auth")
+                       .AddSource("WhiskeyAndSmokes.Api.Captures")
+                       .AddSource("WhiskeyAndSmokes.Api.Agent")
+                       .AddSource("WhiskeyAndSmokes.Api.Storage")
+                       .AddSource("WhiskeyAndSmokes.Api.Admin")
+                       .AddAspNetCoreInstrumentation(opts =>
+                       {
+                           opts.RecordException = true;
+                       })
+                       .AddHttpClientInstrumentation(opts =>
+                       {
+                           opts.RecordException = true;
+                       });
             });
 
         builder.AddOpenTelemetryExporters();
@@ -56,10 +70,26 @@ public static class Extensions
     private static TBuilder AddOpenTelemetryExporters<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
     {
         var useOtlpExporter = !string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
-
         if (useOtlpExporter)
         {
             builder.Services.AddOpenTelemetry().UseOtlpExporter();
+        }
+
+        // Azure Application Insights exporter
+        var appInsightsConnStr = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]
+            ?? builder.Configuration["ApplicationInsights:ConnectionString"];
+
+        if (!string.IsNullOrWhiteSpace(appInsightsConnStr))
+        {
+            builder.Services.AddOpenTelemetry()
+                .WithTracing(tracing => tracing.AddAzureMonitorTraceExporter(opts =>
+                    opts.ConnectionString = appInsightsConnStr))
+                .WithMetrics(metrics => metrics.AddAzureMonitorMetricExporter(opts =>
+                    opts.ConnectionString = appInsightsConnStr));
+
+            builder.Logging.AddOpenTelemetry(logging =>
+                logging.AddAzureMonitorLogExporter(opts =>
+                    opts.ConnectionString = appInsightsConnStr));
         }
 
         return builder;

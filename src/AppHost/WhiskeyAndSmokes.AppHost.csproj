@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\api\SipPuff.Api.csproj" />
+    <ProjectReference Include="..\api\WhiskeyAndSmokes.Api.csproj" />
   </ItemGroup>
 
 </Project>

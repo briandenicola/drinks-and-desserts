@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
 using System.Text.Json;
 
-namespace SipPuff.Api.Models;
+namespace WhiskeyAndSmokes.Api.Models;
 
 public class Item
 {
