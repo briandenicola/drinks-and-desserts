@@ -8,7 +8,7 @@ resource "azurerm_private_dns_a_record" "containerapps" {
   zone_name           = azurerm_private_dns_zone.containerapps.name
   resource_group_name = azurerm_resource_group.core.name
   ttl                 = 300
-  records             = [ 
+  records = [
     azurerm_container_app_environment.this.static_ip_address
   ]
 }

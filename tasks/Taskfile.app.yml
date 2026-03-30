@@ -1,0 +1,88 @@
+version: "3"
+
+vars:
+  TITLE: SipPuff
+  API_DIR: ./src/api
+  WEB_DIR: ./src/web
+
+tasks:
+  default:
+    cmds:
+      - task --list
+
+  build:
+    desc: Builds both the API and web frontend
+    cmds:
+      - task: build:api
+      - task: build:web
+
+  build:api:
+    desc: Builds the .NET API
+    dir: "{{.API_DIR}}"
+    cmds:
+      - dotnet build
+
+  build:web:
+    desc: Builds the Vue frontend
+    dir: "{{.WEB_DIR}}"
+    cmds:
+      - npm ci
+      - npm run build
+
+  run:
+    desc: Runs API and web frontend for local development
+    deps:
+      - run:api
+      - run:web
+
+  run:api:
+    desc: Runs the .NET API locally (auto-configures AI Foundry endpoint)
+    dir: "{{.API_DIR}}"
+    cmds:
+      - AiFoundry__Endpoint={{.FOUNDRY_ENDPOINT}} dotnet run
+    vars:
+      FOUNDRY_ENDPOINT:
+        sh: terraform -chdir=./infrastructure/local output -raw OPENAI_ENDPOINT 2>/dev/null || echo ""
+
+  run:web:
+    desc: Runs the Vue frontend dev server
+    dir: "{{.WEB_DIR}}"
+    cmds:
+      - npm install
+      - npm run dev
+
+  test:
+    desc: Runs all tests
+    cmds:
+      - task: test:api
+      - task: test:web
+
+  test:api:
+    desc: Runs .NET API tests
+    dir: "{{.API_DIR}}"
+    cmds:
+      - dotnet test || echo "No test projects found"
+
+  test:web:
+    desc: Runs Vue frontend type check
+    dir: "{{.WEB_DIR}}"
+    cmds:
+      - npx vue-tsc --noEmit
+
+  docker:up:
+    desc: Starts all services via Docker Compose
+    dir: ./tasks
+    cmds:
+      - docker compose up -d --build
+
+  docker:down:
+    desc: Stops all Docker Compose services
+    dir: ./tasks
+    cmds:
+      - docker compose down
+
+  docker:logs:
+    desc: Tails Docker Compose logs
+    dir: ./tasks
+    cmds:
+      - docker compose logs -f

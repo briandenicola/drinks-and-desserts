@@ -16,11 +16,6 @@ data "azurerm_cognitive_account" "ai_services" {
   resource_group_name = local.ai_rg_name
 }
 
-data "azurerm_application_insights" "classic" {
-  name                = "${local.project_classic}-appinsights"
-  resource_group_name = "${local.project_classic}_rg"
-}
-
 data "azurerm_application_insights" "workflow" {
   name                = "${local.project_workflow}-appinsights"
   resource_group_name = "${local.project_workflow}_rg"

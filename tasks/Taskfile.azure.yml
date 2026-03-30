@@ -1,258 +1,56 @@
 version: "3"
 
-dotenv: 
-  - .env
-
 vars:
-  TITLE: Roman Imperial Coin Analyzer
-  HELM_CHART: ric-analyzer
-  SKU: Standard_D4ads_v5
-  DEFAULT_REGION: canadacentral
-  APP_URL: https://ric.{{.DEFAULT_DOMAIN}}
-  COUNT: 2
-  MODEL_NAME: o1
-  NAMESPACE: ric 
-  APIM_SKU: Consumption #Standard 
-
-includes:
-  local:
-    taskfile: ./Taskfile.local.yaml
-    internal: false
+  TITLE: SipPuff
+  DEFAULT_REGION: eastus2
 
 tasks:
   default:
     cmds:
       - task --list
 
-  branch:
-    internal: true
+  init:
+    desc: Initializes Terraform for {{.TITLE}} Azure environment
     cmds:
-    - git branch {{.TAG_NAME}} 2>>/dev/null || true
-    - git checkout {{.TAG_NAME}} 
-    vars:
-      TAG_NAME:
-        sh: terraform -chdir=./infrastructure output -raw APP_NAME
-
-  up:
-    desc: Creates complete Azure environment for {{.TITLE}}
-    cmds:
-      - task: init
-      - task: apply
-      - task: creds
-      - task: core
-      - task: build
-      - task: deploy
-      - task: dns
+      - terraform workspace new {{.REGION}} || true
+      - terraform workspace select {{.REGION}}
+      - terraform init
     vars:
       REGION: "{{default .DEFAULT_REGION .CLI_ARGS}}"
 
-  init:
-    desc: Initializes Terraform for {{.TITLE}}
+  up:
+    desc: Creates full Azure environment for {{.TITLE}}
     cmds:
-      - terraform -chdir=./infrastructure workspace new {{.REGION}} || true
-      - terraform -chdir=./infrastructure workspace select {{.REGION}}
-      - terraform -chdir=./infrastructure init
+      - task: init
+      - task: apply
     vars:
       REGION: "{{default .DEFAULT_REGION .CLI_ARGS}}"
 
   apply:
+    desc: Applies Terraform configuration for {{.TITLE}}
     cmds:
-      - terraform -chdir=./infrastructure apply -auto-approve  -compact-warnings
+      - terraform apply -auto-approve -compact-warnings
         -var "region={{.REGION}}"
-        -var "node_sku={{.SKU}}"
-        -var "node_count={{.COUNT}}"
         -var "tags={{.TITLE}}"
-        -var "custom_domain={{.APP_URL}}"
-        -var "certificate_base64_encoded={{.CERT}}" 
-        -var "certificate_password={{.CERT_PFX_PASS}}"
-        -var "apim_sku={{.APIM_SKU}}"
     vars:
       REGION: "{{default .DEFAULT_REGION .CLI_ARGS}}"
-      CERT:
-        sh: cat {{.CERT_PATH}} | base64
 
-  creds:
-    desc: Gets credential file for newly created AKS cluster
+  plan:
+    desc: Plans Terraform changes for {{.TITLE}}
     cmds:
-      - az aks get-credentials -g {{.RG}} -n {{.AKS}} --overwrite-existing
-      - sed -i s/devicecode/azurecli/g ~/.kube/config
+      - terraform plan
+        -var "region={{.REGION}}"
+        -var "tags={{.TITLE}}"
     vars:
-      RG:
-        sh: terraform -chdir=./infrastructure output -raw AKS_RESOURCE_GROUP
-      AKS:
-        sh: terraform -chdir=./infrastructure output -raw AKS_CLUSTER_NAME
+      REGION: "{{default .DEFAULT_REGION .CLI_ARGS}}"
 
-  build:
-    desc: Builds application via ACR tasks
-    dir: ./src/api
+  output:
+    desc: Shows Terraform outputs for {{.TITLE}}
     cmds:
-      - task: branch
-      - az acr build -t ric/analyzer-api:{{.COMMIT_VERSION}} -r {{.ACR_NAME}} .
-      - git checkout main 
-    vars:
-      ACR_NAME:
-        sh: terraform -chdir=../../infrastructure output -raw ACR_NAME
-      COMMIT_VERSION:
-        sh: git rev-parse HEAD | cut -c 1-8
-
-  ui:
-    desc: Builds and Deploys the UI code to Azure Static Web Apps
-    dir: ./src/ui
-    cmds:
-      - echo EXPO_PUBLIC_API_URL={{.APIM_GATEWAY}} > .env
-      - echo EXPO_PUBLIC_API_KEY={{.APIM_SUBSCRIPTION_ID}} >> .env
-      - source .env
-      - npm install
-      - npx expo export --platform web -c
-      - cmd: swa deploy --env production --app-location dist --deployment-token {{.DEPLOY_TOKEN}}
-        silent: true
-    vars:
-      SWA:
-        sh: terraform -chdir=../../infrastructure output -raw AZURE_STATIC_WEBAPP_NAME
-      DEPLOY_TOKEN:
-        sh: az staticwebapp secrets list --name {{.SWA}} --query "properties.apiKey" -o tsv
-      APIM_GATEWAY:
-        sh: terraform -chdir=../../infrastructure output -raw APIM_GATEWAY        
-      APIM_SUBSCRIPTION_ID:
-        sh: terraform -chdir=../../infrastructure output -raw APIM_SUBSCRIPTION_ID            
-
-  deploy:
-    desc: Deploys application via Helm/GitOps
-    cmds:
-      - task: branch 
-      - helm template {{.HELM_CHART}}
-        --set ACR.NAME="{{.ACR_NAME}}.azurecr.io"
-        --set APP.VERSION={{.COMMIT_VERSION}}
-        --set APP.TAG_NAME={{.TAG_NAME}}
-        --set WORKLOAD_ID.NAME={{.WORKLOAD_ID_NAME}}
-        --set WORKLOAD_ID.CLIENT_ID={{.WORKLOAD_CLIENT_ID}}
-        --set WORKLOAD_ID.TENANT_ID={{.WORKLOAD_TENANT_ID}}        
-        --set OPENAI.MODEL_NAME={{.MODEL_NAME}}
-        --set OPENAI.ENDPOINT={{.OPENAI_ENDPOINT}} ./charts/api > 
-        ./cluster-config/api/components.yaml
-      - git add ./cluster-config/api/components.yaml || true
-      - git commit -m "[{{.DATE_TIME}}] - Updates for {{.TAG_NAME}} app 🤖🤖🤖 components" || true
-      - git push --set-upstream origin {{.TAG_NAME}} || true
-      - git checkout main        
-    vars:
-      TAG_NAME:
-        sh: terraform -chdir=./infrastructure output -raw APP_NAME
-      WORKLOAD_ID_NAME:
-        sh: terraform -chdir=./infrastructure output -raw WORKLOAD_ID_NAME        
-      WORKLOAD_CLIENT_ID:
-        sh: terraform -chdir=./infrastructure output -raw WORKLOAD_CLIENT_ID
-      WORKLOAD_TENANT_ID:
-        sh: terraform -chdir=./infrastructure output -raw WORKLOAD_TENANT_ID
-      ACR_NAME:
-        sh: terraform -chdir=./infrastructure output -raw ACR_NAME
-      OPENAI_ENDPOINT:
-        sh: terraform -chdir=./infrastructure output -raw OPENAI_ENDPOINT     
-      COMMIT_VERSION:
-        sh: git rev-parse HEAD | cut -c 1-8 
-      DATE_TIME:
-        sh: date        
-
-  core:
-    desc: Deploys Istio Certificate and Otel infrastructure via Helm/GitOps
-    cmds:
-      - task: branch
-      - helm template {{.HELM_CHART}}
-        --set APP.TAG_NAME={{.TAG_NAME}}
-        --set ISTIO.CLIENT_ID={{.ISTIO_CLIENT_ID}}
-        --set ISTIO.TENANT_ID={{.ISTIO_TENANT_ID}}
-        --set ISTIO.KEYVAULT_NAME={{.KEYVAULT_NAME}}        
-        --set OTEL.CLIENT_ID={{.OTEL_CLIENT_ID}}
-        --set OTEL.TENANT_ID={{.OTEL_TENANT_ID}}
-        --set OTEL.WORKLOAD_ID_NAME={{.OTEL_WORKLOAD_ID_NAME}}                
-        --set APP_INSIGHTS.CONNECTION_STRING="{{.APP_INSIGHTS_CONNECTION_STRING}}"
-        --set APP_INSIGHTS.INSTRUMENTATION_KEY={{.APP_INSIGHTS_INSTRUMENTATION_KEY}}
-        --set APP_INSIGHTS.INGESTION_ENDPOINT={{.INGESTION_ENDPOINT}}
-        ./charts/infra > ./cluster-config/infrastructure/components.yaml
-      - git add ./cluster-config/infrastructure/components.yaml || true
-      - git commit -m "[{{.DATE_TIME}}] - Updates for {{.TAG_NAME}} infra 🖥️ certificates" || true
-      - git push --set-upstream origin {{.TAG_NAME}} || true
-      - git checkout main      
-    vars:
-      TAG_NAME:
-        sh: terraform -chdir=./infrastructure output -raw APP_NAME
-      APP_INSIGHTS_CONNECTION_STRING:
-        sh: terraform -chdir=./infrastructure output -raw APP_INSIGHTS_CONNECTION_STRING
-      APP_INSIGHTS_INSTRUMENTATION_KEY:
-        sh: terraform -chdir=./infrastructure output -raw APP_INSIGHTS_INSTRUMENTATION_KEY        
-      ISTIO_CLIENT_ID:
-        sh: terraform -chdir=./infrastructure output -raw ISTIO_CLIENT_ID
-      ISTIO_TENANT_ID:
-        sh: terraform -chdir=./infrastructure output -raw ISTIO_TENANT_ID 
-      OTEL_WORKLOAD_ID_NAME:
-        sh: terraform -chdir=./infrastructure output -raw OTEL_WORKLOAD_ID_NAME
-      OTEL_CLIENT_ID:
-        sh: terraform -chdir=./infrastructure output -raw OTEL_CLIENT_ID
-      OTEL_TENANT_ID:
-        sh: terraform -chdir=./infrastructure output -raw ISTIO_TENANT_ID                    
-      KEYVAULT_NAME:
-        sh: terraform -chdir=./infrastructure output -raw KEYVAULT_NAME  
-      DATE_TIME:
-        sh: date 
-      INGESTION_ENDPOINT:
-        sh: terraform -chdir=./infrastructure output -raw APP_INSIGHTS_CONNECTION_STRING | grep -oP 'IngestionEndpoint=\K[^;]+' | sed 's:/$::'
-
-  dns:
-    desc: Gets the IP Address of the Istio Gateway
-    dir: ./scripts
-    cmds:
-    - cmd: echo -e '➡️\033[1m\e[38;5;45mThe Azure APIM Backend ric.{{.DEFAULT_DOMAIN}} should resolve to {{.IP}}'
-      silent: true
-    vars:
-      IP: 
-        sh: kubectl --namespace aks-istio-ingress get service aks-istio-ingressgateway-external -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
-
-  hubble:
-    desc: Install Hubble Dashboard for Network Observability 
-    dir: ./scripts
-    cmds:
-    - bash ./hubble-certs.sh
-    - kubectl apply -f ../cluster-config/hubble/
-    - kubectl -n kube-system get pods -o wide -l k8s-app=hubble-relay
-    - kubectl -n kube-system get pods -o wide -l k8s-app=hubble-ui
-    - cmd: echo -e '➡️\033[1m\e[38;5;45mHubble is now setup. . .'
-      silent: true
-    - cmd: echo; 
-        echo -e '➡️\033[1m\e[38;5;45mNext, to access the Dashboard, run the following commands:' &&
-        echo -e '\t\033[1m\e[38;5;46mkubectl -n kube-system port-forward svc/hubble-ui 12000:80' &&
-        echo -e '➡️\033[1m\e[38;5;45mThen click this 🔗 \033[1m\e[38;5;46mhttp://localhost:12000'
-      silent: true        
-    - cmd: echo; 
-        echo -e '➡️\033[1m\e[38;5;45mOr, the Hubble cli can also be used to observe pod traffic with:' &&         
-        echo -e '\t➡️\033[1m\e[38;5;46mkubectl port-forward -n kube-system svc/hubble-relay --address 127.0.0.1 4245:443' &&
-        echo -e '\t➡️\033[1m\e[38;5;46mhubble observe --to-pod {{.NAMESPACE}}/$(kubectl -n {{.NAMESPACE}} get pods -o wide -l name={{.APP_NAME}} -o jsonpath="{.items[0].metadata.name}") -f'
-        echo -e '\t➡️\033[1m\e[38;5;46mhubble observe -n {{.NAMESPACE}} -f'
-      silent: true
-    vars:
-      APP_NAME:
-        sh: terraform -chdir=../infrastructure output -raw APP_NAME
-
-  status:
-    desc: Gets the overall status of the cluster
-    cmds:
-    - kubectl get nodes -o wide -L kubernetes.azure.com/node-image-version
-    - kubectl -n kube-system get pods
-    - kubectl -n aks-istio-ingress get pods,services,deployments,gateway
-    - kubectl -n aks-istio-system get pods,services,deployments
-    - kubectl -n ric get pods,services,deployments,virtualservice
-    - flux get all
-
-  restart:
-    desc: Performs a rollout restart on all deployments in {{.NAMESPACE}} namespace
-    cmds:
-    - kubectl -n {{.NAMESPACE}} rollout restart deploy
+      - terraform output
 
   down:
-    desc: Destroys all Azure resources and cleans up Terraform
+    desc: Destroys all Azure resources and cleans up Terraform for {{.TITLE}}
     cmds:
       - az group list --tag Application="{{.TITLE}}" --query "[].name" -o tsv | xargs -ot -n 1 az group delete -y --no-wait -n || true
-      - cd infrastructure ;
-        rm -rf terraform.tfstate.d .terraform.lock.hcl .terraform terraform.tfstate terraform.tfstate.backup .terraform.tfstate.lock.info || true
-      - git branch -D {{.APP_NAME}} || true
-    vars:
-      APP_NAME:
-        sh: terraform -chdir=./infrastructure output -raw APP_NAME
+      - rm -rf terraform.tfstate.d .terraform.lock.hcl .terraform terraform.tfstate terraform.tfstate.backup .terraform.tfstate.lock.info || true

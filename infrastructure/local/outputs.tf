@@ -4,11 +4,11 @@ output "APP_NAME" {
 }
 
 output "APP_RESOURCE_GROUP" {
-    value = azurerm_resource_group.app.name
-    sensitive = false
+  value     = azurerm_resource_group.this.name
+  sensitive = false
 }
 
 output "OPENAI_ENDPOINT" {
-    value = module.openai.OPENAI_ENDPOINT
-    sensitive = false
+  value     = azapi_resource.ai_foundry.output.properties.endpoint
+  sensitive = false
 }

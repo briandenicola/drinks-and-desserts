@@ -1,6 +1,6 @@
 variable "region" {
   description = "Region to deploy resources to"
-  default     =  "eastus2"
+  default     = "eastus2"
 }
 
 variable "tags" {

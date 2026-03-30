@@ -1,70 +1,40 @@
 version: "3"
 
 vars:
-  LOCAL_TITLE: Roman Imperial Coin Analyzer (local)
+  TITLE: SipPuff (local)
   DEFAULT_REGION: eastus2
 
-tasks:  
+tasks:
   default:
     cmds:
       - task --list
 
   up:
-    desc: Creates a simple Azure environment for {{.LOCAL_TITLE}}
+    desc: Provisions Azure AI Foundry resources for {{.TITLE}}
     cmds:
-      - terraform -chdir=./infrastructure/simple workspace new {{.REGION}} || true
-      - terraform -chdir=./infrastructure/simple workspace select {{.REGION}}
-      - terraform -chdir=./infrastructure/simple init
+      - terraform workspace new {{.REGION}} || true
+      - terraform workspace select {{.REGION}}
+      - terraform init
       - task: apply
     vars:
       REGION: "{{default .DEFAULT_REGION .CLI_ARGS}}"
 
   apply:
-    desc: Applies Terraform configuration for {{.LOCAL_TITLE}}
+    desc: Applies Terraform configuration for {{.TITLE}}
     cmds:
-      - terraform -chdir=./infrastructure/simple apply -auto-approve  -compact-warnings
+      - terraform apply -auto-approve -compact-warnings
         -var "region={{.REGION}}"
-        -var "tags={{.LOCAL_TITLE}}"
+        -var "tags={{.TITLE}}"
     vars:
       REGION: "{{default .DEFAULT_REGION .CLI_ARGS}}"
 
-  run:
-    desc: Starts Aspire Dashboard and compiles/runs API (local)
-    dir: ./src/api
-    deps:
-      - task: aspire
-      - task: build
-    cmds: 
-    - RIC_AOI_ENDPOINT={{.AOI_ENDPOINT}} dotnet run --no-build
-    vars:
-      AOI_ENDPOINT: 123
-        #sh: terraform -chdir=../../infrastructure/simple output -raw OPENAI_ENDPOINT
-
-  build:
-    dir: ./src/api
-    run: when_changed
+  output:
+    desc: Shows Terraform outputs for {{.TITLE}}
     cmds:
-    - dotnet build 
-
-  aspire:
-    run: once
-    cmds: 
-    - docker run --rm -p 18888:18888 -p 4317:18889 -d --name aspire-dashboard  mcr.microsoft.com/dotnet/aspire-dashboard:8.1.0 > /dev/null 2>&1 || true
-
-  validate:
-    desc: Runs the script ./scripts/validate.sh to test running API  (local)
-    dir: ./scripts
-    cmds: 
-    - bash ./validate.sh
-    - cmd: chrome.exe {{.URL}}
-      silent: true
-    vars:
-      URL:
-        sh: docker logs aspire-dashboard | grep -i "Login to the dashboard at" | awk '{print $6}' | sed 's/0\.0\.0\.0/localhost/'
+      - terraform output
 
   down:
-    desc: Destroys all resources and cleans up Terraform for {{.LOCAL_TITLE}}
+    desc: Destroys all resources and cleans up Terraform for {{.TITLE}}
     cmds:
-      - az group list --tag Application="{{.LOCAL_TITLE}}" --query "[].name" -o tsv | xargs -ot -n 1 az group delete -y --no-wait -n || true
-      - cd infrastructure/simple ;
-        rm -rf terraform.tfstate.d .terraform.lock.hcl .terraform terraform.tfstate terraform.tfstate.backup .terraform.tfstate.lock.info || true
+      - terraform destroy -auto-approve || true
+      - rm -rf terraform.tfstate.d .terraform.lock.hcl .terraform terraform.tfstate terraform.tfstate.backup .terraform.tfstate.lock.info || true

@@ -1,5 +1,5 @@
 resource "azapi_resource" "ai_foundry" {
-  type                      = "Microsoft.CognitiveServices/accounts@2025-10-01-preview"
+  type                      = "Microsoft.CognitiveServices/accounts@2025-12-01"
   name                      = local.ai_services_name
   parent_id                 = azurerm_resource_group.this.id
   location                  = azurerm_resource_group.this.location
@@ -13,24 +13,16 @@ resource "azapi_resource" "ai_foundry" {
     identity = {
       type = "SystemAssigned"
     }
-
     properties = {
       disableLocalAuth       = false
       allowProjectManagement = true
       customSubDomainName    = local.ai_services_name
-
       networkInjections = [
         {
           scenario                   = "agent"
-          subnetArmId                = azurerm_subnet.agents.id
-          useMicrosoftManagedNetwork = false
+          useMicrosoftManagedNetwork = true
         }
-      ]
-      userOwnedStorageAccounts = [
-        {
-          id = azurerm_storage_account.this.id
-        }
-      ]
+      ]      
     }
   }
 

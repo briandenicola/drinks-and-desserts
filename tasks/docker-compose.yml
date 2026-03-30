@@ -1,0 +1,29 @@
+services:
+  api:
+    build:
+      context: ../src/api/
+      dockerfile: Dockerfile
+    container_name: sippuff-api
+    ports:
+      - "5062:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - Cors__AllowedOrigins__0=http://localhost:8080
+    networks:
+      - sippuff
+
+  web:
+    build:
+      context: ../src/web
+      dockerfile: Dockerfile
+    container_name: sippuff-web
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+    networks:
+      - sippuff
+
+networks:
+  sippuff:
+    driver: bridge
