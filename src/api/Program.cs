@@ -114,6 +114,7 @@ builder.Services.AddSingleton(logLevelService);
 builder.Services.AddSingleton<IAuthService, AuthService>();
 builder.Services.AddSingleton<IPromptService, PromptService>();
 builder.Services.AddSingleton<IAgentService, WorkflowAgentService>();
+builder.Services.AddHostedService<AgentValidationService>();
 
 // API
 builder.Services.AddControllers();
