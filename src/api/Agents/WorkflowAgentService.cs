@@ -91,10 +91,35 @@ public class WorkflowAgentService : IAgentService
             activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
             _logger.LogError(ex, "Failed to process capture {CaptureId}: {Error}", capture.Id, ex.Message);
 
-            capture.Status = CaptureStatus.Failed;
-            capture.ProcessingError = ex.Message;
-            capture.UpdatedAt = DateTime.UtcNow;
-            await _cosmosDb.UpsertAsync("captures", capture, capture.PartitionKey);
+            // Fall back to local extraction if the workflow fails
+            try
+            {
+                _logger.LogWarning("Attempting local extraction fallback for capture {CaptureId}", capture.Id);
+                var fallbackItems = LocalExtraction.Process(capture, _logger);
+
+                foreach (var item in fallbackItems)
+                {
+                    await _cosmosDb.CreateAsync("items", item, item.PartitionKey);
+                    capture.ItemIds.Add(item.Id);
+                }
+
+                capture.Status = CaptureStatus.Completed;
+                capture.ProcessingError = $"AI workflow failed ({ex.Message}), used local extraction";
+                capture.UpdatedAt = DateTime.UtcNow;
+                await _cosmosDb.UpsertAsync("captures", capture, capture.PartitionKey);
+
+                _logger.LogWarning(
+                    "Capture {CaptureId} completed via local extraction fallback: {ItemCount} items",
+                    capture.Id, fallbackItems.Count);
+            }
+            catch (Exception fallbackEx)
+            {
+                _logger.LogError(fallbackEx, "Local extraction fallback also failed for capture {CaptureId}", capture.Id);
+                capture.Status = CaptureStatus.Failed;
+                capture.ProcessingError = ex.Message;
+                capture.UpdatedAt = DateTime.UtcNow;
+                await _cosmosDb.UpsertAsync("captures", capture, capture.PartitionKey);
+            }
         }
     }
 

@@ -50,7 +50,7 @@ public class AuthController : ControllerBase
 
         var user = new User
         {
-            DisplayName = request.DisplayName.Trim(),
+            DisplayName = request.DisplayName?.Trim() ?? request.Email.Split('@')[0],
             Email = request.Email.ToLowerInvariant().Trim(),
             PasswordHash = _authService.HashPassword(request.Password),
             Role = "user"
