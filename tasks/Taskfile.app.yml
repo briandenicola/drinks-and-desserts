@@ -28,7 +28,7 @@ tasks:
   run:
     desc: Runs Aspire AppHost (API with dashboard) and Vue frontend
     deps:
-      - docker:up
+      - services:up
       - apphost
       - web
 
@@ -40,6 +40,7 @@ tasks:
         AiFoundry__Endpoint={{.FOUNDRY_ENDPOINT}}
         APPLICATIONINSIGHTS_CONNECTION_STRING={{.APPINSIGHTS_CONN}}
         ASPIRE_DASHBOARD_OTLP_HTTP_ENDPOINT_URL=http://localhost:18889
+        ASPIRE_ALLOW_UNSECURED_TRANSPORT=true
         dotnet run
     vars:
       FOUNDRY_ENDPOINT:
@@ -69,7 +70,7 @@ tasks:
       - npm install --silent
       - npm run dev
 
-  agent-init:
+  agent:init:
     desc: Validates agent configuration against AI Foundry
     cmds:
       - >-
@@ -79,19 +80,19 @@ tasks:
       FOUNDRY_ENDPOINT:
         sh: terraform -chdir=./infrastructure/local output -raw OPENAI_ENDPOINT
 
-  docker:up:
+  services:up:
     desc: Starts all services via Docker Compose
     dir: ./tasks
     cmds:
       - docker compose up -d
 
-  docker:down:
+  services:down:
     desc: Stops all Docker Compose services
     dir: ./tasks
     cmds:
       - docker compose down
 
-  docker:logs:
+  services:logs:
     desc: Tails Docker Compose logs
     dir: ./tasks
     cmds:
