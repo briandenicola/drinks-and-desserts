@@ -134,6 +134,16 @@ function isAiGenerated(data: Item): boolean {
       <p v-if="item.venue.address" class="text-xs text-stone-600">{{ item.venue.address }}</p>
     </div>
 
+    <!-- Workflow History Link -->
+    <router-link
+      v-if="item.captureId"
+      :to="`/history/${item.captureId}`"
+      class="inline-flex items-center gap-1.5 text-xs text-stone-500 hover:text-amber-500 transition-colors mb-4"
+    >
+      <span>🔍</span>
+      <span>View processing history</span>
+    </router-link>
+
     <!-- Rating & Notes (view/edit) -->
     <div v-if="!isEditing" class="space-y-3">
       <div v-if="item.userRating" class="text-amber-500 text-lg">
