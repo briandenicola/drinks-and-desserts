@@ -1,0 +1,5 @@
+# Downloaded test images (run download.sh to fetch)
+*.jpg
+*.jpeg
+*.png
+*.webp
