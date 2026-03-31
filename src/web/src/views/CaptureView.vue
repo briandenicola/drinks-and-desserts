@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { useCamera } from '../composables/useCamera'
 import { useLocation } from '../composables/useLocation'
 import { useCapturesStore } from '../stores/captures'
 import { capturesApi } from '../services/captures'
 
-const router = useRouter()
 const { photos, previews, addFromInput, removePhoto, clearPhotos } = useCamera()
 const { location, isLocating, requestLocation } = useLocation()
 const capturesStore = useCapturesStore()

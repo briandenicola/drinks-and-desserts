@@ -41,7 +41,7 @@ jobs:
             --image whiskey-and-smokes-api:${{ github.sha }} \
             --image whiskey-and-smokes-api:latest \
             --file src/api/Dockerfile \
-            src/api
+            src
 
       - name: Build Web Image (ACR Build Task)
         run: |

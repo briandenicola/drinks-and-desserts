@@ -20,7 +20,6 @@ const deleteConfirmUserId = ref<string | null>(null)
 
 // Prompt viewing state (read-only — prompts are managed as files in AgentInitiator/Prompts/)
 const expandedPromptId = ref<string | null>(null)
-const promptMessage = ref('')
 
 // Logging state
 const loggingData = ref<LoggingSettingsResponse | null>(null)
@@ -368,18 +367,24 @@ async function testFoundryConnectivity() {
         </div>
 
         <!-- Agent Validation -->
-        <div v-if="foundryStatus.agents && foundryStatus.agents.length > 0" class="bg-stone-900 border border-stone-800 rounded-xl p-4">
+        <div v-if="foundryStatus.agentValidation && foundryStatus.agentValidation.foundAgents.length > 0" class="bg-stone-900 border border-stone-800 rounded-xl p-4">
           <h3 class="text-sm font-semibold text-stone-200 mb-3">Registered Agents</h3>
           <div class="space-y-2">
             <div
-              v-for="agent in foundryStatus.agents"
-              :key="agent.name"
+              v-for="agentName in foundryStatus.agentValidation.foundAgents"
+              :key="agentName"
               class="flex items-center justify-between text-xs py-1 border-b border-stone-800 last:border-b-0"
             >
-              <span class="text-stone-300 font-mono">{{ agent.name }}</span>
-              <span :class="agent.status === 'ok' ? 'text-green-400' : 'text-red-400'" class="font-medium">
-                {{ agent.status === 'ok' ? 'Valid' : agent.error || 'Not Found' }}
-              </span>
+              <span class="text-stone-300 font-mono">{{ agentName }}</span>
+              <span class="text-green-400 font-medium">Valid</span>
+            </div>
+            <div
+              v-for="agentName in foundryStatus.agentValidation.missingAgents"
+              :key="agentName"
+              class="flex items-center justify-between text-xs py-1 border-b border-stone-800 last:border-b-0"
+            >
+              <span class="text-stone-300 font-mono">{{ agentName }}</span>
+              <span class="text-red-400 font-medium">Not Found</span>
             </div>
           </div>
         </div>
