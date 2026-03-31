@@ -230,7 +230,7 @@ public class AdminController : ControllerBase
             const string healthCheckAgent = "whiskey-smokes-domain-expert";
             const string healthCheckPrompt = "Reply with exactly: OK";
 
-            var agentRef = new Azure.AI.Projects.OpenAI.AgentReference(healthCheckAgent, "latest");
+            var agentRef = new Azure.AI.Projects.OpenAI.AgentReference(healthCheckAgent, "1");
             var responsesClient = projectClient.OpenAI.GetProjectResponsesClientForAgent(agentRef);
             var response = await responsesClient.CreateResponseAsync(healthCheckPrompt);
 

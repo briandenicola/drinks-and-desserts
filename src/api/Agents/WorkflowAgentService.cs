@@ -335,7 +335,7 @@ public class WorkflowAgentService : IAgentService
 
         _logger.LogInformation("{Step}: Calling Foundry agent '{Agent}'...", stepId, agentName);
 
-        var agentRef = new AgentReference(agentName, "latest");
+        var agentRef = new AgentReference(agentName, "1");
         var responsesClient = projectClient.OpenAI.GetProjectResponsesClientForAgent(agentRef);
         var response = await responsesClient.CreateResponseAsync(prompt);
 
