@@ -11,9 +11,9 @@ const itemsStore = useItemsStore()
 const item = ref<Item | null>(null)
 const isEditing = ref(false)
 const isSaving = ref(false)
+const isAddingNote = ref(false)
 const showDeleteConfirm = ref(false)
 const editRating = ref(0)
-const editNotes = ref('')
 const editName = ref('')
 const editBrand = ref('')
 const editCategory = ref('')
@@ -21,6 +21,7 @@ const editVenueName = ref('')
 const editVenueAddress = ref('')
 const editTags = ref<string[]>([])
 const newTag = ref('')
+const newJournalEntry = ref('')
 
 onMounted(async () => {
   const { data } = await itemsApi.get(route.params.id as string)
@@ -30,7 +31,6 @@ onMounted(async () => {
 
 function resetEditFields(data: Item) {
   editRating.value = data.userRating ?? 0
-  editNotes.value = data.userNotes ?? ''
   editName.value = data.name ?? ''
   editBrand.value = data.brand ?? ''
   editCategory.value = data.category ?? ''
@@ -66,7 +66,6 @@ async function save() {
       category: editCategory.value || undefined,
       venue: editVenueName.value ? { name: editVenueName.value, address: editVenueAddress.value || undefined } : undefined,
       userRating: editRating.value || undefined,
-      userNotes: editNotes.value || undefined,
       tags: editTags.value,
       status: 'reviewed',
     })
@@ -75,6 +74,27 @@ async function save() {
   } finally {
     isSaving.value = false
   }
+}
+
+async function addJournalEntry() {
+  if (!item.value || !newJournalEntry.value.trim()) return
+  isAddingNote.value = true
+  try {
+    const updated = await itemsStore.updateItem(item.value.id, {
+      journalEntry: newJournalEntry.value.trim(),
+    })
+    item.value = updated
+    newJournalEntry.value = ''
+  } finally {
+    isAddingNote.value = false
+  }
+}
+
+function formatDate(dateStr: string): string {
+  const d = new Date(dateStr)
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+    + ' at '
+    + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
 }
 
 async function deleteItem() {
@@ -143,12 +163,11 @@ function isAiGenerated(data: Item): boolean {
       <span>View processing history →</span>
     </router-link>
 
-    <!-- Rating & Notes (view/edit) -->
+    <!-- Rating & Actions (view mode) -->
     <div v-if="!isEditing" class="space-y-3">
       <div v-if="item.userRating" class="text-amber-500 text-lg">
         {{ '★'.repeat(item.userRating) }}{{ '☆'.repeat(5 - item.userRating) }}
       </div>
-      <p v-if="item.userNotes" class="text-stone-300 text-sm">{{ item.userNotes }}</p>
 
       <div class="flex gap-3 pt-4">
         <button
@@ -163,6 +182,44 @@ function isAiGenerated(data: Item): boolean {
         >
           Delete
         </button>
+      </div>
+    </div>
+
+    <!-- Journal -->
+    <div v-if="!isEditing" class="mt-6">
+      <h3 class="text-sm font-medium text-stone-400 mb-3">Journal</h3>
+
+      <!-- Existing entries -->
+      <div v-if="item.journal?.length" class="space-y-3 mb-4">
+        <div
+          v-for="(entry, i) in item.journal"
+          :key="i"
+          class="border-l-2 border-stone-700 pl-3"
+        >
+          <p class="text-sm text-stone-300">{{ entry.text }}</p>
+          <p class="text-xs text-stone-600 mt-1">
+            {{ formatDate(entry.date) }}
+            <span v-if="entry.source === 'capture'" class="text-stone-700 ml-1">· Quick note</span>
+          </p>
+        </div>
+      </div>
+      <p v-else class="text-xs text-stone-600 mb-4">No journal entries yet.</p>
+
+      <!-- Add new entry -->
+      <div class="flex gap-2">
+        <textarea
+          v-model="newJournalEntry"
+          rows="2"
+          placeholder="Add a thought..."
+          class="flex-1 bg-stone-800 border border-stone-700 rounded-xl px-4 py-2 text-sm text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-700 resize-none"
+          @keydown.meta.enter.prevent="addJournalEntry"
+          @keydown.ctrl.enter.prevent="addJournalEntry"
+        />
+        <button
+          @click="addJournalEntry"
+          :disabled="!newJournalEntry.trim() || isAddingNote"
+          class="self-end px-4 py-2 bg-stone-800 hover:bg-stone-700 disabled:opacity-30 text-amber-500 rounded-xl text-sm font-medium"
+        >{{ isAddingNote ? '...' : 'Add' }}</button>
       </div>
     </div>
 
@@ -229,17 +286,6 @@ function isAiGenerated(data: Item): boolean {
             :class="star <= editRating ? 'text-amber-500' : 'text-stone-700'"
           >★</button>
         </div>
-      </div>
-
-      <!-- Notes -->
-      <div>
-        <label class="block text-sm text-stone-400 mb-1">Your Notes</label>
-        <textarea
-          v-model="editNotes"
-          rows="3"
-          placeholder="What did you think? Flavor notes, pairing, occasion..."
-          class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-700 resize-none"
-        />
       </div>
 
       <!-- Tags -->
