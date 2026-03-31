@@ -148,24 +148,35 @@ function isAiGenerated(data: Item): boolean {
       </p>
     </div>
 
-    <!-- Venue -->
-    <div v-if="item.venue" class="mb-4">
-      <p class="text-sm text-stone-500">Location: {{ item.venue.name }}</p>
-      <p v-if="item.venue.address" class="text-xs text-stone-600">{{ item.venue.address }}</p>
-    </div>
+    <!-- Details Bar (venue, rating, history) -->
+    <div class="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4 space-y-3">
+      <!-- Rating -->
+      <div v-if="!isEditing && item.userRating" class="flex items-center gap-2">
+        <span class="text-xs text-stone-500 uppercase tracking-wide w-16">Rating</span>
+        <span class="text-amber-500 text-lg tracking-wider">
+          {{ '★'.repeat(item.userRating) }}{{ '☆'.repeat(5 - item.userRating) }}
+        </span>
+      </div>
 
-    <!-- Workflow History Link -->
-    <router-link
-      v-if="item.captureId"
-      :to="`/history/${item.captureId}`"
-      class="inline-flex items-center gap-1.5 text-xs text-stone-500 hover:text-amber-500 transition-colors mb-4"
-    >
-      <span>View processing history →</span>
-    </router-link>
+      <!-- Venue -->
+      <div v-if="item.venue" class="flex items-start gap-2">
+        <span class="text-xs text-stone-500 uppercase tracking-wide w-16 pt-0.5">Location</span>
+        <div>
+          <p class="text-sm text-stone-300">{{ item.venue.name }}</p>
+          <p v-if="item.venue.address" class="text-xs text-stone-500">{{ item.venue.address }}</p>
+        </div>
+      </div>
 
-    <!-- Rating (view mode) -->
-    <div v-if="!isEditing && item.userRating" class="text-amber-500 text-lg">
-      {{ '★'.repeat(item.userRating) }}{{ '☆'.repeat(5 - item.userRating) }}
+      <!-- History Link -->
+      <div v-if="item.captureId" class="flex items-center gap-2">
+        <span class="text-xs text-stone-500 uppercase tracking-wide w-16">Source</span>
+        <router-link
+          :to="`/history/${item.captureId}`"
+          class="text-sm text-stone-400 hover:text-amber-500 transition-colors"
+        >
+          View processing history →
+        </router-link>
+      </div>
     </div>
 
     <!-- Journal -->
