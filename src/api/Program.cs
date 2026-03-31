@@ -1,4 +1,5 @@
 using System.Text;
+using System.Threading.Channels;
 using Azure.Identity;
 using Azure.Storage.Blobs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -6,6 +7,7 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.IdentityModel.Tokens;
 using WhiskeyAndSmokes.Api;
 using WhiskeyAndSmokes.Api.Agents;
+using WhiskeyAndSmokes.Api.Models;
 using WhiskeyAndSmokes.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,11 +20,19 @@ builder.Logging.AddFilter((provider, category, logLevel) =>
 
 builder.AddServiceDefaults();
 
-// JWT Authentication
-var jwtSecret = builder.Configuration["Jwt:Secret"] ?? "dev-secret-key-change-in-production-min-32-chars!!";
-var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "whiskey-and-smokes";
-var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "whiskey-and-smokes";
+// Bind strongly-typed options
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.Section));
+builder.Services.Configure<AiFoundryOptions>(builder.Configuration.GetSection(AiFoundryOptions.Section));
+builder.Services.Configure<CosmosDbOptions>(builder.Configuration.GetSection(CosmosDbOptions.Section));
+builder.Services.Configure<BlobStorageOptions>(builder.Configuration.GetSection(BlobStorageOptions.Section));
 
+var jwtOptions = builder.Configuration.GetSection(JwtOptions.Section).Get<JwtOptions>() ?? new JwtOptions();
+if (string.IsNullOrEmpty(jwtOptions.Secret) && builder.Environment.IsDevelopment())
+{
+    jwtOptions.Secret = "dev-secret-key-change-in-production-min-32-chars!!";
+}
+
+// JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -32,9 +42,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtIssuer,
-            ValidAudience = jwtAudience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
+            ValidIssuer = jwtOptions.Issuer,
+            ValidAudience = jwtOptions.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Secret)),
             ClockSkew = TimeSpan.FromMinutes(5)
         };
     });
@@ -117,9 +127,27 @@ builder.Services.AddSingleton<IPromptService, PromptService>();
 builder.Services.AddSingleton<IAgentService, WorkflowAgentService>();
 builder.Services.AddHostedService<AgentValidationService>();
 
+// Background capture processing queue
+builder.Services.AddSingleton(Channel.CreateUnbounded<Capture>(new UnboundedChannelOptions
+{
+    SingleReader = true
+}));
+builder.Services.AddHostedService<CaptureProcessingService>();
+
+// Dependency health checks
+if (!useLocalStorage)
+{
+    builder.Services.AddHealthChecks()
+        .AddCheck<CosmosDbHealthCheck>("cosmosdb", tags: ["ready"])
+        .AddCheck<BlobStorageHealthCheck>("blob-storage", tags: ["ready"]);
+}
+builder.Services.AddHealthChecks()
+    .AddCheck<FoundryHealthCheck>("ai-foundry", tags: ["ready"]);
+
 // API
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+builder.Services.AddProblemDetails();
 
 // CORS
 builder.Services.AddCors(options =>
@@ -161,6 +189,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapDefaultEndpoints();
+
+app.UseExceptionHandler();
+app.UseStatusCodePages();
+
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 app.UseAuthentication();

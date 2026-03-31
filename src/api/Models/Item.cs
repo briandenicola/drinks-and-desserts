@@ -53,6 +53,9 @@ public class Item
     [JsonPropertyName("status")]
     public string Status { get; set; } = ItemStatus.AiDraft;
 
+    [JsonPropertyName("processedBy")]
+    public string ProcessedBy { get; set; } = string.Empty;
+
     [JsonPropertyName("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

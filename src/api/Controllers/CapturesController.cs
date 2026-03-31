@@ -1,3 +1,4 @@
+using System.Threading.Channels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WhiskeyAndSmokes.Api;
@@ -14,15 +15,15 @@ public class CapturesController : ControllerBase
 {
     private readonly ICosmosDbService _cosmosDb;
     private readonly IBlobStorageService _blobStorage;
-    private readonly IAgentService _agentService;
+    private readonly Channel<Capture> _captureQueue;
     private readonly ILogger<CapturesController> _logger;
     private const string ContainerName = "captures";
 
-    public CapturesController(ICosmosDbService cosmosDb, IBlobStorageService blobStorage, IAgentService agentService, ILogger<CapturesController> logger)
+    public CapturesController(ICosmosDbService cosmosDb, IBlobStorageService blobStorage, Channel<Capture> captureQueue, ILogger<CapturesController> logger)
     {
         _cosmosDb = cosmosDb;
         _blobStorage = blobStorage;
-        _agentService = agentService;
+        _captureQueue = captureQueue;
         _logger = logger;
     }
 
@@ -69,8 +70,8 @@ public class CapturesController : ControllerBase
         capture = await _cosmosDb.CreateAsync(ContainerName, capture, capture.PartitionKey);
         activity?.SetTag("capture.id", capture.Id);
 
-        // Fire-and-forget AI processing
-        _ = Task.Run(() => _agentService.ProcessCaptureAsync(capture));
+        // Queue for background processing (observed, retryable, cancellable)
+        await _captureQueue.Writer.WriteAsync(capture);
 
         _logger.LogInformation("Capture {CaptureId} created for user {UserId} with {PhotoCount} photo(s)",
             capture.Id, userId, photoCount);
@@ -122,6 +123,7 @@ public class CapturesController : ControllerBase
     {
         Id = c.Id,
         Status = c.Status,
+        ProcessedBy = c.ProcessedBy,
         Photos = c.Photos,
         UserNote = c.UserNote,
         Location = c.Location,

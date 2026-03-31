@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using WhiskeyAndSmokes.Api;
 using WhiskeyAndSmokes.Api.Models;
@@ -19,14 +20,14 @@ public interface IAuthService
 public class AuthService : IAuthService
 {
     private readonly ICosmosDbService _cosmosDb;
-    private readonly IConfiguration _config;
+    private readonly JwtOptions _jwtOptions;
     private readonly ILogger<AuthService> _logger;
     private const string ContainerName = "users";
 
-    public AuthService(ICosmosDbService cosmosDb, IConfiguration config, ILogger<AuthService> logger)
+    public AuthService(ICosmosDbService cosmosDb, IOptions<JwtOptions> jwtOptions, ILogger<AuthService> logger)
     {
         _cosmosDb = cosmosDb;
-        _config = config;
+        _jwtOptions = jwtOptions.Value;
         _logger = logger;
     }
 
@@ -62,10 +63,11 @@ public class AuthService : IAuthService
             user.Id, user.Email, user.Role);
 
         var key = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(_config["Jwt:Secret"] ?? throw new InvalidOperationException("JWT secret not configured")));
+            Encoding.UTF8.GetBytes(_jwtOptions.Secret.Length > 0
+                ? _jwtOptions.Secret
+                : throw new InvalidOperationException("JWT secret not configured")));
 
-        var expirationDays = int.TryParse(_config["Jwt:ExpirationDays"], out var days) ? days : 7;
-        var expiresAt = DateTime.UtcNow.AddDays(expirationDays);
+        var expiresAt = DateTime.UtcNow.AddDays(_jwtOptions.ExpirationDays);
 
         var claims = new[]
         {
@@ -76,15 +78,15 @@ public class AuthService : IAuthService
         };
 
         var token = new JwtSecurityToken(
-            issuer: _config["Jwt:Issuer"] ?? "whiskey-and-smokes",
-            audience: _config["Jwt:Audience"] ?? "whiskey-and-smokes",
+            issuer: _jwtOptions.Issuer,
+            audience: _jwtOptions.Audience,
             claims: claims,
             expires: expiresAt,
             signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256));
 
         _logger.LogInformation(
             "JWT token generated for user {UserId}: expiresAt={ExpiresAt}, expirationDays={ExpirationDays}, issuer={Issuer}",
-            user.Id, expiresAt, expirationDays, _config["Jwt:Issuer"] ?? "whiskey-and-smokes");
+            user.Id, expiresAt, _jwtOptions.ExpirationDays, _jwtOptions.Issuer);
 
         return new AuthResponse
         {
@@ -103,7 +105,8 @@ public class AuthService : IAuthService
 
         var users = await _cosmosDb.QueryCrossPartitionAsync<User>(
             ContainerName,
-            $"SELECT * FROM c WHERE c.email = '{email.Replace("'", "''")}'",
+            "SELECT * FROM c WHERE c.email = @email",
+            new Dictionary<string, object> { ["@email"] = email },
             maxItems: 1);
 
         var user = users.FirstOrDefault();

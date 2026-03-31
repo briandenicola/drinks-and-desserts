@@ -23,6 +23,9 @@ public class CaptureResponse
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
 
+    [JsonPropertyName("processedBy")]
+    public string ProcessedBy { get; set; } = string.Empty;
+
     [JsonPropertyName("photos")]
     public List<string> Photos { get; set; } = [];
 

@@ -19,6 +19,7 @@ public interface ICosmosDbService
         int maxItems = 25,
         Expression<Func<T, bool>>? predicate = null);
     Task<List<T>> QueryCrossPartitionAsync<T>(string containerName, string query, int maxItems = 100);
+    Task<List<T>> QueryCrossPartitionAsync<T>(string containerName, string query, IDictionary<string, object> parameters, int maxItems = 100);
 }
 
 public class CosmosDbService : ICosmosDbService
@@ -190,6 +191,38 @@ public class CosmosDbService : ICosmosDbService
         activity?.SetTag("db.request_charge", totalRu);
         _logger.LogDebug("CosmosDb CROSS-PARTITION QUERY result: container={Container}, itemCount={ItemCount}, totalRU={RequestCharge}",
             containerName, results.Count, totalRu);
+
+        return results;
+    }
+
+    public async Task<List<T>> QueryCrossPartitionAsync<T>(string containerName, string query, IDictionary<string, object> parameters, int maxItems = 100)
+    {
+        using var activity = Diagnostics.Storage.StartActivity("CosmosDb.QueryCrossPartition");
+        activity?.SetTag("db.container", containerName);
+        activity?.SetTag("db.operation", "QueryCrossPartition");
+
+        _logger.LogDebug("CosmosDb PARAMETERIZED CROSS-PARTITION QUERY: container={Container}, maxItems={MaxItems}",
+            containerName, maxItems);
+
+        var container = _database.GetContainer(containerName);
+        var queryDef = new QueryDefinition(query);
+        foreach (var (key, value) in parameters)
+        {
+            queryDef = queryDef.WithParameter(key, value);
+        }
+        var iterator = container.GetItemQueryIterator<T>(queryDef, requestOptions: new QueryRequestOptions { MaxItemCount = maxItems });
+        var results = new List<T>();
+        double totalRu = 0;
+
+        while (iterator.HasMoreResults && results.Count < maxItems)
+        {
+            var response = await iterator.ReadNextAsync();
+            results.AddRange(response);
+            totalRu += response.RequestCharge;
+        }
+
+        activity?.SetTag("db.item_count", results.Count);
+        activity?.SetTag("db.request_charge", totalRu);
 
         return results;
     }

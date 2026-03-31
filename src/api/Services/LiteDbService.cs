@@ -203,6 +203,18 @@ public class LiteDbService : ICosmosDbService, IDisposable
         return Task.FromResult(items);
     }
 
+    public Task<List<T>> QueryCrossPartitionAsync<T>(string containerName, string query, IDictionary<string, object> parameters, int maxItems = 100)
+    {
+        // LiteDB doesn't support parameterized Cosmos SQL — extract parameter values and
+        // substitute them into the simple regex parser used by the non-parameterized overload.
+        var resolved = query;
+        foreach (var (key, value) in parameters)
+        {
+            resolved = resolved.Replace(key, $"'{value}'");
+        }
+        return QueryCrossPartitionAsync<T>(containerName, resolved, maxItems);
+    }
+
     public void Dispose()
     {
         _db.Dispose();

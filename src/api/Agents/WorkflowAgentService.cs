@@ -4,6 +4,7 @@ using Azure.AI.Projects;
 using Azure.AI.Projects.OpenAI;
 using Azure.Identity;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Options;
 using WhiskeyAndSmokes.Api.Agents.Executors;
 using WhiskeyAndSmokes.Api.Agents.Models;
 using WhiskeyAndSmokes.Api.Models;
@@ -23,7 +24,7 @@ public class WorkflowAgentService : IAgentService
     private readonly IPromptService _promptService;
     private readonly IBlobStorageService _blobService;
     private readonly ILogger<WorkflowAgentService> _logger;
-    private readonly IConfiguration _config;
+    private readonly AiFoundryOptions _foundryOptions;
     private readonly ILoggerFactory _loggerFactory;
     private readonly bool _isFoundryConfigured;
 
@@ -38,16 +39,16 @@ public class WorkflowAgentService : IAgentService
         IPromptService promptService,
         IBlobStorageService blobService,
         ILogger<WorkflowAgentService> logger,
-        IConfiguration config,
+        IOptions<AiFoundryOptions> foundryOptions,
         ILoggerFactory loggerFactory)
     {
         _cosmosDb = cosmosDb;
         _promptService = promptService;
         _blobService = blobService;
         _logger = logger;
-        _config = config;
+        _foundryOptions = foundryOptions.Value;
         _loggerFactory = loggerFactory;
-        _isFoundryConfigured = !string.IsNullOrEmpty(config["AiFoundry:ProjectEndpoint"]);
+        _isFoundryConfigured = !string.IsNullOrEmpty(_foundryOptions.ProjectEndpoint);
     }
 
     public async Task ProcessCaptureAsync(Capture capture)
@@ -74,12 +75,14 @@ public class WorkflowAgentService : IAgentService
             {
                 _logger.LogInformation("Running multi-agent workflow for capture {CaptureId}", capture.Id);
                 items = await RunWorkflowAsync(capture);
+                capture.ProcessedBy = ProcessingSource.AiFoundry;
             }
             else
             {
                 _logger.LogWarning("AI Foundry not configured — using local extraction for capture {CaptureId}", capture.Id);
                 await LogStep(capture, "S01", "Local Extraction", WorkflowStepStatus.Running, "AI Foundry not configured — using keyword matching");
                 items = LocalExtraction.Process(capture, _logger);
+                capture.ProcessedBy = ProcessingSource.LocalExtraction;
                 await LogStep(capture, "S01", "Local Extraction", WorkflowStepStatus.Complete,
                     $"Extracted {items.Count} item(s) from note keywords");
             }
@@ -119,6 +122,7 @@ public class WorkflowAgentService : IAgentService
                 }
 
                 capture.Status = CaptureStatus.Completed;
+                capture.ProcessedBy = ProcessingSource.AiFallback;
                 capture.ProcessingError = $"AI workflow failed ({ex.Message}), used local extraction";
                 capture.UpdatedAt = DateTime.UtcNow;
                 await _cosmosDb.UpsertAsync("captures", capture, capture.PartitionKey);
@@ -139,8 +143,9 @@ public class WorkflowAgentService : IAgentService
         using var activity = Diagnostics.Agent.StartActivity("RunWorkflow");
         activity?.SetTag("capture.id", capture.Id);
 
-        var endpoint = _config["AiFoundry:ProjectEndpoint"]
-            ?? throw new InvalidOperationException("AiFoundry:ProjectEndpoint is required");
+        var endpoint = _foundryOptions.ProjectEndpoint;
+        if (string.IsNullOrEmpty(endpoint))
+            throw new InvalidOperationException("AiFoundry:ProjectEndpoint is required");
 
         var credential = new ChainedTokenCredential(
             new AzureCliCredential(),
@@ -149,8 +154,8 @@ public class WorkflowAgentService : IAgentService
 
         var projectClient = new AIProjectClient(new Uri(endpoint), credential);
 
-        var visionModel = _config["AiFoundry:Models:Vision"] ?? "gpt-4o";
-        var reasoningModel = _config["AiFoundry:Models:Reasoning"] ?? "gpt-5-mini";
+        var visionModel = _foundryOptions.Models.Vision;
+        var reasoningModel = _foundryOptions.Models.Reasoning;
 
         _logger.LogInformation("Connected to Foundry project at {Endpoint} for capture {CaptureId}",
             endpoint, capture.Id);
@@ -305,7 +310,8 @@ public class WorkflowAgentService : IAgentService
             AiConfidence = p.Confidence ?? 0.8,
             AiSummary = p.Summary,
             Tags = p.Tags ?? [],
-            Status = ItemStatus.AiDraft
+            Status = ItemStatus.AiDraft,
+            ProcessedBy = ProcessingSource.AiFoundry
         }).ToList();
     }
 

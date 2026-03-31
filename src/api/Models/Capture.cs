@@ -22,6 +22,9 @@ public class Capture
     [JsonPropertyName("status")]
     public string Status { get; set; } = CaptureStatus.Pending;
 
+    [JsonPropertyName("processedBy")]
+    public string ProcessedBy { get; set; } = ProcessingSource.Pending;
+
     [JsonPropertyName("itemIds")]
     public List<string> ItemIds { get; set; } = [];
 
@@ -85,4 +88,12 @@ public static class CaptureStatus
     public const string Processing = "processing";
     public const string Completed = "completed";
     public const string Failed = "failed";
+}
+
+public static class ProcessingSource
+{
+    public const string Pending = "pending";
+    public const string AiFoundry = "ai-foundry";
+    public const string LocalExtraction = "local-extraction";
+    public const string AiFallback = "ai-fallback";
 }

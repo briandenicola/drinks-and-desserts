@@ -47,7 +47,8 @@ internal static class LocalExtraction
                     Name = $"Location: {capture.Location.Latitude:F4}, {capture.Location.Longitude:F4}"
                 } : null,
                 Tags = [],
-                Status = ItemStatus.AiDraft
+                Status = ItemStatus.AiDraft,
+                ProcessedBy = ProcessingSource.LocalExtraction
             });
         }
 
@@ -111,7 +112,8 @@ internal static class LocalExtraction
                             Name = $"Location: {capture.Location.Latitude:F4}, {capture.Location.Longitude:F4}"
                         } : null,
                         Tags = [],
-                        Status = ItemStatus.AiDraft
+                        Status = ItemStatus.AiDraft,
+                        ProcessedBy = ProcessingSource.LocalExtraction
                     });
                     break;
                 }
@@ -148,7 +150,8 @@ internal static class LocalExtraction
             AiSummary = summary,
             PhotoUrls = capture.Photos,
             AiConfidence = 0.0,
-            Status = ItemStatus.AiDraft
+            Status = ItemStatus.AiDraft,
+            ProcessedBy = ProcessingSource.LocalExtraction
         };
     }
 }
