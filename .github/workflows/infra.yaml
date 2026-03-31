@@ -68,7 +68,7 @@ jobs:
         id: plan
         run: |
           terraform plan \
-            -var="tags=${{ vars.APP_NAME || 'whiskey-and-smokes' }}" \
+            -var="tags=${{ secrets.APP_NAME || 'whiskey-and-smokes' }}" \
             -out=tfplan \
             -input=false
 
@@ -82,7 +82,7 @@ jobs:
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
         run: |
           terraform destroy \
-            -var="tags=${{ vars.APP_NAME || 'whiskey-and-smokes' }}" \
+            -var="tags=${{ secrets.APP_NAME || 'whiskey-and-smokes' }}" \
             -auto-approve
 
   terraform-app:
@@ -116,11 +116,11 @@ jobs:
         id: plan
         run: |
           terraform plan \
-            -var="app_name=${{ vars.APP_NAME }}" \
-            -var="tags=${{ vars.APP_NAME || 'whiskey-and-smokes' }}" \
+            -var="app_name=${{ secrets.APP_NAME }}" \
+            -var="tags=${{ secrets.APP_NAME || 'whiskey-and-smokes' }}" \
             -var="commit_version=${{ github.sha }}" \
-            -var="cosmosdb_endpoint=${{ vars.COSMOSDB_ENDPOINT }}" \
-            -var="storage_blob_endpoint=${{ vars.STORAGE_BLOB_ENDPOINT }}" \
+            -var="cosmosdb_endpoint=${{ secrets.COSMOSDB_ENDPOINT }}" \
+            -var="storage_blob_endpoint=${{ secrets.STORAGE_BLOB_ENDPOINT }}" \
             -out=tfplan \
             -input=false
 
@@ -134,9 +134,9 @@ jobs:
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
         run: |
           terraform destroy \
-            -var="app_name=${{ vars.APP_NAME }}" \
-            -var="tags=${{ vars.APP_NAME || 'whiskey-and-smokes' }}" \
+            -var="app_name=${{ secrets.APP_NAME }}" \
+            -var="tags=${{ secrets.APP_NAME || 'whiskey-and-smokes' }}" \
             -var="commit_version=${{ github.sha }}" \
-            -var="cosmosdb_endpoint=${{ vars.COSMOSDB_ENDPOINT }}" \
-            -var="storage_blob_endpoint=${{ vars.STORAGE_BLOB_ENDPOINT }}" \
+            -var="cosmosdb_endpoint=${{ secrets.COSMOSDB_ENDPOINT }}" \
+            -var="storage_blob_endpoint=${{ secrets.STORAGE_BLOB_ENDPOINT }}" \
             -auto-approve
