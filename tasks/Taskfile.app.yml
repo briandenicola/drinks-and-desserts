@@ -43,6 +43,8 @@ tasks:
       APPLICATIONINSIGHTS_CONNECTION_STRING: "{{.APPINSIGHTS_CONN}}"
       ASPIRE_DASHBOARD_OTLP_HTTP_ENDPOINT_URL: http://localhost:18889
       ASPIRE_ALLOW_UNSECURED_TRANSPORT: "true"
+      # Trust proxy/corporate root CAs for local dev (TLS inspection)
+      SSL_CERT_DIR: /etc/ssl/certs
     cmds:
       - dotnet run
     vars:
@@ -62,6 +64,8 @@ tasks:
       AiFoundry__Models__Vision: gpt-4o
       AiFoundry__Models__Reasoning: gpt-5-mini
       APPLICATIONINSIGHTS_CONNECTION_STRING: "{{.APPINSIGHTS_CONN}}"
+      # Trust proxy/corporate root CAs for local dev (TLS inspection)
+      SSL_CERT_DIR: /etc/ssl/certs
     cmds:
       - dotnet run
     vars:

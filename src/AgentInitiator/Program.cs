@@ -73,9 +73,46 @@ var projectClient = new AIProjectClient(
 
 Console.WriteLine("  ✅ AIProjectClient created");
 
-// ── Step 3: Create versioned agents ───────────────────────────────────────
+// ── Step 3: Delete existing agents ────────────────────────────────────
 Console.WriteLine();
-Console.WriteLine("Step 3: Creating versioned agents (PromptAgentDefinition)...");
+Console.WriteLine("Step 3: Removing existing agents...");
+Console.WriteLine(new string('─', 70));
+
+var agentNames = new HashSet<string>
+{
+    "whiskey-smokes-vision-analyst",
+    "whiskey-smokes-domain-expert",
+    "whiskey-smokes-data-curator",
+};
+
+try
+{
+    await foreach (var agent in projectClient.Agents.GetAgentsAsync())
+    {
+        if (agent.Name != null && agentNames.Contains(agent.Name))
+        {
+            Console.Write($"  Deleting {agent.Name} (id={agent.Id})...");
+            try
+            {
+                await projectClient.Agents.DeleteAgentAsync(agent.Id);
+                Console.WriteLine(" done");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($" FAILED: {ex.Message}");
+            }
+        }
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"  ⚠️  Could not list existing agents: {ex.Message}");
+    Console.WriteLine("  Continuing with creation (may create duplicates)...");
+}
+
+// ── Step 4: Create versioned agents ───────────────────────────────────────
+Console.WriteLine();
+Console.WriteLine("Step 4: Creating versioned agents (PromptAgentDefinition)...");
 Console.WriteLine(new string('─', 70));
 
 // Load prompts from text files in the Prompts/ directory
@@ -162,9 +199,9 @@ foreach (var spec in agentSpecs)
     }
 }
 
-// ── Step 4: Verify agents were created ────────────────────────────────────
+// ── Step 5: Verify agents were created ────────────────────────────────────
 Console.WriteLine();
-Console.WriteLine("Step 4: Verifying agents...");
+Console.WriteLine("Step 5: Verifying agents...");
 try
 {
     int verified = 0;
