@@ -72,16 +72,16 @@ This starts both the Aspire AppHost (API + OpenTelemetry dashboard) and the Vue 
 To run services individually:
 
 ```bash
-task app:apphost  # API via Aspire (with dashboard)
-task app:api      # API standalone (no Aspire)
-task app:web      # Frontend only
+task test:apphost  # API via Aspire (with dashboard)
+task test:api      # API standalone (no Aspire)
+task test:web      # Frontend only
 ```
 
 ### 6. Build
 
 ```bash
-task app:build        # Full .NET solution + Vue frontend
-task app:build:web    # Vue frontend only
+task test:build        # Full .NET solution + Vue frontend
+task test:build:web    # Vue frontend only
 ```
 
 ### 7. Tear down Azure resources
@@ -96,18 +96,18 @@ task local:down
 
 Run `task --list` to see all tasks. Key ones for local dev:
 
-### App Tasks (`task app:*`)
+### Test/Dev Tasks (`task test:*`)
 
 | Task | Description |
 |------|-------------|
-| `app:build` | Builds the full .NET solution and Vue frontend |
-| `app:build:web` | Builds the Vue frontend only |
-| `app:run` | Runs Aspire AppHost + Vue frontend |
-| `app:apphost` | Runs the Aspire AppHost (API + dashboard) |
-| `app:api` | Runs the .NET API standalone |
-| `app:web` | Runs the Vue dev server |
-| `app:services:up` | Starts Docker Compose services |
-| `app:services:down` | Stops Docker Compose services |
+| `test:build` | Builds the full .NET solution and Vue frontend |
+| `test:build:web` | Builds the Vue frontend only |
+| `test:run` | Runs Aspire AppHost + Vue frontend + Docker services |
+| `test:apphost` | Runs the Aspire AppHost (API + dashboard) |
+| `test:api` | Runs the .NET API standalone |
+| `test:web` | Runs the Vue dev server |
+| `test:services:up` | Starts Docker Compose services (Aspire dashboard, emulators) |
+| `test:services:down` | Stops Docker Compose services |
 
 ### Local Infrastructure (`task local:*`)
 
@@ -115,6 +115,7 @@ Run `task --list` to see all tasks. Key ones for local dev:
 |------|-------------|
 | `local:up` | Provisions Azure AI Foundry for local dev |
 | `local:apply` | Applies Terraform changes |
+| `local:agents` | Creates/recreates agents in AI Foundry |
 | `local:output` | Shows Terraform outputs (endpoint, App Insights) |
 | `local:down` | Destroys local Azure resources |
 
@@ -159,8 +160,8 @@ If you're behind a TLS-inspecting proxy (corporate network, Zscaler, etc.), you 
 
 ### Aspire dashboard not accessible
 
-The dashboard runs on port 18888. If running standalone (`task app:api`), there is no Aspire dashboard — use Application Insights or attach a local OTLP collector.
+The dashboard runs on port 18888. If running standalone (`task test:api`), there is no Aspire dashboard — use Application Insights or attach a local OTLP collector.
 
 ### Foundry agents not found
 
-Run `task app:agent:init` to create the agents. Agent version must be `"1"` (not `"latest"`).
+Run `task local:agents` to create the agents. Agent version must be `"1"` (not `"latest"`).

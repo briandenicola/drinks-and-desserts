@@ -1,7 +1,7 @@
 services:
   api:
     build:
-      context: src
+      context: ../src
       dockerfile: api/Dockerfile
     container_name: whiskey-and-smokes-api
     environment:
@@ -28,7 +28,7 @@ services:
 
   web:
     build:
-      context: src/web
+      context: ../src/web
       dockerfile: Dockerfile
     container_name: whiskey-and-smokes-web
     ports:

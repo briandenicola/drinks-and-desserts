@@ -96,14 +96,14 @@ Access the admin panel at `/admin` (requires admin role — the first registered
 ├── infrastructure/
 │   ├── local/                  # Terraform — local dev (AI Foundry only)
 │   ├── azure/                  # Terraform — full Azure environment
-│   ├── app/                    # Terraform — Container App (API) + Static Web App
-│   └── modules/                # Shared Terraform modules
+│   └── app/                    # Terraform — Container App (API) + Static Web App
 ├── tasks/                      # Taskfile configs + Docker Compose
 ├── docs/                       # Documentation
 │   ├── local-development.md
 │   ├── local-docker-deployment.md
 │   └── azure-deployment.md
 ├── .github/workflows/
+│   ├── ci.yml                 # PR checks (build + type-check)
 │   └── build.yml              # Build API image + deploy SWA
 ├── Taskfile.yml
 └── README.md

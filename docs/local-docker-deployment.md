@@ -12,14 +12,14 @@ Run Whiskey & Smokes locally with Docker Compose. Data is stored in LiteDB (file
 
 ```bash
 # 1. Copy and configure environment variables
-cp .env.example .env
-# Edit .env — set JWT_SECRET and AI_FOUNDRY_PROJECT_ENDPOINT
+cp tasks/.env.example tasks/.env
+# Edit tasks/.env — set JWT_SECRET and AI_FOUNDRY_PROJECT_ENDPOINT
 
 # 2. Log in to Azure (for Foundry access from the container)
 az login
 
 # 3. Build and start
-docker compose up --build -d --file ./tasks/docker-compose.local.prod.yml
+docker compose --file tasks/docker-compose.local.prod.yml up --build -d
 
 # 4. Open the app
 open http://localhost:8080
@@ -29,7 +29,7 @@ The first user to register becomes the admin.
 
 ## Configuration
 
-All configuration is in `.env`:
+All configuration is in `tasks/.env`:
 
 | Variable | Required | Description |
 |----------|----------|-------------|
@@ -60,11 +60,11 @@ docker compose cp ./backup/. api:/data
 
 The API container uses `DefaultAzureCredential` to authenticate with Foundry. For local Docker, this picks up credentials from:
 
-1. **Environment variables** — Set `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_CLIENT_SECRET` in `.env` for a service principal
+1. **Environment variables** — Set `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_CLIENT_SECRET` in `tasks/.env` for a service principal
 2. **Azure CLI** — If running on the same machine with `az login` active, mount the Azure CLI cache:
 
 ```yaml
-# Add to docker-compose.yml api service volumes:
+# Add to tasks/docker-compose.local.prod.yml api service volumes:
 volumes:
   - app-data:/data
   - ~/.azure:/root/.azure:ro
@@ -74,10 +74,10 @@ volumes:
 
 ```bash
 # Stop (preserves data)
-docker compose down
+docker compose --file tasks/docker-compose.local.prod.yml down
 
 # Stop and remove data
-docker compose down -v
+docker compose --file tasks/docker-compose.local.prod.yml down -v
 ```
 
 ## Without AI Foundry

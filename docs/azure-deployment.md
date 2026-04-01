@@ -139,7 +139,7 @@ az role assignment create \
 Create federated credentials so GitHub Actions can authenticate without a client secret. You need one credential for each subject pattern used by the workflows:
 
 ```bash
-# For pushes to main branch (used by both infra.yml and deploy.yml)
+# For pushes to main branch (used by build.yml)
 az ad app federated-credential create --id "$APP_ID" --parameters '{
   "name": "github-main-branch",
   "issuer": "https://token.actions.githubusercontent.com",
@@ -147,7 +147,7 @@ az ad app federated-credential create --id "$APP_ID" --parameters '{
   "audiences": ["api://AzureADTokenExchange"]
 }'
 
-# For the "dev" GitHub environment (used by deploy.yml and infra.yml)
+# For the "dev" GitHub environment (used by build.yml)
 az ad app federated-credential create --id "$APP_ID" --parameters '{
   "name": "github-env-dev",
   "issuer": "https://token.actions.githubusercontent.com",
@@ -176,8 +176,8 @@ echo "AZURE_SUBSCRIPTION_ID: $SUBSCRIPTION_ID"
 
 1. Go to **Settings → Environments** in your GitHub repository
 2. Create the `dev` environment (and `prod` when ready)
-3. Add the three **secrets** listed above
-4. Add the **variables** listed above (populate `COSMOSDB_ENDPOINT` and `STORAGE_BLOB_ENDPOINT` after running `task azure:up`)
+3. Add the secrets listed above
+4. Add the **variables** listed above
 
 ## Container Apps
 
@@ -237,7 +237,7 @@ For a fresh environment:
 task azure:up
 
 # 2. Deploy Container Apps + Static Web App
-task azure:app
+task azure:app:deploy
 
 # 3. Note the outputs
 task azure:output
