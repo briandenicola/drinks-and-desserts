@@ -1,22 +1,15 @@
-# Azure only allows one deployment operation at a time per Cognitive Services account.
-# Terraform treats all count/for_each instances as a single node in the dependency graph,
-# so any self-reference creates a cycle. We split into two resources with depends_on.
 
-locals {
-  model_list = var.foundry_project.models
-}
-
-resource "azapi_resource" "model_deployment_first" {
+resource "azapi_resource" "model_deployment_gpt4o" {
   type      = "Microsoft.CognitiveServices/accounts/deployments@2025-06-01"
-  name      = local.model_list[0].name
+  name      = var.foundry_project.models[0].name
   parent_id = var.foundry_project.ai_foundry.id
 
   body = {
     properties = {
       model = {
-        format  = local.model_list[0].format
-        name    = local.model_list[0].name
-        version = local.model_list[0].version
+        format  = var.foundry_project.models[0].format
+        name    = var.foundry_project.models[0].name
+        version = var.foundry_project.models[0].version
       }
     }
     sku = {
@@ -26,18 +19,17 @@ resource "azapi_resource" "model_deployment_first" {
   }
 }
 
-resource "azapi_resource" "model_deployment_rest" {
-  count     = length(local.model_list) - 1
+resource "azapi_resource" "model_deployment_gpt51-mini" {
   type      = "Microsoft.CognitiveServices/accounts/deployments@2025-06-01"
-  name      = local.model_list[count.index + 1].name
+  name      = var.foundry_project.models[1].name
   parent_id = var.foundry_project.ai_foundry.id
 
   body = {
     properties = {
       model = {
-        format  = local.model_list[count.index + 1].format
-        name    = local.model_list[count.index + 1].name
-        version = local.model_list[count.index + 1].version
+        format  = var.foundry_project.models[1].format
+        name    = var.foundry_project.models[1].name
+        version = var.foundry_project.models[1].version
       }
     }
     sku = {
@@ -46,5 +38,5 @@ resource "azapi_resource" "model_deployment_rest" {
     }
   }
 
-  depends_on = [azapi_resource.model_deployment_first]
+  depends_on = [azapi_resource.model_deployment_gpt4o]
 }
