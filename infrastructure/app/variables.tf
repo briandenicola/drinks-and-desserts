@@ -5,7 +5,6 @@ variable "app_name" {
 
 variable "region" {
   description = "Region to deploy resources to (must match infrastructure)"
-  default     = "eastus2"
 }
 
 variable "tags" {

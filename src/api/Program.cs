@@ -118,10 +118,14 @@ builder.Services.AddAuthorizationBuilder()
         policy.RequireRole("admin")
               .RequireAuthenticatedUser());
 
-// Storage services — conditional on environment
-var useLocalStorage = builder.Environment.IsDevelopment() &&
-    string.IsNullOrEmpty(builder.Configuration["CosmosDb:Endpoint"]) &&
-    string.IsNullOrEmpty(builder.Configuration["CosmosDb:ConnectionString"]);
+// Storage services — conditional on provider setting or environment
+// Storage:Provider = "local" | "azure" | "auto" (default)
+var storageProvider = builder.Configuration["Storage:Provider"]?.ToLowerInvariant() ?? "auto";
+var useLocalStorage = storageProvider == "local" ||
+    (storageProvider == "auto" &&
+     builder.Environment.IsDevelopment() &&
+     string.IsNullOrEmpty(builder.Configuration["CosmosDb:Endpoint"]) &&
+     string.IsNullOrEmpty(builder.Configuration["CosmosDb:ConnectionString"]));
 
 if (useLocalStorage)
 {
@@ -243,12 +247,12 @@ var cosmosDb = app.Services.GetRequiredService<ICosmosDbService>();
 await logLevelService.LoadFromStoreAsync(cosmosDb);
 
 app.Logger.LogInformation("Whiskey & Smokes API starting — log levels loaded from store");
+app.Logger.LogInformation("Storage provider: {Provider} ({Backend})",
+    storageProvider, useLocalStorage ? "LiteDB + local filesystem" : "CosmosDB + Azure Blob Storage");
 
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.Logger.LogInformation("Running in Development mode with {Storage}",
-        useLocalStorage ? "LiteDB + local filesystem" : "CosmosDB + Azure Blob Storage");
 }
 
 app.MapDefaultEndpoints();

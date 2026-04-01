@@ -21,8 +21,8 @@ locals {
 
   # Container images
   acr_login_server  = "${local.acr_name}.azurecr.io"
-  api_image         = "${local.acr_login_server}/whiskey-and-smokes-api:${var.commit_version}"
-  web_image         = "${local.acr_login_server}/whiskey-and-smokes-web:${var.commit_version}"
+  api_image         = "${local.acr_login_server}/whiskey-and-smokes-api:latest" #${var.commit_version}"
+  web_image         = "${local.acr_login_server}/whiskey-and-smokes-web:latest" #${var.commit_version}"
 
   # Foundry endpoint
   foundry_project_endpoint = "https://${local.ai_services_name}.services.ai.azure.com/api/projects/${local.project_name}"

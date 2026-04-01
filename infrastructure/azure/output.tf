@@ -3,6 +3,10 @@ output "APP_NAME" {
   sensitive = false
 }
 
+output "APP_LOCATION" {
+  value     = var.region
+  sensitive = false
+}
 output "APP_RESOURCE_GROUP" {
   value     = azurerm_resource_group.this.name
   sensitive = false

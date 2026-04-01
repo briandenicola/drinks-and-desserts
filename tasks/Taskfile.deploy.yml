@@ -28,6 +28,7 @@ tasks:
       - task: init
       - terraform apply -auto-approve -compact-warnings
         -var="app_name={{.APP_NAME}}"
+        -var="region={{.APP_LOCATION}}"
         -var="tags={{.TITLE}}"
         -var="commit_version={{.COMMIT_VERSION}}"
         -var="cosmosdb_endpoint={{.COSMOSDB_ENDPOINT}}"
@@ -35,12 +36,14 @@ tasks:
     vars:
       APP_NAME: hare-22173
         #sh: terraform -chdir={{.AZURE_DIR}} output -raw APP_NAME 2>/dev/null || echo ""
+      APP_LOCATION: canadacentral
+        #sh: terraform -chdir={{.AZURE_DIR}} output -raw APP_LOCATION 2>/dev/null || echo ""
       COMMIT_VERSION:
         sh: git rev-parse HEAD
-      COSMOSDB_ENDPOINT:
-        sh: terraform -chdir={{.AZURE_DIR}} output -raw COSMOSDB_ENDPOINT 2>/dev/null || echo ""
-      STORAGE_BLOB_ENDPOINT:
-        sh: terraform -chdir={{.AZURE_DIR}} output -raw STORAGE_BLOB_ENDPOINT 2>/dev/null || echo ""
+      COSMOSDB_ENDPOINT: hare-22173-db
+        #sh: terraform -chdir={{.AZURE_DIR}} output -raw COSMOSDB_ENDPOINT 2>/dev/null || echo ""
+      STORAGE_BLOB_ENDPOINT: 1edf95d9cde5bf1da9a282sa
+        #sh: terraform -chdir={{.AZURE_DIR}} output -raw STORAGE_BLOB_ENDPOINT 2>/dev/null || echo ""
 
   output:
     desc: Shows Container Apps deployment outputs
@@ -54,6 +57,7 @@ tasks:
     cmds:
       - terraform destroy -auto-approve
         -var="app_name={{.APP_NAME}}"
+        -var="region={{.APP_LOCATION}}"
         -var="tags={{.TITLE}}"
         -var="commit_version={{.COMMIT_VERSION}}"
         -var="cosmosdb_endpoint={{.COSMOSDB_ENDPOINT}}"
@@ -67,3 +71,6 @@ tasks:
         sh: terraform -chdir={{.AZURE_DIR}} output -raw COSMOSDB_ENDPOINT 2>/dev/null || echo ""
       STORAGE_BLOB_ENDPOINT:
         sh: terraform -chdir={{.AZURE_DIR}} output -raw STORAGE_BLOB_ENDPOINT 2>/dev/null || echo ""
+      APP_LOCATION: 
+        sh: terraform -chdir={{.AZURE_DIR}} output -raw APP_LOCATION 2>/dev/null || echo ""
+      

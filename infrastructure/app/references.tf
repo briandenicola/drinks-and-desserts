@@ -19,4 +19,4 @@ data "azurerm_cognitive_account" "ai_services" {
 data "azurerm_application_insights" "this" {
   name                = local.appinsights_name
   resource_group_name = local.apps_rg_name
-a}
+}

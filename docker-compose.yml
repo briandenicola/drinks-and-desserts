@@ -1,0 +1,48 @@
+services:
+  api:
+    build:
+      context: src
+      dockerfile: api/Dockerfile
+    container_name: whiskey-and-smokes-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - Storage__Provider=local
+      - LiteDb__Path=/data/whiskey-and-smokes.db
+      - LocalStorage__Path=/data/uploads
+      - LocalStorage__BaseUrl=http://whiskey-and-smokes-api:8080/uploads
+      - Jwt__Secret=${JWT_SECRET:?Set JWT_SECRET in .env (min 32 chars)}
+      - Jwt__Issuer=whiskey-and-smokes
+      - Jwt__Audience=whiskey-and-smokes
+      - AiFoundry__ProjectEndpoint=${AI_FOUNDRY_PROJECT_ENDPOINT:-}
+      - AiFoundry__Models__Vision=gpt-4o
+      - AiFoundry__Models__Reasoning=gpt-5-mini
+      - EntraId__TenantId=${ENTRA_TENANT_ID:-}
+      - EntraId__ClientId=${ENTRA_CLIENT_ID:-}
+      - Cors__AllowedOrigins__0=http://localhost:${WEB_PORT:-8080}
+      - Cors__AllowedOrigins__1=http://127.0.0.1:${WEB_PORT:-8080}
+    volumes:
+      - app-data:/data
+    networks:
+      - whiskey-and-smokes
+    restart: unless-stopped
+
+  web:
+    build:
+      context: src/web
+      dockerfile: Dockerfile
+    container_name: whiskey-and-smokes-web
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    depends_on:
+      - api
+    networks:
+      - whiskey-and-smokes
+    restart: unless-stopped
+
+volumes:
+  app-data:
+    driver: local
+
+networks:
+  whiskey-and-smokes:
+    driver: bridge

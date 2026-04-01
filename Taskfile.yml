@@ -7,8 +7,8 @@ env:
   DEFAULT_REGION: "eastus2"
 
 includes:
-  app:
-    taskfile: ./tasks/Taskfile.app.yml
+  test:
+    taskfile: ./tasks/Taskfile.test.yml
     internal: false
     dir: .
 
@@ -22,7 +22,7 @@ includes:
     internal: false
     dir: ./infrastructure/azure/
 
-  deploy:
+  app:
     taskfile: ./tasks/Taskfile.deploy.yml
     internal: false
     dir: ./tasks
