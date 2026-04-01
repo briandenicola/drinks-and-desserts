@@ -15,3 +15,15 @@ resource "azurerm_role_assignment" "ai_foundry_owner_project_manager" {
   role_definition_name = "Azure AI Project Manager"
   principal_id         = data.azurerm_client_config.current.object_id
 }
+
+resource "azurerm_role_assignment" "spn_openai_user" {
+  scope                = azurerm_resource_group.this.id
+  role_definition_name = "Cognitive Services OpenAI User"
+  principal_id         = azuread_service_principal.this.object_id
+}
+
+resource "azurerm_role_assignment" "spn_ai_developer" {
+  scope                = azurerm_resource_group.this.id
+  role_definition_name = "Azure AI Developer"
+  principal_id         = azuread_service_principal.this.object_id
+}
