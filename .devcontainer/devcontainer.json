@@ -1,15 +1,15 @@
 {
 	"name": "Whiskey & Smokes",
-	"build": {
-		"dockerfile": "Dockerfile",
-		"args": {
-			"VARIANT": "10.0",
-			"NODE_VERSION": "22"
-		}
+	"image": "mcr.microsoft.com/devcontainers/dotnet:10.0",
+	"features": {
+		"ghcr.io/devcontainers/features/node:1": {
+			"version": "22"
+		},
+		"ghcr.io/devcontainers/features/azure-cli:1": {},
+		"ghcr.io/devcontainers/features/github-cli:1": {},
+		"ghcr.io/devcontainers/features/docker-from-docker:2": {},
+		"ghcr.io/devcontainers-extra/features/terraform-asdf:1": {}
 	},
-	"runArgs": [
-		"--init"
-	],
 	"forwardPorts": [
 		5062,
 		5173,
@@ -36,15 +36,6 @@
 			]
 		}
 	},
-	"remoteUser": "vscode",
-	"features": {
-		"ghcr.io/devcontainers/features/azure-cli:1": {},
-  		"ghcr.io/devcontainers/features/common-utils:2": {},
-		"ghcr.io/devcontainers/features/terraform:1": {},
-		"ghcr.io/devcontainers/features/docker-from-docker:2": {},
-		"ghcr.io/devcontainers/features/github-cli:1": {}
-	},
-	"waitFor": "postCreateCommand",
 	"postCreateCommand": "bash .devcontainer/post-create.sh",
 	"postStartCommand": "bash .devcontainer/post-start.sh"
 }
