@@ -46,5 +46,9 @@ tasks:
   down:
     desc: Destroys all resources and cleans up Terraform for {{.TITLE}}
     cmds:
-      - terraform destroy -auto-approve || true
-      - rm -rf terraform.tfstate.d .terraform.lock.hcl .terraform terraform.tfstate terraform.tfstate.backup .terraform.tfstate.lock.info || true
+      - terraform destroy -auto-approve 
+        -var "region={{.REGION}}"
+        -var "tags={{.TITLE}}" || true
+      - rm -rf terraform.tfstate.d .terraform.lock.hcl .terraform terraform.tfstate terraform.tfstate.backup .terraform.tfstate.lock.info || true     
+    vars:
+      REGION: "{{default .DEFAULT_REGION .CLI_ARGS}}"

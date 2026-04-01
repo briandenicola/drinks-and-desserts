@@ -1,0 +1,50 @@
+{
+	"name": "Whiskey & Smokes",
+	"build": {
+		"dockerfile": "Dockerfile",
+		"args": {
+			"VARIANT": "10.0",
+			"NODE_VERSION": "22"
+		}
+	},
+	"runArgs": [
+		"--init"
+	],
+	"forwardPorts": [
+		5062,
+		5173,
+		18888
+	],
+	"portsAttributes": {
+		"5062": { "label": "API" },
+		"5173": { "label": "Web (Vite)" },
+		"18888": { "label": "Aspire Dashboard" }
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-dotnettools.csdevkit",
+				"ms-dotnettools.vscode-dotnet-runtime",
+				"Vue.volar",
+				"dbaeumer.vscode-eslint",
+				"bradlc.vscode-tailwindcss",
+				"hashicorp.terraform",
+				"ms-vscode.azure-account",
+				"GitHub.copilot",
+				"github.vscode-pull-request-github",
+				"humao.rest-client"
+			]
+		}
+	},
+	"remoteUser": "vscode",
+	"features": {
+		"ghcr.io/devcontainers/features/azure-cli:1": {},
+		"ghcr.io/devcontainers/features/common-utils:1": {},
+		"ghcr.io/devcontainers/features/terraform:1": {},
+		"ghcr.io/devcontainers/features/docker-from-docker:1": {},
+		"ghcr.io/devcontainers/features/github-cli:1": {}
+	},
+	"waitFor": "postCreateCommand",
+	"postCreateCommand": "bash .devcontainer/post-create.sh",
+	"postStartCommand": "bash .devcontainer/post-start.sh"
+}
