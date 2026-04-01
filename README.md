@@ -44,7 +44,7 @@ The app uses a multi-agent graph workflow to analyze captured photos:
        └──────────▶ back to Domain Expert with feedback
 ```
 
-Agent prompts are stored as markdown files in `src/AgentInitiator/Prompts/` and viewable (read-only) in the admin panel. To update prompts, edit the files and re-run `task app:agent:init`.
+Agent prompts are stored as markdown files in `src/AgentInitiator/Prompts/` and viewable (read-only) in the admin panel. To update prompts, edit the files and re-run `task test:agent:init`.
 
 When AI Foundry is not configured, the system falls back to keyword-based local extraction.
 
@@ -61,8 +61,8 @@ When AI Foundry is not configured, the system falls back to keyword-based local 
 ```bash
 az login
 task local:up          # Provision AI Foundry
-task app:agent:init    # Create Foundry agents
-task app:run           # Start API + Web
+task test:agent:init   # Create Foundry agents
+task test:run          # Start API + Web
 ```
 
 See [Local Development](docs/local-development.md) for full setup instructions.
@@ -101,10 +101,11 @@ Access the admin panel at `/admin` (requires admin role — the first registered
 ├── tasks/                      # Taskfile configs + Docker Compose
 ├── docs/                       # Documentation
 │   ├── local-development.md
+│   ├── local-docker-deployment.md
 │   └── azure-deployment.md
 ├── .github/workflows/
-│   ├── deploy.yml              # Build images + deploy Container Apps
-│   └── infra.yml               # Terraform plan/apply
+│   └── build.yml              # Build images + push to ACR
+├── docker-compose.yml             # Local Docker deployment
 ├── Taskfile.yml
 └── README.md
 ```
