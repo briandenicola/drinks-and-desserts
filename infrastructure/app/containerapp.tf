@@ -121,8 +121,13 @@ resource "azurerm_container_app" "web" {
       memory = "0.5Gi"
 
       env {
-        name  = "VITE_API_URL"
-        value = "https://${local.api_app_name}.${data.azurerm_container_app_environment.this.default_domain}"
+        name  = "API_HOST"
+        value = "${local.api_app_name}.internal.${data.azurerm_container_app_environment.this.default_domain}"
+      }
+
+      env {
+        name  = "API_PORT"
+        value = "443"
       }
     }
 

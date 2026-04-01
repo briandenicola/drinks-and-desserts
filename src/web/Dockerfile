@@ -6,18 +6,14 @@ RUN npm ci --ignore-scripts
 COPY . .
 RUN npm run build
 
-# ── Runtime stage (nginx unprivileged on alpine — ~7MB) ──
+# ── Runtime stage (nginx on alpine) ──
 FROM nginx:stable-alpine-slim AS runtime
 COPY --from=build /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/templates/default.conf.template
 
-# Run as non-root
-RUN chown -R nginx:nginx /usr/share/nginx/html && \
-    chown -R nginx:nginx /var/cache/nginx && \
-    chown -R nginx:nginx /var/log/nginx && \
-    touch /var/run/nginx.pid && \
-    chown -R nginx:nginx /var/run/nginx.pid
-USER nginx
+# Default API upstream (Docker Compose service name)
+ENV API_HOST=whiskey-and-smokes-api
+ENV API_PORT=8080
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
