@@ -181,9 +181,9 @@ onUnmounted(() => {
       <div class="relative shrink-0 sort-dropdown">
         <button
           @click="showSortMenu = !showSortMenu"
-          class="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs border border-stone-700 text-stone-400 hover:border-stone-600 transition-colors"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border border-stone-700 text-stone-400 hover:border-stone-600 transition-colors"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
           </svg>
           <span>{{ sortOptions.find(o => o.value === activeSort)?.label }}</span>
