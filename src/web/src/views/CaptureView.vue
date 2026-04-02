@@ -81,7 +81,7 @@ async function submit() {
 
 <template>
   <div class="p-4 max-w-lg mx-auto">
-    <h2 class="text-xl font-semibold mb-4">Quick Capture</h2>
+    <h2 class="text-xl font-semibold mb-4">Capture</h2>
 
     <!-- Success toast -->
     <div v-if="showSuccess" class="bg-green-900/50 border border-green-700 text-green-300 px-4 py-3 rounded-xl mb-4 text-sm flex items-center justify-between">

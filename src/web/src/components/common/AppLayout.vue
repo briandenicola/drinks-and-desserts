@@ -32,7 +32,7 @@ const navItems = [
 <template>
   <div class="min-h-screen flex flex-col">
     <!-- Header -->
-    <header class="bg-stone-900 border-b border-stone-800 px-4 py-3 flex items-center justify-between">
+    <header class="bg-stone-900 border-b border-stone-800 px-4 py-3 flex items-center justify-between safe-area-top">
       <h1 class="text-lg font-bold text-amber-500">Whiskey &amp; Smokes</h1>
       <button
         v-if="auth.isAuthenticated"
@@ -113,5 +113,8 @@ const navItems = [
 <style scoped>
 .safe-area-bottom {
   padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+.safe-area-top {
+  padding-top: max(0.75rem, env(safe-area-inset-top));
 }
 </style>
