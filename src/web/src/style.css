@@ -13,4 +13,5 @@ body {
   @apply bg-stone-950 text-stone-50 min-h-screen;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
+  touch-action: manipulation;
 }
