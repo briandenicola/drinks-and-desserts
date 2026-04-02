@@ -99,8 +99,10 @@ public static class ItemType
     public const string Wine = "wine";
     public const string Cocktail = "cocktail";
     public const string Cigar = "cigar";
+    public const string Venue = "venue";
+    public const string Custom = "custom";
 
-    public static readonly string[] All = [Whiskey, Wine, Cocktail, Cigar];
+    public static readonly string[] All = [Whiskey, Wine, Cocktail, Cigar, Venue, Custom];
 }
 
 public static class ItemStatus

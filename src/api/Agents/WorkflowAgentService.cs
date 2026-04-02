@@ -376,7 +376,8 @@ public class WorkflowAgentService : IAgentService
             "wine" or "red wine" or "white wine" or "rosé" => ItemType.Wine,
             "cocktail" or "mixed drink" => ItemType.Cocktail,
             "cigar" => ItemType.Cigar,
-            _ => type?.ToLowerInvariant() ?? "unknown"
+            "venue" or "bar" or "restaurant" or "lounge" => ItemType.Venue,
+            _ => ItemType.Custom
         };
     }
 

@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useItemsStore } from '../stores/items'
 import { itemsApi, type Item } from '../services/items'
 import StarRating from '../components/common/StarRating.vue'
+import AutocompleteInput from '../components/common/AutocompleteInput.vue'
 import { RefreshKey } from '../composables/refreshKey'
 
 const route = useRoute()
@@ -18,13 +19,36 @@ const isAddingNote = ref(false)
 const showDeleteConfirm = ref(false)
 const editRating = ref(0)
 const editName = ref('')
+const editType = ref('')
 const editBrand = ref('')
-const editCategory = ref('')
 const editVenueName = ref('')
 const editVenueAddress = ref('')
 const editTags = ref<string[]>([])
 const newTag = ref('')
 const newJournalEntry = ref('')
+
+// Suggestions for autocomplete
+const nameSuggestions = ref<string[]>([])
+const brandSuggestions = ref<string[]>([])
+const tagSuggestions = ref<string[]>([])
+
+const typeOptions = [
+  { label: 'Whiskey', value: 'whiskey' },
+  { label: 'Wine', value: 'wine' },
+  { label: 'Cocktail', value: 'cocktail' },
+  { label: 'Cigar', value: 'cigar' },
+  { label: 'Venue', value: 'venue' },
+  { label: 'Custom', value: 'custom' },
+]
+
+async function loadSuggestions() {
+  try {
+    const { data } = await itemsApi.getSuggestions()
+    nameSuggestions.value = data.names
+    brandSuggestions.value = data.brands
+    tagSuggestions.value = data.tags
+  } catch { /* ignore */ }
+}
 
 async function refreshItem() {
   const { data } = await itemsApi.get(route.params.id as string)
@@ -41,8 +65,8 @@ onMounted(async () => {
 function resetEditFields(data: Item) {
   editRating.value = data.userRating ?? 0
   editName.value = data.name ?? ''
+  editType.value = data.type ?? 'custom'
   editBrand.value = data.brand ?? ''
-  editCategory.value = data.category ?? ''
   editVenueName.value = data.venue?.name ?? ''
   editVenueAddress.value = data.venue?.address ?? ''
   editTags.value = [...(data.tags ?? [])]
@@ -51,6 +75,7 @@ function resetEditFields(data: Item) {
 function startEditing() {
   if (item.value) resetEditFields(item.value)
   isEditing.value = true
+  loadSuggestions()
 }
 
 function addTag() {
@@ -71,8 +96,8 @@ async function save() {
   try {
     const updated = await itemsStore.updateItem(item.value.id, {
       name: editName.value || undefined,
+      type: editType.value || undefined,
       brand: editBrand.value || undefined,
-      category: editCategory.value || undefined,
       venue: editVenueName.value ? { name: editVenueName.value, address: editVenueAddress.value || undefined } : undefined,
       userRating: editRating.value || undefined,
       tags: editTags.value,
@@ -144,7 +169,6 @@ function isAiGenerated(data: Item): boolean {
       <span v-if="item.status === 'ai-draft'" class="text-xs text-amber-500 ml-2">AI Draft — tap edit to review</span>
       <h2 class="text-2xl font-bold mt-2">{{ item.name }}</h2>
       <p v-if="item.brand" class="text-stone-400">{{ item.brand }}</p>
-      <p v-if="item.category" class="text-sm text-stone-500">{{ item.category }}</p>
     </div>
 
     <!-- AI Summary -->
@@ -230,33 +254,39 @@ function isAiGenerated(data: Item): boolean {
       <!-- Name -->
       <div>
         <label class="block text-sm text-stone-400 mb-1">Name</label>
-        <input
+        <AutocompleteInput
           v-model="editName"
-          type="text"
-          class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 focus:outline-none focus:border-amber-700"
+          :suggestions="nameSuggestions"
+          placeholder="Item name"
         />
       </div>
 
-      <!-- Brand & Category row -->
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="block text-sm text-stone-400 mb-1">Brand</label>
-          <input
-            v-model="editBrand"
-            type="text"
-            placeholder="e.g. Four Roses"
-            class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-700"
-          />
+      <!-- Type -->
+      <div>
+        <label class="block text-sm text-stone-400 mb-2">Type</label>
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-for="opt in typeOptions"
+            :key="opt.value"
+            @click="editType = opt.value"
+            class="px-3 py-1.5 rounded-full text-xs border transition-colors"
+            :class="editType === opt.value
+              ? 'bg-amber-700 border-amber-600 text-white'
+              : 'bg-stone-800 border-stone-700 text-stone-400'"
+          >
+            {{ opt.label }}
+          </button>
         </div>
-        <div>
-          <label class="block text-sm text-stone-400 mb-1">Category</label>
-          <input
-            v-model="editCategory"
-            type="text"
-            placeholder="e.g. Small Batch"
-            class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-700"
-          />
-        </div>
+      </div>
+
+      <!-- Brand -->
+      <div>
+        <label class="block text-sm text-stone-400 mb-1">Brand</label>
+        <AutocompleteInput
+          v-model="editBrand"
+          :suggestions="brandSuggestions"
+          placeholder="e.g. Four Roses"
+        />
       </div>
 
       <!-- Location -->
@@ -299,12 +329,12 @@ function isAiGenerated(data: Item): boolean {
           </span>
         </div>
         <div class="flex gap-2">
-          <input
+          <AutocompleteInput
             v-model="newTag"
-            type="text"
+            :suggestions="tagSuggestions.filter(t => !editTags.includes(t))"
             placeholder="Add a tag..."
+            input-class="flex-1 bg-stone-800 border border-stone-700 rounded-xl px-4 py-2 text-sm text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-700"
             @keydown.enter.prevent="addTag"
-            class="flex-1 bg-stone-800 border border-stone-700 rounded-xl px-4 py-2 text-sm text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-700"
           />
           <button
             @click="addTag"

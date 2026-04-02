@@ -182,7 +182,8 @@ internal static class LocalExtraction
         if (lower.Contains("wine") || lower.Contains("cabernet") || lower.Contains("merlot") || lower.Contains("chardonnay")) return ItemType.Wine;
         if (lower.Contains("cocktail") || lower.Contains("mixed") || lower.Contains("old fashioned") || lower.Contains("martini")) return ItemType.Cocktail;
         if (lower.Contains("whiskey") || lower.Contains("whisky") || lower.Contains("bourbon") || lower.Contains("scotch")) return ItemType.Whiskey;
-        return "unknown";
+        if (lower.Contains("bar") || lower.Contains("restaurant") || lower.Contains("lounge") || lower.Contains("venue")) return ItemType.Venue;
+        return ItemType.Custom;
     }
 
     private static string Truncate(string text, int maxLength)

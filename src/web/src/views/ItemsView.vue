@@ -17,6 +17,7 @@ const registerRefresh = inject(RefreshKey)
 // Wishlist add form
 const showAddForm = ref(false)
 const showSortMenu = ref(false)
+const showFilterMenu = ref(false)
 const newName = ref('')
 const newType = ref('whiskey')
 const newBrand = ref('')
@@ -43,6 +44,8 @@ const typeFilters = [
   { label: 'Wine', value: 'wine' },
   { label: 'Cocktail', value: 'cocktail' },
   { label: 'Cigar', value: 'cigar' },
+  { label: 'Venue', value: 'venue' },
+  { label: 'Custom', value: 'custom' },
 ]
 
 const typeOptions = [
@@ -50,7 +53,13 @@ const typeOptions = [
   { label: 'Wine', value: 'wine' },
   { label: 'Cocktail', value: 'cocktail' },
   { label: 'Cigar', value: 'cigar' },
+  { label: 'Venue', value: 'venue' },
+  { label: 'Custom', value: 'custom' },
 ]
+
+const activeFilterLabel = computed(() =>
+  typeFilters.find(f => f.value === activeFilter.value)?.label ?? 'All'
+)
 
 function setFilter(value?: string) {
   activeFilter.value = value
@@ -130,6 +139,9 @@ function closeSortMenu(e: MouseEvent) {
   if (!target.closest('.sort-dropdown')) {
     showSortMenu.value = false
   }
+  if (!target.closest('.filter-dropdown')) {
+    showFilterMenu.value = false
+  }
 }
 
 onMounted(() => {
@@ -163,20 +175,41 @@ onUnmounted(() => {
     </div>
 
     <!-- Filters + Sort -->
-    <div class="flex items-center gap-1.5 mb-4">
-      <div class="flex gap-1 flex-1 min-w-0">
+    <div class="flex items-center gap-2 mb-4">
+      <!-- Filter dropdown -->
+      <div class="relative filter-dropdown">
         <button
-          v-for="filter in typeFilters"
-          :key="filter.label"
-          @click="setFilter(filter.value)"
-          class="flex-1 min-w-0 px-2 py-1.5 rounded-full text-xs border transition-colors truncate"
-          :class="activeFilter === filter.value
+          @click="showFilterMenu = !showFilterMenu"
+          class="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs border transition-colors"
+          :class="activeFilter
             ? 'bg-amber-700 border-amber-600 text-white'
-            : 'bg-stone-900 border-stone-700 text-stone-400 hover:border-stone-600'"
+            : 'border-stone-700 text-stone-400 hover:border-stone-600'"
         >
-          {{ filter.label }}
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+          </svg>
+          <span>{{ activeFilterLabel }}</span>
         </button>
+
+        <div
+          v-if="showFilterMenu"
+          class="absolute left-0 top-full mt-1 bg-stone-900 border border-stone-700 rounded-xl overflow-hidden shadow-lg z-10 min-w-[140px]"
+        >
+          <button
+            v-for="opt in typeFilters"
+            :key="opt.label"
+            @click="setFilter(opt.value); showFilterMenu = false"
+            class="w-full text-left px-4 py-2.5 text-sm transition-colors"
+            :class="activeFilter === opt.value
+              ? 'text-amber-500 bg-stone-800'
+              : 'text-stone-400 hover:bg-stone-800'"
+          >
+            {{ opt.label }}
+          </button>
+        </div>
       </div>
+
+      <div class="flex-1"></div>
 
       <!-- Sort dropdown -->
       <div class="relative shrink-0 sort-dropdown">

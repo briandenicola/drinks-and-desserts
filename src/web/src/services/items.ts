@@ -34,6 +34,7 @@ export interface JournalEntry {
 
 export interface UpdateItemRequest {
   name?: string
+  type?: string
   brand?: string
   category?: string
   venue?: {
@@ -76,4 +77,7 @@ export const itemsApi = {
 
   convertWishlistItem: (id: string) =>
     api.post<Item>(`/items/${id}/convert`),
+
+  getSuggestions: () =>
+    api.get<{ names: string[]; brands: string[]; tags: string[] }>('/items/suggestions'),
 }

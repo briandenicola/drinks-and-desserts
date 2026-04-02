@@ -66,6 +66,32 @@ public class ItemsController : ControllerBase
         });
     }
 
+    [HttpGet("suggestions")]
+    public async Task<ActionResult<Dictionary<string, List<string>>>> GetSuggestions()
+    {
+        var userId = GetUserId();
+
+        var all = new List<Item>();
+        string? token = null;
+        do
+        {
+            var (items, nextToken) = await _cosmosDb.QueryAsync<Item>(ContainerName, userId, token);
+            all.AddRange(items);
+            token = nextToken;
+        } while (token != null);
+
+        var names = all.Select(i => i.Name).Where(n => !string.IsNullOrWhiteSpace(n)).Distinct().OrderBy(n => n).ToList();
+        var brands = all.Select(i => i.Brand).Where(b => !string.IsNullOrWhiteSpace(b)).Distinct().OrderBy(b => b).ToList()!;
+        var tags = all.SelectMany(i => i.Tags).Where(t => !string.IsNullOrWhiteSpace(t)).Distinct().OrderBy(t => t).ToList();
+
+        return Ok(new Dictionary<string, List<string>>
+        {
+            ["names"] = names,
+            ["brands"] = brands!,
+            ["tags"] = tags,
+        });
+    }
+
     [HttpGet("{id}")]
     public async Task<ActionResult<Item>> GetItem(string id)
     {
@@ -104,6 +130,7 @@ public class ItemsController : ControllerBase
         }
 
         if (request.Name != null) item.Name = request.Name;
+        if (request.Type != null) item.Type = request.Type;
         if (request.Brand != null) item.Brand = request.Brand;
         if (request.Category != null) item.Category = request.Category;
         if (request.Venue != null) item.Venue = request.Venue;

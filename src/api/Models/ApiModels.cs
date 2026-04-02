@@ -64,6 +64,9 @@ public class UpdateItemRequest
     [JsonPropertyName("name")]
     public string? Name { get; set; }
 
+    [JsonPropertyName("type")]
+    public string? Type { get; set; }
+
     [JsonPropertyName("brand")]
     public string? Brand { get; set; }
 
