@@ -1,5 +1,4 @@
 using Azure.AI.OpenAI;
-using Azure.Identity;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
 using WhiskeyAndSmokes.Api.Agents.Executors;
@@ -27,10 +26,7 @@ public static class CaptureWorkflow
         var endpoint = config["AiFoundry:ProjectEndpoint"]
             ?? throw new InvalidOperationException("AiFoundry:ProjectEndpoint is required for the capture workflow.");
 
-        var credential = new ChainedTokenCredential(
-            new AzureCliCredential(),
-            new EnvironmentCredential(),
-            new ManagedIdentityCredential(ManagedIdentityId.SystemAssigned));
+        var credential = CredentialFactory.Create();
 
         var azureClient = new AzureOpenAIClient(new Uri(endpoint), credential);
 

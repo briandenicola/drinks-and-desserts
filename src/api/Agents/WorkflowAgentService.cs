@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.Text.Json;
 using Azure.AI.Projects;
 using Azure.AI.Projects.OpenAI;
-using Azure.Identity;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
 using WhiskeyAndSmokes.Api.Agents.Executors;
@@ -148,10 +147,7 @@ public class WorkflowAgentService : IAgentService
         if (string.IsNullOrEmpty(endpoint))
             throw new InvalidOperationException("AiFoundry:ProjectEndpoint is required");
 
-        var credential = new ChainedTokenCredential(
-            new AzureCliCredential(),
-            new EnvironmentCredential(),
-            new ManagedIdentityCredential(ManagedIdentityId.SystemAssigned));
+        var credential = CredentialFactory.Create();
 
         var projectClient = new AIProjectClient(new Uri(endpoint), credential);
 

@@ -3,20 +3,35 @@ services:
     image: ${DOCKER_REPO}/whiskey-and-smokes-api:${DOCKER_VERSION}
     container_name: whiskey-and-smokes-api
     network_mode: containers
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - Storage__Provider=local
+      - LiteDb__Path=/data/whiskey-and-smokes.db
+      - LocalStorage__Path=/data/uploads
+      - LocalStorage__BaseUrl=http://whiskey-and-smokes-api:8080/uploads
+      - Jwt__Issuer=whiskey-and-smokes
+      - Jwt__Audience=whiskey-and-smokes
+      - AiFoundry__Models__Vision=gpt-4o
+      - AiFoundry__Models__Reasoning=gpt-5-mini
+      - Cors__AllowedOrigins__0=http://localhost:${WEB_PORT:-8080}
+      - Cors__AllowedOrigins__1=http://127.0.0.1:${WEB_PORT:-8080}
     env_file:
       - stack.env
     ports:
-      - 3260:8080
+      - 3262:8080
     volumes:
       - /opt/containers/whiskey-and-smokes:/data
+      - /mnt/nas/data/whiskey:/data/uploads
     restart: unless-stopped
 
   whiskey-and-smokes-web:
     image: ${DOCKER_REPO}/whiskey-and-smokes-web:${DOCKER_VERSION}
     container_name: whiskey-and-smokes-web
     network_mode: containers
+    depends_on:
+      - whiskey-and-smokes-api
     env_file:
       - stack.env
     ports:
-      - 3261:80
+      - 3263:80
     restart: unless-stopped

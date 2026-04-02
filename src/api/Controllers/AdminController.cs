@@ -217,10 +217,7 @@ public class AdminController : ControllerBase
         var sw = System.Diagnostics.Stopwatch.StartNew();
         try
         {
-            var credential = new Azure.Identity.ChainedTokenCredential(
-                new Azure.Identity.AzureCliCredential(),
-                new Azure.Identity.EnvironmentCredential(),
-                new Azure.Identity.ManagedIdentityCredential(Azure.Identity.ManagedIdentityId.SystemAssigned));
+            var credential = CredentialFactory.Create();
 
             var projectClient = new Azure.AI.Projects.AIProjectClient(
                 new Uri(status.ProjectEndpoint), credential);

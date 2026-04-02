@@ -1,5 +1,4 @@
 using Azure.AI.Projects;
-using Azure.Identity;
 
 namespace WhiskeyAndSmokes.Api.Services;
 
@@ -72,10 +71,7 @@ public class AgentValidationService : IHostedService
 
         try
         {
-            var credential = new ChainedTokenCredential(
-                new AzureCliCredential(),
-                new EnvironmentCredential(),
-                new ManagedIdentityCredential(ManagedIdentityId.SystemAssigned));
+            var credential = CredentialFactory.Create();
 
             var client = new AIProjectClient(new Uri(projectEndpoint), credential);
             var agents = client.Agents;
