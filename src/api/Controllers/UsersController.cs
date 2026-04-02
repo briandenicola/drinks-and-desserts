@@ -110,6 +110,120 @@ public class UsersController : ControllerBase
         return Ok(new { message = "Password changed successfully" });
     }
 
+    [HttpGet("me/stats")]
+    public async Task<ActionResult<UserStats>> GetStats()
+    {
+        using var activity = Diagnostics.Auth.StartActivity("UserGetStats");
+        var userId = GetUserId();
+        activity?.SetTag("user.id", userId);
+
+        var user = await _cosmosDb.GetAsync<User>(ContainerName, userId, userId);
+        var allItems = await QueryAllAsync<Item>("items", userId);
+        var allCaptures = await QueryAllAsync<Capture>("captures", userId);
+
+        var dayNames = new[] { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+        var now = DateTime.UtcNow;
+        var sixMonthsAgo = new DateTime(now.Year, now.Month, 1).AddMonths(-5);
+
+        var stats = new UserStats
+        {
+            Overview = new OverviewStats
+            {
+                TotalItems = allItems.Count,
+                TotalCaptures = allCaptures.Count,
+                TotalRated = allItems.Count(i => i.UserRating.HasValue && i.UserRating > 0),
+                UniqueBrands = allItems.Where(i => !string.IsNullOrEmpty(i.Brand)).Select(i => i.Brand!).Distinct(StringComparer.OrdinalIgnoreCase).Count(),
+                UniqueVenues = allItems.Where(i => i.Venue != null && !string.IsNullOrEmpty(i.Venue.Name)).Select(i => i.Venue!.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count(),
+                MemberSince = user?.CreatedAt ?? now,
+            },
+
+            TypeBreakdown = allItems
+                .GroupBy(i => i.Type)
+                .Select(g => new TypeCount { Type = g.Key, Count = g.Count() })
+                .OrderByDescending(t => t.Count)
+                .ToList(),
+
+            AvgRatingByType = allItems
+                .Where(i => i.UserRating.HasValue && i.UserRating > 0)
+                .GroupBy(i => i.Type)
+                .Select(g => new TypeRating
+                {
+                    Type = g.Key,
+                    AvgRating = Math.Round(g.Average(i => i.UserRating!.Value), 1),
+                    Count = g.Count(),
+                })
+                .OrderByDescending(t => t.AvgRating)
+                .ToList(),
+
+            TopRated = allItems
+                .Where(i => i.UserRating.HasValue && i.UserRating > 0)
+                .OrderByDescending(i => i.UserRating)
+                .ThenByDescending(i => i.UpdatedAt)
+                .Take(5)
+                .Select(i => new TopItem
+                {
+                    Id = i.Id,
+                    Name = i.Name,
+                    Type = i.Type,
+                    Brand = i.Brand,
+                    Rating = i.UserRating!.Value,
+                    PhotoUrl = i.PhotoUrls.FirstOrDefault(),
+                })
+                .ToList(),
+
+            TopVenues = allItems
+                .Where(i => i.Venue != null && !string.IsNullOrEmpty(i.Venue.Name))
+                .GroupBy(i => i.Venue!.Name, StringComparer.OrdinalIgnoreCase)
+                .Select(g => new VenueCount { Name = g.Key, Count = g.Count() })
+                .OrderByDescending(v => v.Count)
+                .Take(5)
+                .ToList(),
+
+            TopTags = allItems
+                .SelectMany(i => i.Tags)
+                .Where(t => !string.IsNullOrEmpty(t))
+                .GroupBy(t => t, StringComparer.OrdinalIgnoreCase)
+                .Select(g => new TagCount { Tag = g.Key, Count = g.Count() })
+                .OrderByDescending(t => t.Count)
+                .Take(10)
+                .ToList(),
+
+            ActivityByDay = Enumerable.Range(0, 7)
+                .Select(d => new DayActivity
+                {
+                    Day = dayNames[d],
+                    Count = allCaptures.Count(c => (int)c.CreatedAt.DayOfWeek == d),
+                })
+                .ToList(),
+
+            MonthlyTrend = Enumerable.Range(0, 6)
+                .Select(i => sixMonthsAgo.AddMonths(i))
+                .Select(m => new MonthlyCount
+                {
+                    Month = m.ToString("MMM yyyy"),
+                    Count = allItems.Count(i => i.CreatedAt.Year == m.Year && i.CreatedAt.Month == m.Month),
+                })
+                .ToList(),
+
+            RatingTrend = Enumerable.Range(0, 6)
+                .Select(i => sixMonthsAgo.AddMonths(i))
+                .Select(m =>
+                {
+                    var rated = allItems.Where(i => i.CreatedAt.Year == m.Year && i.CreatedAt.Month == m.Month && i.UserRating.HasValue && i.UserRating > 0).ToList();
+                    return new MonthlyRating
+                    {
+                        Month = m.ToString("MMM yyyy"),
+                        AvgRating = rated.Count > 0 ? Math.Round(rated.Average(i => i.UserRating!.Value), 1) : 0,
+                        Count = rated.Count,
+                    };
+                })
+                .ToList(),
+        };
+
+        _logger.LogInformation("Generated stats for user {UserId}: {ItemCount} items, {CaptureCount} captures", userId, allItems.Count, allCaptures.Count);
+        return Ok(stats);
+    }
+
     [HttpGet("me/export")]
     public async Task<IActionResult> ExportData(CancellationToken cancellationToken)
     {

@@ -92,6 +92,9 @@ export const usersApi = {
   exportData: () =>
     api.get('/users/me/export', { responseType: 'blob' }),
 
+  getStats: () =>
+    api.get('/users/me/stats'),
+
   // Admin - Foundry
   getFoundryStatus: () => api.get<FoundryStatus>('/admin/foundry'),
 
