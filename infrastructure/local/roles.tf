@@ -22,6 +22,12 @@ resource "azurerm_role_assignment" "spn_openai_user" {
   principal_id         = azuread_service_principal.this.object_id
 }
 
+resource "azurerm_role_assignment" "spn_cognitive_services_user" {
+  scope                = azurerm_resource_group.this.id
+  role_definition_name = "Cognitive Services User"
+  principal_id         = azuread_service_principal.this.object_id
+}
+
 resource "azurerm_role_assignment" "spn_ai_developer" {
   scope                = azurerm_resource_group.this.id
   role_definition_name = "Azure AI Developer"
