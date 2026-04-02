@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, inject, onMounted, computed } from 'vue'
+import { ref, inject, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useItemsStore } from '../stores/items'
 import { useAuthStore } from '../stores/auth'
@@ -15,6 +15,7 @@ const registerRefresh = inject(RefreshKey)
 
 // Wishlist add form
 const showAddForm = ref(false)
+const showSortMenu = ref(false)
 const newName = ref('')
 const newType = ref('whiskey')
 const newBrand = ref('')
@@ -123,8 +124,20 @@ const isLoadingList = computed(() =>
   activeTab.value === 'wishlist' ? itemsStore.isLoadingWishlist : itemsStore.isLoading
 )
 
+function closeSortMenu(e: MouseEvent) {
+  const target = e.target as HTMLElement
+  if (!target.closest('.sort-dropdown')) {
+    showSortMenu.value = false
+  }
+}
+
 onMounted(() => {
   itemsStore.loadItems(undefined, true)
+  document.addEventListener('click', closeSortMenu)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', closeSortMenu)
 })
 </script>
 
@@ -148,35 +161,51 @@ onMounted(() => {
       </button>
     </div>
 
-    <!-- Type filters -->
-    <div class="flex gap-2 mb-4 overflow-x-auto pb-2">
-      <button
-        v-for="filter in typeFilters"
-        :key="filter.label"
-        @click="setFilter(filter.value)"
-        class="shrink-0 px-3 py-1.5 rounded-full text-sm border transition-colors"
-        :class="activeFilter === filter.value
-          ? 'bg-amber-700 border-amber-600 text-white'
-          : 'bg-stone-900 border-stone-700 text-stone-400 hover:border-stone-600'"
-      >
-        {{ filter.label }}
-      </button>
-    </div>
-
-    <!-- Sort options -->
+    <!-- Filters + Sort -->
     <div class="flex items-center gap-2 mb-4">
-      <span class="text-xs text-stone-600">Sort:</span>
-      <button
-        v-for="opt in sortOptions"
-        :key="opt.value"
-        @click="activeSort = opt.value"
-        class="px-2.5 py-1 rounded-full text-xs border transition-colors"
-        :class="activeSort === opt.value
-          ? 'bg-stone-700 border-stone-600 text-stone-200'
-          : 'border-stone-800 text-stone-600 hover:border-stone-700'"
-      >
-        {{ opt.label }}
-      </button>
+      <div class="flex gap-2 overflow-x-auto flex-1 pb-1">
+        <button
+          v-for="filter in typeFilters"
+          :key="filter.label"
+          @click="setFilter(filter.value)"
+          class="shrink-0 px-3 py-1.5 rounded-full text-sm border transition-colors"
+          :class="activeFilter === filter.value
+            ? 'bg-amber-700 border-amber-600 text-white'
+            : 'bg-stone-900 border-stone-700 text-stone-400 hover:border-stone-600'"
+        >
+          {{ filter.label }}
+        </button>
+      </div>
+
+      <!-- Sort dropdown -->
+      <div class="relative shrink-0 sort-dropdown">
+        <button
+          @click="showSortMenu = !showSortMenu"
+          class="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs border border-stone-700 text-stone-400 hover:border-stone-600 transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+          </svg>
+          <span>{{ sortOptions.find(o => o.value === activeSort)?.label }}</span>
+        </button>
+
+        <div
+          v-if="showSortMenu"
+          class="absolute right-0 top-full mt-1 bg-stone-900 border border-stone-700 rounded-xl overflow-hidden shadow-lg z-10 min-w-[140px]"
+        >
+          <button
+            v-for="opt in sortOptions"
+            :key="opt.value"
+            @click="activeSort = opt.value; showSortMenu = false"
+            class="w-full text-left px-4 py-2.5 text-sm transition-colors"
+            :class="activeSort === opt.value
+              ? 'text-amber-500 bg-stone-800'
+              : 'text-stone-400 hover:bg-stone-800'"
+          >
+            {{ opt.label }}
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Wishlist: Add button + form -->
