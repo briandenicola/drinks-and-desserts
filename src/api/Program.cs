@@ -2,6 +2,7 @@ using System.Text;
 using System.Threading.Channels;
 using Azure.Identity;
 using Azure.Storage.Blobs;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Azure.Cosmos;
 using Microsoft.IdentityModel.Tokens;
@@ -111,6 +112,10 @@ builder.Services.AddAuthentication()
             return "LocalJwt";
         };
     });
+
+// API key authentication for external integrations
+builder.Services.AddAuthentication()
+    .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthHandler>("ApiKey", null);
 
 // Authorization policies
 builder.Services.AddAuthorizationBuilder()

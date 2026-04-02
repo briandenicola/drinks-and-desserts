@@ -110,6 +110,87 @@ public class UsersController : ControllerBase
         return Ok(new { message = "Password changed successfully" });
     }
 
+    // API Key Management
+    [HttpGet("me/api-keys")]
+    public async Task<ActionResult<List<ApiKeyResponse>>> ListApiKeys()
+    {
+        var userId = GetUserId();
+        var user = await _cosmosDb.GetAsync<User>(ContainerName, userId, userId);
+        if (user == null) return NotFound();
+
+        var keys = user.ApiKeys.Select(k => new ApiKeyResponse
+        {
+            Id = k.Id,
+            Name = k.Name,
+            Prefix = k.Prefix,
+            CreatedAt = k.CreatedAt,
+            LastUsedAt = k.LastUsedAt,
+            IsRevoked = k.IsRevoked,
+        }).ToList();
+
+        return Ok(keys);
+    }
+
+    [HttpPost("me/api-keys")]
+    public async Task<ActionResult<CreateApiKeyResponse>> CreateApiKey([FromBody] CreateApiKeyRequest request)
+    {
+        var userId = GetUserId();
+        var user = await _cosmosDb.GetAsync<User>(ContainerName, userId, userId);
+        if (user == null) return NotFound();
+
+        if (string.IsNullOrWhiteSpace(request.Name))
+            return BadRequest(new { message = "Key name is required" });
+
+        var activeKeys = user.ApiKeys.Count(k => !k.IsRevoked);
+        if (activeKeys >= 5)
+            return BadRequest(new { message = "Maximum of 5 active API keys allowed" });
+
+        var rawKey = ApiKeyAuthHandler.GenerateKey();
+        var keyHash = ApiKeyAuthHandler.HashKey(rawKey);
+        var prefix = rawKey[..10] + "...";
+
+        var apiKey = new ApiKey
+        {
+            Name = request.Name,
+            Prefix = prefix,
+            KeyHash = keyHash,
+        };
+
+        user.ApiKeys.Add(apiKey);
+        user.UpdatedAt = DateTime.UtcNow;
+        await _cosmosDb.UpsertAsync(ContainerName, user, user.PartitionKey);
+
+        _logger.LogInformation("API key created for user {UserId}: keyId={KeyId}, name={Name}",
+            userId, apiKey.Id, request.Name);
+
+        return Ok(new CreateApiKeyResponse
+        {
+            Id = apiKey.Id,
+            Name = apiKey.Name,
+            Key = rawKey,
+            Prefix = prefix,
+            CreatedAt = apiKey.CreatedAt,
+        });
+    }
+
+    [HttpDelete("me/api-keys/{keyId}")]
+    public async Task<IActionResult> RevokeApiKey(string keyId)
+    {
+        var userId = GetUserId();
+        var user = await _cosmosDb.GetAsync<User>(ContainerName, userId, userId);
+        if (user == null) return NotFound();
+
+        var apiKey = user.ApiKeys.FirstOrDefault(k => k.Id == keyId);
+        if (apiKey == null) return NotFound();
+
+        apiKey.IsRevoked = true;
+        user.UpdatedAt = DateTime.UtcNow;
+        await _cosmosDb.UpsertAsync(ContainerName, user, user.PartitionKey);
+
+        _logger.LogInformation("API key revoked for user {UserId}: keyId={KeyId}", userId, keyId);
+        return NoContent();
+    }
+
     [HttpGet("me/stats")]
     public async Task<ActionResult<UserStats>> GetStats()
     {

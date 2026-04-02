@@ -212,3 +212,9 @@ public class UpdatePromptRequest
     [JsonPropertyName("content")]
     public string Content { get; set; } = string.Empty;
 }
+
+public class CreateApiKeyRequest
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
+}

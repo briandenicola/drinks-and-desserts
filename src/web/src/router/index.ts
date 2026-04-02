@@ -10,6 +10,10 @@ const routes = [
   },
   {
     path: '/',
+    redirect: '/items',
+  },
+  {
+    path: '/capture',
     name: 'Capture',
     component: () => import('../views/CaptureView.vue'),
   },
@@ -66,7 +70,7 @@ router.beforeEach((to) => {
   }
 
   if (to.meta.requiresAdmin && !auth.isAdmin) {
-    return { name: 'Capture' }
+    return { name: 'Items' }
   }
 })
 

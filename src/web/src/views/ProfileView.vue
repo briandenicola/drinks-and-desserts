@@ -2,6 +2,7 @@
 import { ref, inject, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { usersApi } from '../services/users'
+import type { ApiKeyResponse, CreateApiKeyResponse } from '../services/users'
 import { RefreshKey } from '../composables/refreshKey'
 
 const auth = useAuthStore()
@@ -24,14 +25,66 @@ const isChangingPassword = ref(false)
 const passwordMessage = ref('')
 const passwordError = ref(false)
 
+// API Keys
+const apiKeys = ref<ApiKeyResponse[]>([])
+const newKeyName = ref('')
+const isCreatingKey = ref(false)
+const newlyCreatedKey = ref<CreateApiKeyResponse | null>(null)
+const keyCopied = ref(false)
+const keyMessage = ref('')
+
 const registerRefresh = inject(RefreshKey)
 registerRefresh?.(async () => {
   await auth.loadUser()
   if (auth.user) displayName.value = auth.user.displayName
+  await loadApiKeys()
 })
 
 const isExporting = ref(false)
 const exportMessage = ref('')
+
+async function loadApiKeys() {
+  try {
+    const res = await usersApi.listApiKeys()
+    apiKeys.value = res.data
+  } catch { /* ignore */ }
+}
+
+async function createApiKey() {
+  if (!newKeyName.value.trim()) return
+  isCreatingKey.value = true
+  keyMessage.value = ''
+  try {
+    const res = await usersApi.createApiKey(newKeyName.value.trim())
+    newlyCreatedKey.value = res.data
+    keyCopied.value = false
+    newKeyName.value = ''
+    await loadApiKeys()
+  } catch (e: any) {
+    keyMessage.value = e.response?.data?.message ?? 'Failed to create key'
+  } finally {
+    isCreatingKey.value = false
+  }
+}
+
+async function copyKey() {
+  if (!newlyCreatedKey.value) return
+  try {
+    await navigator.clipboard.writeText(newlyCreatedKey.value.key)
+    keyCopied.value = true
+  } catch {
+    keyMessage.value = 'Failed to copy'
+  }
+}
+
+async function revokeKey(keyId: string) {
+  try {
+    await usersApi.revokeApiKey(keyId)
+    await loadApiKeys()
+  } catch {
+    keyMessage.value = 'Failed to revoke key'
+  }
+}
 
 async function exportData() {
   isExporting.value = true
@@ -61,6 +114,7 @@ onMounted(() => {
     displayName.value = auth.user.displayName
     collectionSort.value = auth.user.preferences?.collectionSort || 'rating'
   }
+  loadApiKeys()
 })
 
 async function saveProfile() {
@@ -213,6 +267,85 @@ async function changePassword() {
         >
           {{ isChangingPassword ? 'Changing...' : 'Change Password' }}
         </button>
+      </section>
+
+      <!-- API Keys -->
+      <section class="bg-stone-900 border border-stone-800 rounded-xl p-4 space-y-4">
+        <h3 class="text-sm font-medium text-stone-400 uppercase tracking-wide">API Keys</h3>
+        <p class="text-sm text-stone-400">
+          Create API keys to integrate with iOS Shortcuts or other tools.
+        </p>
+
+        <!-- Newly created key banner -->
+        <div v-if="newlyCreatedKey" class="bg-amber-900/30 border border-amber-700 rounded-lg p-3 space-y-2">
+          <p class="text-sm text-amber-400 font-medium">Key created - copy it now, it will not be shown again</p>
+          <div class="flex items-center gap-2">
+            <code class="flex-1 bg-stone-800 px-3 py-2 rounded text-xs text-stone-200 break-all font-mono">
+              {{ newlyCreatedKey.key }}
+            </code>
+            <button
+              @click="copyKey"
+              class="shrink-0 px-3 py-2 rounded bg-amber-700 hover:bg-amber-600 text-white text-xs font-medium"
+            >
+              {{ keyCopied ? 'Copied' : 'Copy' }}
+            </button>
+          </div>
+          <button @click="newlyCreatedKey = null" class="text-xs text-stone-500 hover:text-stone-400">
+            Dismiss
+          </button>
+        </div>
+
+        <!-- Create new key -->
+        <div class="flex gap-2">
+          <input
+            v-model="newKeyName"
+            placeholder="Key name (e.g. iPhone Shortcut)"
+            class="flex-1 bg-stone-800 border border-stone-700 rounded-xl px-4 py-2.5 text-sm text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-700"
+            @keyup.enter="createApiKey"
+          />
+          <button
+            @click="createApiKey"
+            :disabled="isCreatingKey || !newKeyName.trim()"
+            class="shrink-0 px-4 py-2.5 bg-amber-700 hover:bg-amber-600 disabled:bg-stone-700 disabled:text-stone-500 text-white rounded-xl text-sm font-medium"
+          >
+            {{ isCreatingKey ? '...' : 'Create' }}
+          </button>
+        </div>
+
+        <div v-if="keyMessage" class="text-sm text-red-400">{{ keyMessage }}</div>
+
+        <!-- Existing keys -->
+        <div v-if="apiKeys.length" class="space-y-2">
+          <div
+            v-for="key in apiKeys"
+            :key="key.id"
+            class="flex items-center justify-between bg-stone-800 border border-stone-700 rounded-lg px-3 py-2.5"
+            :class="key.isRevoked ? 'opacity-50' : ''"
+          >
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2">
+                <span class="text-sm text-stone-200 truncate">{{ key.name }}</span>
+                <span v-if="key.isRevoked" class="text-[10px] px-1.5 py-0.5 rounded bg-red-900/50 text-red-400 border border-red-800">
+                  Revoked
+                </span>
+              </div>
+              <div class="text-xs text-stone-500 mt-0.5">
+                <span class="font-mono">{{ key.prefix }}</span>
+                <span v-if="key.lastUsedAt" class="ml-2">
+                  Last used {{ new Date(key.lastUsedAt).toLocaleDateString() }}
+                </span>
+                <span v-else class="ml-2">Never used</span>
+              </div>
+            </div>
+            <button
+              v-if="!key.isRevoked"
+              @click="revokeKey(key.id)"
+              class="shrink-0 ml-3 text-xs text-red-400 hover:text-red-300"
+            >
+              Revoke
+            </button>
+          </div>
+        </div>
       </section>
 
       <!-- Export Data -->

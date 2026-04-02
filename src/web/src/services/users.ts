@@ -57,11 +57,37 @@ export interface FoundryStatus {
   checkedAt: string
 }
 
+export interface ApiKeyResponse {
+  id: string
+  name: string
+  prefix: string
+  createdAt: string
+  lastUsedAt: string | null
+  isRevoked: boolean
+}
+
+export interface CreateApiKeyResponse {
+  id: string
+  name: string
+  key: string
+  prefix: string
+  createdAt: string
+}
+
 export const usersApi = {
   getMe: () => api.get<User>('/users/me'),
 
   updateMe: (data: { displayName?: string; preferences?: User['preferences'] }) =>
     api.put<User>('/users/me', data),
+
+  // API Keys
+  listApiKeys: () => api.get<ApiKeyResponse[]>('/users/me/api-keys'),
+
+  createApiKey: (name: string) =>
+    api.post<CreateApiKeyResponse>('/users/me/api-keys', { name }),
+
+  revokeApiKey: (keyId: string) =>
+    api.delete(`/users/me/api-keys/${keyId}`),
 
   // Admin - Users
   listUsers: () => api.get<User[]>('/admin/users'),

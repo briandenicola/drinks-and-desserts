@@ -55,6 +55,11 @@ public class ExifLocationService
     private static Models.GeoLocation? ExtractGpsFromBytes(byte[] bytes)
     {
         using var stream = new MemoryStream(bytes);
+        return ExtractGpsFromStream(stream);
+    }
+
+    public static Models.GeoLocation? ExtractGpsFromStream(Stream stream)
+    {
         var directories = MetadataExtractor.ImageMetadataReader.ReadMetadata(stream);
 
         var gps = directories.OfType<GpsDirectory>().FirstOrDefault();

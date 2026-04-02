@@ -7,6 +7,7 @@ namespace WhiskeyAndSmokes.Api.Services;
 public interface IBlobStorageService
 {
     Task<(string UploadUrl, string BlobUrl)> GenerateUploadUrlAsync(string userId, string fileName);
+    Task<string> UploadAsync(string userId, string fileName, Stream content);
     Task DeleteBlobAsync(string blobUrl);
     Task<byte[]?> DownloadAsync(string blobUrl, CancellationToken cancellationToken = default);
 }
@@ -63,6 +64,26 @@ public class BlobStorageService : IBlobStorageService
             userId, _containerName, blobName);
 
         return (uploadUrl, blobClient.Uri.ToString());
+    }
+
+    public async Task<string> UploadAsync(string userId, string fileName, Stream content)
+    {
+        using var activity = Diagnostics.Storage.StartActivity("Blob.Upload");
+        activity?.SetTag("blob.container", _containerName);
+
+        var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
+        await containerClient.CreateIfNotExistsAsync();
+
+        var blobName = $"{userId}/{DateTime.UtcNow:yyyy/MM/dd}/{Guid.NewGuid()}{Path.GetExtension(fileName)}";
+        var blobClient = containerClient.GetBlobClient(blobName);
+
+        activity?.SetTag("blob.path", blobName);
+        await blobClient.UploadAsync(content, overwrite: true);
+
+        _logger.LogInformation("Blob uploaded for user {UserId}: container={Container}, blobPath={BlobPath}",
+            userId, _containerName, blobName);
+
+        return blobClient.Uri.ToString();
     }
 
     public async Task DeleteBlobAsync(string blobUrl)

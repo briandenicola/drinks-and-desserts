@@ -35,6 +35,22 @@ public class LocalBlobStorageService : IBlobStorageService
         return Task.FromResult((uploadUrl, blobUrl));
     }
 
+    public async Task<string> UploadAsync(string userId, string fileName, Stream content)
+    {
+        var ext = Path.GetExtension(fileName);
+        var blobName = $"{userId}/{DateTime.UtcNow:yyyy-MM-dd}/{Guid.NewGuid()}{ext}";
+        var localPath = Path.Combine(_storagePath, blobName.Replace('/', Path.DirectorySeparatorChar));
+
+        Directory.CreateDirectory(Path.GetDirectoryName(localPath)!);
+
+        using var fileStream = new FileStream(localPath, FileMode.Create);
+        await content.CopyToAsync(fileStream);
+
+        _logger.LogInformation("File uploaded locally for user {UserId}: path={Path}", userId, blobName);
+
+        return $"{_baseUrl}/{blobName}";
+    }
+
     public Task DeleteBlobAsync(string blobUrl)
     {
         try

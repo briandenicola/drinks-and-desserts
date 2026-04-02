@@ -22,9 +22,9 @@ const {
 provide(RefreshKey, (fn: () => Promise<void>) => setRefreshCallback(fn))
 
 const navItems = [
-  { name: 'Capture', path: '/' },
   { name: 'Collection', path: '/items' },
   { name: 'History', path: '/history' },
+  { name: 'Capture', path: '/capture' },
   { name: 'Stats', path: '/stats' },
   { name: 'Profile', path: '/profile' },
 ]
@@ -79,38 +79,57 @@ const navItems = [
       <slot />
     </main>
 
-    <!-- Bottom Navigation (mobile) -->
-    <nav v-if="auth.isAuthenticated" class="fixed bottom-0 inset-x-0 bg-stone-900 border-t border-stone-800 flex justify-around py-2 safe-area-bottom">
-      <router-link
-        v-for="item in navItems"
-        :key="item.path"
-        :to="item.path"
-        class="flex flex-col items-center px-3 py-1 text-xs transition-colors"
-        :class="route.path === item.path ? 'text-amber-500' : 'text-stone-500'"
-      >
-        <!-- Capture -->
-        <svg v-if="item.path === '/'" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-          <circle cx="12" cy="13" r="3" />
-        </svg>
-        <!-- Collection -->
-        <svg v-else-if="item.path === '/items'" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-        </svg>
-        <!-- History -->
-        <svg v-else-if="item.path === '/history'" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <!-- Stats -->
-        <svg v-else-if="item.path === '/stats'" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-        </svg>
-        <!-- Profile -->
-        <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-        </svg>
-        <span>{{ item.name }}</span>
-      </router-link>
+    <!-- Bottom Navigation -->
+    <nav v-if="auth.isAuthenticated" class="fixed bottom-0 inset-x-0 bg-stone-900 border-t border-stone-800 safe-area-bottom">
+      <div class="flex justify-around items-end pt-1 pb-2">
+        <template v-for="item in navItems" :key="item.path">
+          <!-- Raised Capture FAB -->
+          <router-link
+            v-if="item.path === '/capture'"
+            :to="item.path"
+            class="capture-fab flex flex-col items-center -mt-6"
+          >
+            <div
+              class="w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all"
+              :class="route.path === '/capture'
+                ? 'bg-amber-500 shadow-amber-500/30'
+                : 'bg-gradient-to-br from-amber-600 to-amber-800 shadow-amber-700/20 hover:shadow-amber-500/30'"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <circle cx="12" cy="13" r="3" />
+              </svg>
+            </div>
+            <span class="text-[10px] mt-1" :class="route.path === '/capture' ? 'text-amber-500' : 'text-stone-500'">Capture</span>
+          </router-link>
+
+          <!-- Standard nav items -->
+          <router-link
+            v-else
+            :to="item.path"
+            class="flex flex-col items-center px-3 py-1 text-xs transition-colors"
+            :class="route.path === item.path ? 'text-amber-500' : 'text-stone-500'"
+          >
+            <!-- Collection -->
+            <svg v-if="item.path === '/items'" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            <!-- History -->
+            <svg v-else-if="item.path === '/history'" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <!-- Stats -->
+            <svg v-else-if="item.path === '/stats'" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            <!-- Profile -->
+            <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            <span>{{ item.name }}</span>
+          </router-link>
+        </template>
+      </div>
     </nav>
   </div>
 </template>
@@ -121,5 +140,9 @@ const navItems = [
 }
 .safe-area-top {
   padding-top: max(0.75rem, env(safe-area-inset-top));
+}
+.capture-fab {
+  position: relative;
+  z-index: 1;
 }
 </style>
