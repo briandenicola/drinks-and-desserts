@@ -22,6 +22,7 @@ public class WorkflowAgentService : IAgentService
     private readonly ICosmosDbService _cosmosDb;
     private readonly IPromptService _promptService;
     private readonly IBlobStorageService _blobService;
+    private readonly ExifLocationService _exifLocation;
     private readonly ILogger<WorkflowAgentService> _logger;
     private readonly AiFoundryOptions _foundryOptions;
     private readonly ILoggerFactory _loggerFactory;
@@ -38,6 +39,7 @@ public class WorkflowAgentService : IAgentService
         ICosmosDbService cosmosDb,
         IPromptService promptService,
         IBlobStorageService blobService,
+        ExifLocationService exifLocation,
         ILogger<WorkflowAgentService> logger,
         IOptions<AiFoundryOptions> foundryOptions,
         ILoggerFactory loggerFactory)
@@ -45,6 +47,7 @@ public class WorkflowAgentService : IAgentService
         _cosmosDb = cosmosDb;
         _promptService = promptService;
         _blobService = blobService;
+        _exifLocation = exifLocation;
         _logger = logger;
         _foundryOptions = foundryOptions.Value;
         _loggerFactory = loggerFactory;
@@ -68,6 +71,17 @@ public class WorkflowAgentService : IAgentService
             capture.WorkflowSteps = [];
             capture.UpdatedAt = DateTime.UtcNow;
             await _cosmosDb.UpsertAsync("captures", capture, capture.PartitionKey);
+
+            // Extract GPS from photo EXIF as fallback when client didn't provide location
+            if (capture.Location == null && capture.Photos.Count > 0)
+            {
+                capture.Location = await _exifLocation.TryExtractLocationAsync(capture.Photos);
+                if (capture.Location != null)
+                {
+                    capture.UpdatedAt = DateTime.UtcNow;
+                    await _cosmosDb.UpsertAsync("captures", capture, capture.PartitionKey);
+                }
+            }
 
             List<Item> items;
 

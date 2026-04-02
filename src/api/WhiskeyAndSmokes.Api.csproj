@@ -15,6 +15,7 @@
     <PackageReference Include="Azure.Storage.Blobs" Version="12.27.0" />
     <PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
     <PackageReference Include="LiteDB" Version="5.0.21" />
+    <PackageReference Include="MetadataExtractor" Version="2.9.2" />
     <PackageReference Include="Microsoft.Agents.AI" Version="1.0.0-rc4" />
     <PackageReference Include="Microsoft.Agents.AI.OpenAI" Version="1.0.0-rc4" />
     <PackageReference Include="Microsoft.Agents.AI.Workflows" Version="1.0.0-rc4" />
