@@ -1,13 +1,17 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, inject } from 'vue'
 import { useCamera } from '../composables/useCamera'
 import { useLocation } from '../composables/useLocation'
 import { useCapturesStore } from '../stores/captures'
 import { capturesApi } from '../services/captures'
+import { RefreshKey } from '../composables/refreshKey'
 
 const { photos, previews, addFromInput, removePhoto, clearPhotos } = useCamera()
 const { location, isLocating, requestLocation } = useLocation()
 const capturesStore = useCapturesStore()
+const registerRefresh = inject(RefreshKey)
+
+registerRefresh?.(async () => { requestLocation() })
 
 const userNote = ref('')
 const isSubmitting = ref(false)

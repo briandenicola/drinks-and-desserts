@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, inject, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useItemsStore } from '../stores/items'
 import { itemsApi, type Item } from '../services/items'
+import { RefreshKey } from '../composables/refreshKey'
 
 const route = useRoute()
 const router = useRouter()
 const itemsStore = useItemsStore()
+const registerRefresh = inject(RefreshKey)
 
 const item = ref<Item | null>(null)
 const isEditing = ref(false)
@@ -23,10 +25,16 @@ const editTags = ref<string[]>([])
 const newTag = ref('')
 const newJournalEntry = ref('')
 
-onMounted(async () => {
+async function refreshItem() {
   const { data } = await itemsApi.get(route.params.id as string)
   item.value = data
   resetEditFields(data)
+}
+
+registerRefresh?.(refreshItem)
+
+onMounted(async () => {
+  await refreshItem()
 })
 
 function resetEditFields(data: Item) {

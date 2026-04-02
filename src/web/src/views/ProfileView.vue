@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, inject, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { usersApi } from '../services/users'
+import { RefreshKey } from '../composables/refreshKey'
 
 const auth = useAuthStore()
 const displayName = ref('')
@@ -15,6 +16,12 @@ const confirmPassword = ref('')
 const isChangingPassword = ref(false)
 const passwordMessage = ref('')
 const passwordError = ref(false)
+
+const registerRefresh = inject(RefreshKey)
+registerRefresh?.(async () => {
+  await auth.loadUser()
+  if (auth.user) displayName.value = auth.user.displayName
+})
 
 onMounted(() => {
   if (auth.user) {

@@ -1,9 +1,25 @@
 <script setup lang="ts">
+import { provide } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 import { useRoute } from 'vue-router'
+import { usePullToRefresh } from '../../composables/usePullToRefresh'
+import { RefreshKey } from '../../composables/refreshKey'
 
 const auth = useAuthStore()
 const route = useRoute()
+
+const {
+  isRefreshing,
+  pullDistance,
+  pullProgress,
+  setRefreshCallback,
+  onTouchStart,
+  onTouchMove,
+  onTouchEnd,
+} = usePullToRefresh()
+
+// Views call this to register their refresh function
+provide(RefreshKey, (fn: () => Promise<void>) => setRefreshCallback(fn))
 
 const navItems = [
   { name: 'Capture', path: '/' },
@@ -27,8 +43,38 @@ const navItems = [
       </button>
     </header>
 
+    <!-- Pull-to-refresh indicator -->
+    <div
+      class="flex justify-center overflow-hidden transition-all duration-200"
+      :style="{ height: pullDistance + 'px' }"
+    >
+      <div class="flex items-center justify-center h-full">
+        <svg
+          v-if="isRefreshing"
+          class="w-5 h-5 text-amber-500 animate-spin"
+          xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+        >
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
+        <svg
+          v-else
+          class="w-5 h-5 text-stone-500 transition-transform duration-200"
+          :style="{ transform: `rotate(${pullProgress * 180}deg)`, opacity: pullProgress }"
+          xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+        </svg>
+      </div>
+    </div>
+
     <!-- Main Content -->
-    <main class="flex-1 overflow-y-auto pb-20">
+    <main
+      class="flex-1 overflow-y-auto pb-20"
+      @touchstart.passive="onTouchStart"
+      @touchmove.passive="onTouchMove"
+      @touchend="onTouchEnd"
+    >
       <slot />
     </main>
 

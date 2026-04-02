@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, inject, onMounted } from 'vue'
 import { useItemsStore } from '../stores/items'
+import { RefreshKey } from '../composables/refreshKey'
 
 const itemsStore = useItemsStore()
 const activeFilter = ref<string | undefined>()
+const registerRefresh = inject(RefreshKey)
+
+registerRefresh?.(() => itemsStore.loadItems(activeFilter.value, true))
 
 const typeFilters = [
   { label: 'All', value: undefined },

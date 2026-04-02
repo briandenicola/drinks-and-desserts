@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { inject, onMounted } from 'vue'
 import { useCapturesStore } from '../stores/captures'
+import { RefreshKey } from '../composables/refreshKey'
 
 const capturesStore = useCapturesStore()
+const registerRefresh = inject(RefreshKey)
+
+registerRefresh?.(() => capturesStore.loadCaptures(true))
 
 onMounted(() => {
   capturesStore.loadCaptures(true)

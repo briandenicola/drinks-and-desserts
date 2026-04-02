@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, inject, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { capturesApi, type CaptureResponse, type WorkflowStep } from '../services/captures'
 import { itemsApi, type Item } from '../services/items'
+import { RefreshKey } from '../composables/refreshKey'
 
 const route = useRoute()
 const router = useRouter()
+const registerRefresh = inject(RefreshKey)
 
 const capture = ref<CaptureResponse | null>(null)
 const items = ref<Item[]>([])
@@ -28,6 +30,8 @@ const canReprocess = computed(() => {
   if (!capture.value) return false
   return capture.value.status === 'completed' || capture.value.status === 'failed'
 })
+
+registerRefresh?.(async () => { await loadCapture() })
 
 onMounted(async () => {
   await loadCapture()
