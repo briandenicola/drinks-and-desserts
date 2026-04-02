@@ -1,0 +1,22 @@
+services:
+  whiskey-and-smokes-api:
+    image: ${DOCKER_REPO}/whiskey-and-smokes-api:${DOCKER_VERSION}
+    container_name: whiskey-and-smokes-api
+    network_mode: containers
+    env_file:
+      - stack.env
+    ports:
+      - 3260:8080
+    volumes:
+      - /opt/containers/whiskey-and-smokes:/data
+    restart: unless-stopped
+
+  whiskey-and-smokes-web:
+    image: ${DOCKER_REPO}/whiskey-and-smokes-web:${DOCKER_VERSION}
+    container_name: whiskey-and-smokes-web
+    network_mode: containers
+    env_file:
+      - stack.env
+    ports:
+      - 3261:80
+    restart: unless-stopped
