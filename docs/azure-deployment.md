@@ -66,17 +66,34 @@ Deploys the container apps and role assignments. Requires the azure stack to be 
 
 ## GitHub Actions Workflows
 
-### `build.yml` — Build & Deploy
+### `ci.yml` — PR Checks
+
+Runs on pull requests to `main`. Builds the .NET solution and type-checks/builds the Vue frontend.
+
+### `build.yml` — Build & Deploy (Azure)
 
 Builds the API container image and deploys the Vue frontend to Azure Static Web Apps.
 
 **Triggers:**
-- Push to `main` (ignores docs, infrastructure, and tasks changes)
 - Manual dispatch with environment selection (dev/prod)
 
 **Jobs:**
 1. `build-api` — uses `az acr build` (ACR Build Tasks) to build and push the API image directly in ACR
 2. `deploy-web` — runs `npm ci && npm run build`, then deploys the `dist/` folder to Azure Static Web Apps using the SWA deployment token
+
+### `docker-publish.yml` — Build & Push (Docker Hub)
+
+Builds and pushes API and Web container images to Docker Hub for self-hosted deployments.
+
+**Triggers:**
+- Push to `main`
+- Manual dispatch
+
+**Jobs:**
+1. `build-and-push-api` — builds `src/api/Dockerfile`, pushes to `{DOCKERHUB_USERNAME}/whiskey-and-smokes-api`
+2. `build-and-push-web` — builds `src/web/Dockerfile`, pushes to `{DOCKERHUB_USERNAME}/whiskey-and-smokes-web`
+
+Tags: `latest`, `sha-{short}`, `sha-{long}`.
 
 ## GitHub Configuration
 
@@ -91,6 +108,15 @@ Configure these in **Settings → Environments → dev** (and `prod` if applicab
 | `AZURE_SUBSCRIPTION_ID` | Azure subscription ID | `00000000-0000-0000-0000-000000000000` |
 | `ACR_NAME` | Azure Container Registry name | `whiskeyandsmokesacr` |
 | `SWA_DEPLOYMENT_TOKEN` | Static Web App deployment token (from `terraform output SWA_DEPLOYMENT_TOKEN`) | `(auto-generated)` |
+
+### Secrets (repository-level, for Docker Hub)
+
+Configure these in **Settings → Secrets and variables → Actions**:
+
+| Secret | Description |
+|--------|-------------|
+| `DOCKERHUB_USERNAME` | Your Docker Hub username |
+| `DOCKERHUB_TOKEN` | Docker Hub access token |
 
 ### Variables (per environment)
 

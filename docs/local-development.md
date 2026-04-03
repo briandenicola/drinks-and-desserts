@@ -9,7 +9,7 @@ The only Azure dependency for local development is **Azure AI Foundry** (for the
 | AI Vision | gpt-4o via Azure AI Foundry | gpt-4o via Azure AI Foundry |
 | AI Reasoning | gpt-5-mini via Azure AI Foundry | gpt-5-mini via Azure AI Foundry |
 | Observability | Aspire Dashboard (OTLP) | Azure Application Insights |
-| Auth | JWT with dev secret | Azure Entra ID |
+| Auth | JWT with dev secret | Azure Entra ID + JWT |
 
 ## Prerequisites
 
@@ -165,3 +165,40 @@ The dashboard runs on port 18888. If running standalone (`task test:api`), there
 ### Foundry agents not found
 
 Run `task local:agents` to create the agents. Agent version must be `"1"` (not `"latest"`).
+
+## JWT Secret
+
+In local development, a dev secret is auto-generated. In production, the application **will not start** unless `Jwt__Secret` is configured via environment variable. The secret must be at least 32 characters.
+
+## External API (iOS Shortcuts)
+
+The API exposes `POST /api/external/capture` for external integrations. To test locally:
+
+1. Start the app with `task test:run`
+2. Register a user and log in
+3. Go to Profile and create an API key
+4. Test with curl:
+
+```bash
+curl -X POST http://localhost:5062/api/external/capture \
+  -H "X-API-Key: ws_your_key_here" \
+  -F "images=@photo.jpg" \
+  -F "note=Great old fashioned at the speakeasy"
+```
+
+Accepted image formats: JPEG, PNG, GIF, WebP, HEIC (max 15MB per file).
+
+## Item Types
+
+The application supports six item types:
+
+| Type | Description |
+|------|-------------|
+| `whiskey` | Bourbon, scotch, rye, etc. |
+| `wine` | All varietals and regions |
+| `cocktail` | Mixed drinks and cocktails |
+| `cigar` | Premium cigars |
+| `venue` | Bars, lounges, restaurants |
+| `custom` | Anything that doesn't fit the other types |
+
+Types are editable after AI detection — the user can always change the assigned type.
