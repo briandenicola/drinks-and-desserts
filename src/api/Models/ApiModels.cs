@@ -221,3 +221,15 @@ public class CreateApiKeyRequest
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
 }
+
+public class AddPhotoRequest
+{
+    [JsonPropertyName("blobUrl")]
+    public string BlobUrl { get; set; } = string.Empty;
+}
+
+public class RemovePhotoRequest
+{
+    [JsonPropertyName("blobUrl")]
+    public string BlobUrl { get; set; } = string.Empty;
+}

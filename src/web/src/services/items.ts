@@ -80,4 +80,13 @@ export const itemsApi = {
 
   getSuggestions: () =>
     api.get<{ names: string[]; brands: string[]; tags: string[] }>('/items/suggestions'),
+
+  getPhotoUploadUrl: (id: string, fileName: string) =>
+    api.get<{ uploadUrl: string; blobUrl: string }>(`/items/${id}/photos/upload-url`, { params: { fileName } }),
+
+  addPhoto: (id: string, blobUrl: string) =>
+    api.post<Item>(`/items/${id}/photos`, { blobUrl }),
+
+  removePhoto: (id: string, blobUrl: string) =>
+    api.delete<Item>(`/items/${id}/photos`, { data: { blobUrl } }),
 }

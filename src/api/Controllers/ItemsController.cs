@@ -13,12 +13,14 @@ namespace WhiskeyAndSmokes.Api.Controllers;
 public class ItemsController : ControllerBase
 {
     private readonly ICosmosDbService _cosmosDb;
+    private readonly IBlobStorageService _blobStorage;
     private readonly ILogger<ItemsController> _logger;
     private const string ContainerName = "items";
 
-    public ItemsController(ICosmosDbService cosmosDb, ILogger<ItemsController> logger)
+    public ItemsController(ICosmosDbService cosmosDb, IBlobStorageService blobStorage, ILogger<ItemsController> logger)
     {
         _cosmosDb = cosmosDb;
+        _blobStorage = blobStorage;
         _logger = logger;
     }
 
@@ -256,6 +258,77 @@ public class ItemsController : ControllerBase
         item = await _cosmosDb.UpsertAsync(ContainerName, item, item.PartitionKey);
 
         _logger.LogInformation("Converted wishlist item {ItemId} to collection for user {UserId}", id, userId);
+        return Ok(item);
+    }
+
+    [HttpGet("{id}/photos/upload-url")]
+    public async Task<ActionResult<UploadUrlResponse>> GetPhotoUploadUrl(string id, [FromQuery] string fileName)
+    {
+        var userId = GetUserId();
+
+        var item = await _cosmosDb.GetAsync<Item>(ContainerName, id, userId);
+        if (item == null)
+            return NotFound();
+
+        if (string.IsNullOrWhiteSpace(fileName))
+            return BadRequest(new { message = "fileName is required" });
+
+        var (uploadUrl, blobUrl) = await _blobStorage.GenerateUploadUrlAsync(userId, fileName);
+        return Ok(new UploadUrlResponse { UploadUrl = uploadUrl, BlobUrl = blobUrl });
+    }
+
+    [HttpPost("{id}/photos")]
+    public async Task<ActionResult<Item>> AddPhoto(string id, [FromBody] AddPhotoRequest request)
+    {
+        var userId = GetUserId();
+
+        var item = await _cosmosDb.GetAsync<Item>(ContainerName, id, userId);
+        if (item == null)
+            return NotFound();
+
+        if (string.IsNullOrWhiteSpace(request.BlobUrl))
+            return BadRequest(new { message = "blobUrl is required" });
+
+        if (!item.PhotoUrls.Contains(request.BlobUrl))
+        {
+            item.PhotoUrls.Add(request.BlobUrl);
+            item.UpdatedAt = DateTime.UtcNow;
+            item = await _cosmosDb.UpsertAsync(ContainerName, item, item.PartitionKey);
+        }
+
+        _logger.LogInformation("Added photo to item {ItemId} for user {UserId}, total photos: {Count}", id, userId, item.PhotoUrls.Count);
+        return Ok(item);
+    }
+
+    [HttpDelete("{id}/photos")]
+    public async Task<ActionResult<Item>> RemovePhoto(string id, [FromBody] RemovePhotoRequest request)
+    {
+        var userId = GetUserId();
+
+        var item = await _cosmosDb.GetAsync<Item>(ContainerName, id, userId);
+        if (item == null)
+            return NotFound();
+
+        if (string.IsNullOrWhiteSpace(request.BlobUrl))
+            return BadRequest(new { message = "blobUrl is required" });
+
+        if (item.PhotoUrls.Remove(request.BlobUrl))
+        {
+            item.UpdatedAt = DateTime.UtcNow;
+            item = await _cosmosDb.UpsertAsync(ContainerName, item, item.PartitionKey);
+
+            try
+            {
+                await _blobStorage.DeleteBlobAsync(request.BlobUrl);
+                _logger.LogInformation("Deleted blob {BlobUrl} for item {ItemId}", request.BlobUrl, id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to delete blob {BlobUrl} for item {ItemId}", request.BlobUrl, id);
+            }
+        }
+
+        _logger.LogInformation("Removed photo from item {ItemId} for user {UserId}, remaining: {Count}", id, userId, item.PhotoUrls.Count);
         return Ok(item);
     }
 }
