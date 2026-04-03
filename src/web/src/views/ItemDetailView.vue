@@ -33,6 +33,73 @@ const photoFileInput = ref<HTMLInputElement | null>(null)
 const pendingPhotoDeletes = ref<Set<string>>(new Set())
 const pendingPhotoAdds = ref<{ file: File; previewUrl: string }[]>([])
 
+// Lightbox
+const lightboxUrl = ref<string | null>(null)
+const lightboxScale = ref(1)
+const lightboxTranslateX = ref(0)
+const lightboxTranslateY = ref(0)
+const isPanning = ref(false)
+let pinchStartDist = 0
+let pinchStartScale = 1
+let panStartX = 0
+let panStartY = 0
+
+function openLightbox(url: string) {
+  lightboxUrl.value = url
+  lightboxScale.value = 1
+  lightboxTranslateX.value = 0
+  lightboxTranslateY.value = 0
+}
+
+function closeLightbox() {
+  lightboxUrl.value = null
+}
+
+function onLightboxWheel(e: WheelEvent) {
+  e.preventDefault()
+  const delta = e.deltaY > 0 ? 0.9 : 1.1
+  lightboxScale.value = Math.min(Math.max(lightboxScale.value * delta, 0.5), 5)
+}
+
+function onLightboxTouchStart(e: TouchEvent) {
+  if (e.touches.length === 2) {
+    pinchStartDist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    )
+    pinchStartScale = lightboxScale.value
+  } else if (e.touches.length === 1 && lightboxScale.value > 1) {
+    isPanning.value = true
+    panStartX = e.touches[0].clientX - lightboxTranslateX.value
+    panStartY = e.touches[0].clientY - lightboxTranslateY.value
+  }
+}
+
+function onLightboxTouchMove(e: TouchEvent) {
+  if (e.touches.length === 2) {
+    e.preventDefault()
+    const dist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    )
+    lightboxScale.value = Math.min(Math.max(pinchStartScale * (dist / pinchStartDist), 0.5), 5)
+  } else if (e.touches.length === 1 && isPanning.value) {
+    e.preventDefault()
+    lightboxTranslateX.value = e.touches[0].clientX - panStartX
+    lightboxTranslateY.value = e.touches[0].clientY - panStartY
+  }
+}
+
+function onLightboxTouchEnd() {
+  isPanning.value = false
+}
+
+function resetLightboxZoom() {
+  lightboxScale.value = 1
+  lightboxTranslateX.value = 0
+  lightboxTranslateY.value = 0
+}
+
 // Suggestions for autocomplete
 const nameSuggestions = ref<string[]>([])
 const brandSuggestions = ref<string[]>([])
@@ -261,7 +328,8 @@ function isAiGenerated(data: Item): boolean {
           v-for="(url, i) in item.photoUrls"
           :key="i"
           :src="url"
-          class="h-48 object-cover rounded-xl"
+          class="h-48 object-cover rounded-xl cursor-pointer hover:ring-2 hover:ring-amber-600 transition-all"
+          @click="openLightbox(url)"
         />
       </div>
     </div>
@@ -535,6 +603,73 @@ function isAiGenerated(data: Item): boolean {
             <button @click="showDeleteConfirm = false" class="px-4 py-2 text-sm rounded-xl bg-stone-800 text-stone-400 hover:bg-stone-700">Cancel</button>
             <button @click="deleteItem" class="px-4 py-2 text-sm rounded-xl bg-red-700 text-white hover:bg-red-600">Delete</button>
           </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Photo Lightbox Modal -->
+    <Teleport to="body">
+      <div
+        v-if="lightboxUrl"
+        class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-6"
+        @click.self="closeLightbox"
+        @wheel.prevent="onLightboxWheel"
+      >
+        <!-- Close button -->
+        <button
+          @click="closeLightbox"
+          class="absolute top-4 right-4 text-white/70 hover:text-white bg-black/40 rounded-full w-10 h-10 flex items-center justify-center text-xl z-10"
+        >×</button>
+
+        <!-- Zoom controls -->
+        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-black/50 rounded-full px-4 py-2 z-10">
+          <button
+            @click="lightboxScale = Math.max(lightboxScale - 0.25, 0.5)"
+            class="text-white/70 hover:text-white text-lg w-8 h-8 flex items-center justify-center"
+          >-</button>
+          <button
+            @click="resetLightboxZoom"
+            class="text-xs text-white/70 hover:text-white px-2"
+          >{{ Math.round(lightboxScale * 100) }}%</button>
+          <button
+            @click="lightboxScale = Math.min(lightboxScale + 0.25, 5)"
+            class="text-white/70 hover:text-white text-lg w-8 h-8 flex items-center justify-center"
+          >+</button>
+        </div>
+
+        <!-- Image with multi-photo navigation -->
+        <div class="flex items-center gap-4 max-w-[85vw] max-h-[80vh]">
+          <!-- Previous arrow -->
+          <button
+            v-if="item.photoUrls.length > 1"
+            @click.stop="openLightbox(item.photoUrls[(item.photoUrls.indexOf(lightboxUrl!) - 1 + item.photoUrls.length) % item.photoUrls.length])"
+            class="text-white/50 hover:text-white text-3xl flex-shrink-0 w-10 h-10 flex items-center justify-center"
+          >&lsaquo;</button>
+
+          <img
+            :src="lightboxUrl"
+            class="max-w-full max-h-[80vh] rounded-2xl object-contain select-none"
+            :style="{
+              transform: `scale(${lightboxScale}) translate(${lightboxTranslateX / lightboxScale}px, ${lightboxTranslateY / lightboxScale}px)`,
+              transition: isPanning ? 'none' : 'transform 0.15s ease'
+            }"
+            @touchstart="onLightboxTouchStart"
+            @touchmove="onLightboxTouchMove"
+            @touchend="onLightboxTouchEnd"
+            draggable="false"
+          />
+
+          <!-- Next arrow -->
+          <button
+            v-if="item.photoUrls.length > 1"
+            @click.stop="openLightbox(item.photoUrls[(item.photoUrls.indexOf(lightboxUrl!) + 1) % item.photoUrls.length])"
+            class="text-white/50 hover:text-white text-3xl flex-shrink-0 w-10 h-10 flex items-center justify-center"
+          >&rsaquo;</button>
+        </div>
+
+        <!-- Photo counter -->
+        <div v-if="item.photoUrls.length > 1" class="absolute top-4 left-1/2 -translate-x-1/2 text-xs text-white/50">
+          {{ item.photoUrls.indexOf(lightboxUrl!) + 1 }} / {{ item.photoUrls.length }}
         </div>
       </div>
     </Teleport>
