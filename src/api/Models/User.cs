@@ -72,6 +72,9 @@ public class UserPreferences
 
     [JsonPropertyName("collectionSort")]
     public string CollectionSort { get; set; } = "rating";
+
+    [JsonPropertyName("collectionFilter")]
+    public string? CollectionFilter { get; set; }
 }
 
 public class ApiKey

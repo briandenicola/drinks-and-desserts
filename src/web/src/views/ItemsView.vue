@@ -9,7 +9,8 @@ import StarRating from '../components/common/StarRating.vue'
 const router = useRouter()
 const itemsStore = useItemsStore()
 const auth = useAuthStore()
-const activeFilter = ref<string | undefined>()
+const defaultFilter = auth.user?.preferences?.collectionFilter || undefined
+const activeFilter = ref<string | undefined>(defaultFilter)
 const activeTab = ref<'collection' | 'wishlist'>('collection')
 const activeSort = ref(auth.user?.preferences?.collectionSort || 'rating')
 const registerRefresh = inject(RefreshKey)
@@ -72,11 +73,11 @@ function setFilter(value?: string) {
 
 function switchTab(tab: 'collection' | 'wishlist') {
   activeTab.value = tab
-  activeFilter.value = undefined
+  activeFilter.value = defaultFilter
   if (tab === 'wishlist') {
-    itemsStore.loadWishlist(undefined, true)
+    itemsStore.loadWishlist(defaultFilter, true)
   } else {
-    itemsStore.loadItems(undefined, true)
+    itemsStore.loadItems(defaultFilter, true)
   }
 }
 
@@ -145,7 +146,7 @@ function closeSortMenu(e: MouseEvent) {
 }
 
 onMounted(() => {
-  itemsStore.loadItems(undefined, true)
+  itemsStore.loadItems(defaultFilter, true)
   document.addEventListener('click', closeSortMenu)
 })
 

@@ -8,6 +8,7 @@ import { RefreshKey } from '../composables/refreshKey'
 const auth = useAuthStore()
 const displayName = ref('')
 const collectionSort = ref('rating')
+const collectionFilter = ref<string | undefined>(undefined)
 const isSaving = ref(false)
 const saveMessage = ref('')
 
@@ -15,6 +16,16 @@ const sortOptions = [
   { label: 'Rating', value: 'rating' },
   { label: 'Date Added', value: 'createdAt' },
   { label: 'Date Updated', value: 'updatedAt' },
+]
+
+const filterOptions = [
+  { label: 'All', value: undefined as string | undefined },
+  { label: 'Whiskey', value: 'whiskey' as string | undefined },
+  { label: 'Wine', value: 'wine' as string | undefined },
+  { label: 'Cocktail', value: 'cocktail' as string | undefined },
+  { label: 'Cigar', value: 'cigar' as string | undefined },
+  { label: 'Venue', value: 'venue' as string | undefined },
+  { label: 'Custom', value: 'custom' as string | undefined },
 ]
 
 // Password change
@@ -113,6 +124,7 @@ onMounted(() => {
   if (auth.user) {
     displayName.value = auth.user.displayName
     collectionSort.value = auth.user.preferences?.collectionSort || 'rating'
+    collectionFilter.value = auth.user.preferences?.collectionFilter || undefined
   }
   loadApiKeys()
 })
@@ -126,6 +138,7 @@ async function saveProfile() {
       preferences: {
         ...auth.user!.preferences,
         collectionSort: collectionSort.value,
+        collectionFilter: collectionFilter.value,
       },
     })
     await auth.loadUser()
@@ -213,6 +226,23 @@ async function changePassword() {
               @click="collectionSort = opt.value"
               class="px-4 py-2.5 min-h-[44px] rounded-full text-sm border transition-colors"
               :class="collectionSort === opt.value
+                ? 'bg-amber-700 border-amber-600 text-white'
+                : 'bg-stone-800 border-stone-700 text-stone-400 hover:border-stone-600'"
+            >
+              {{ opt.label }}
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm text-stone-400 mb-2">Default Collection Filter</label>
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="opt in filterOptions"
+              :key="opt.label"
+              @click="collectionFilter = opt.value"
+              class="px-4 py-2.5 min-h-[44px] rounded-full text-sm border transition-colors"
+              :class="collectionFilter === opt.value
                 ? 'bg-amber-700 border-amber-600 text-white'
                 : 'bg-stone-800 border-stone-700 text-stone-400 hover:border-stone-600'"
             >

@@ -10,6 +10,7 @@ export interface User {
     favoriteTypes: string[]
     defaultView: string
     collectionSort: string
+    collectionFilter?: string
   }
   createdAt: string
   updatedAt: string
