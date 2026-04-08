@@ -10,8 +10,18 @@ const router = useRouter()
 const itemsStore = useItemsStore()
 const auth = useAuthStore()
 const defaultFilter = auth.user?.preferences?.collectionFilter || undefined
-const activeFilter = ref<string | undefined>(defaultFilter)
-const activeTab = ref<'collection' | 'wishlist'>('collection')
+// Initialize store state from user preferences if not already set
+if (!itemsStore.activeFilter && defaultFilter) {
+  itemsStore.activeFilter = defaultFilter
+}
+const activeFilter = computed({
+  get: () => itemsStore.activeFilter,
+  set: (v) => { itemsStore.activeFilter = v }
+})
+const activeTab = computed({
+  get: () => itemsStore.activeTab,
+  set: (v) => { itemsStore.activeTab = v }
+})
 const activeSort = ref(auth.user?.preferences?.collectionSort || 'rating')
 const registerRefresh = inject(RefreshKey)
 
@@ -168,7 +178,11 @@ function closeSortMenu(e: MouseEvent) {
 }
 
 onMounted(() => {
-  itemsStore.loadItems(defaultFilter, true)
+  if (activeTab.value === 'wishlist') {
+    itemsStore.loadWishlist(activeFilter.value, true)
+  } else {
+    itemsStore.loadItems(activeFilter.value, true)
+  }
   document.addEventListener('click', closeSortMenu)
 })
 
@@ -409,8 +423,8 @@ onUnmounted(() => {
                   <span class="text-xs px-2 py-0.5 rounded-full bg-stone-800 text-stone-400">{{ item.type }}</span>
                 </div>
                 <h3 class="font-medium text-stone-100 truncate">{{ item.name }}</h3>
-                <p v-if="item.brand" class="text-sm text-stone-500 truncate">{{ item.brand }}</p>
-                <p v-if="item.userNotes" class="text-xs text-stone-600 mt-1 truncate">{{ item.userNotes }}</p>
+                <p v-if="item.brand" class="text-sm text-stone-400 truncate">{{ item.brand }}</p>
+                <p v-if="item.userNotes" class="text-xs text-stone-500 mt-1 line-clamp-2">{{ item.userNotes }}</p>
                 <p v-if="item.name === 'Extracting from URL...'" class="text-xs text-amber-500 mt-1">Processing...</p>
               </div>
             </div>

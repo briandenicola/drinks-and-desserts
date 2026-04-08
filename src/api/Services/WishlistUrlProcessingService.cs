@@ -14,6 +14,7 @@ public class WishlistUrlProcessingService : BackgroundService
     private readonly ICosmosDbService _cosmosDb;
     private readonly ILogger<WishlistUrlProcessingService> _logger;
     private const string ContainerName = "items";
+    private const string CapturesContainerName = "captures";
 
     public WishlistUrlProcessingService(
         Channel<WishlistUrlWorkItem> channel,
@@ -38,14 +39,61 @@ public class WishlistUrlProcessingService : BackgroundService
                 _logger.LogInformation("Processing wishlist URL extraction for item {ItemId}: {Url}",
                     workItem.ItemId, workItem.Url);
 
-                var result = await _urlService.ExtractFromUrlAsync(workItem.Url);
+                // Create a capture record for history tracking
+                var capture = new Capture
+                {
+                    UserId = workItem.UserId,
+                    UserNote = $"Wishlist URL extraction: {workItem.Url}",
+                    Status = CaptureStatus.Processing,
+                    ProcessedBy = ProcessingSource.Pending,
+                    ItemIds = [workItem.ItemId],
+                };
+                capture = await _cosmosDb.CreateAsync(CapturesContainerName, capture, capture.PartitionKey);
 
+                // Link the item to this capture
                 var item = await _cosmosDb.GetAsync<Item>(ContainerName, workItem.ItemId, workItem.UserId);
                 if (item == null)
                 {
                     _logger.LogWarning("Wishlist item {ItemId} not found after URL extraction", workItem.ItemId);
+                    capture.Status = CaptureStatus.Failed;
+                    capture.ProcessingError = "Wishlist item not found";
+                    capture.UpdatedAt = DateTime.UtcNow;
+                    await _cosmosDb.UpsertAsync(CapturesContainerName, capture, capture.PartitionKey);
                     continue;
                 }
+
+                item.CaptureId = capture.Id;
+
+                // Step 1: Fetch and extract
+                capture.WorkflowSteps.Add(new WorkflowStep
+                {
+                    StepId = "W01",
+                    AgentName = "URL Fetcher",
+                    Status = WorkflowStepStatus.Running,
+                    Summary = $"Fetching content from {workItem.Url}",
+                });
+                await _cosmosDb.UpsertAsync(CapturesContainerName, capture, capture.PartitionKey);
+
+                var result = await _urlService.ExtractFromUrlAsync(workItem.Url);
+
+                // Update step 1 status
+                capture.WorkflowSteps[0].Status = result.Success
+                    ? WorkflowStepStatus.Complete
+                    : WorkflowStepStatus.Error;
+                capture.WorkflowSteps[0].Summary = result.Success
+                    ? "Content fetched and analyzed"
+                    : $"Extraction failed: {result.Error}";
+
+                // Step 2: Enrich item
+                capture.WorkflowSteps.Add(new WorkflowStep
+                {
+                    StepId = "W02",
+                    AgentName = "Wishlist URL Extractor",
+                    Status = result.Success ? WorkflowStepStatus.Complete : WorkflowStepStatus.Error,
+                    Summary = result.Success
+                        ? $"Extracted: {result.Name ?? "unknown"} ({result.Type ?? "custom"})"
+                        : result.Error ?? "Unknown error",
+                });
 
                 if (result.Success)
                 {
@@ -63,6 +111,9 @@ public class WishlistUrlProcessingService : BackgroundService
                         item.Type = type;
 
                     item.ProcessedBy = ProcessingSource.AiFoundry;
+                    capture.Status = CaptureStatus.Completed;
+                    capture.ProcessedBy = ProcessingSource.AiFoundry;
+
                     _logger.LogInformation("Enriched wishlist item {ItemId} with AI-extracted data from {Url}",
                         workItem.ItemId, workItem.Url);
                 }
@@ -71,10 +122,23 @@ public class WishlistUrlProcessingService : BackgroundService
                     _logger.LogWarning("URL extraction failed for item {ItemId}: {Error}",
                         workItem.ItemId, result.Error);
                     item.UserNotes = $"URL extraction failed: {result.Error}\nSource: {workItem.Url}";
+                    capture.Status = CaptureStatus.Failed;
+                    capture.ProcessingError = result.Error;
                 }
 
+                // Record the source URL in the journal
+                item.Journal.Add(new JournalEntry
+                {
+                    Text = $"Added from URL: {workItem.Url}",
+                    Date = DateTime.UtcNow,
+                    Source = "url-extraction"
+                });
+
                 item.UpdatedAt = DateTime.UtcNow;
+                capture.UpdatedAt = DateTime.UtcNow;
+
                 await _cosmosDb.UpsertAsync(ContainerName, item, item.PartitionKey);
+                await _cosmosDb.UpsertAsync(CapturesContainerName, capture, capture.PartitionKey);
             }
             catch (Exception ex)
             {

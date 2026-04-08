@@ -11,6 +11,9 @@ export const useItemsStore = defineStore('items', () => {
   const isLoadingWishlist = ref(false)
   const wishlistContinuationToken = ref<string | undefined>()
 
+  const activeTab = ref<'collection' | 'wishlist'>('collection')
+  const activeFilter = ref<string | undefined>(undefined)
+
   async function loadItems(type?: string, reset = false) {
     if (reset) {
       items.value = []
@@ -83,5 +86,6 @@ export const useItemsStore = defineStore('items', () => {
     updateItem, deleteItem,
     createWishlistItem, convertWishlistItem,
     createWishlistFromUrl,
+    activeTab, activeFilter,
   }
 })
