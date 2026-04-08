@@ -109,6 +109,8 @@ const typeOptions = [
   { label: 'Whiskey', value: 'whiskey' },
   { label: 'Wine', value: 'wine' },
   { label: 'Cocktail', value: 'cocktail' },
+  { label: 'Vodka', value: 'vodka' },
+  { label: 'Gin', value: 'gin' },
   { label: 'Cigar', value: 'cigar' },
   { label: 'Venue', value: 'venue' },
   { label: 'Custom', value: 'custom' },

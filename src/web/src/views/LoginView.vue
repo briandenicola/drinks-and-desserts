@@ -66,7 +66,7 @@ function toggleMode() {
   <div class="flex flex-col items-center justify-center min-h-screen px-6">
     <div class="text-center mb-10">
       <h1 class="text-5xl font-bold text-amber-500 mb-2">Whiskey &amp; Smokes</h1>
-      <p class="text-stone-400 text-lg">Track your whiskey, wine, cocktails & cigars</p>
+      <p class="text-stone-400 text-lg">Track your whiskey, vodka, gin, wine, cocktails & cigars</p>
     </div>
 
     <!-- Microsoft sign-in -->

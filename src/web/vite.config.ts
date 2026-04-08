@@ -13,7 +13,7 @@ export default defineConfig({
       manifest: {
         name: 'Whiskey & Smokes',
         short_name: 'W&S',
-        description: 'Track your whiskey, wine, cocktail, and cigar experiences',
+        description: 'Track your whiskey, vodka, gin, wine, cocktail, and cigar experiences',
         theme_color: '#0c0a09',
         background_color: '#0c0a09',
         display: 'standalone',

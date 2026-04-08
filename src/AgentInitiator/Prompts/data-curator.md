@@ -6,7 +6,7 @@ and convert it into a precise, validated JSON array matching our schema.
 For each item, output a JSON object with these exact fields:
 ```json
 {
-  "type": "whiskey" | "wine" | "cocktail" | "cigar",
+  "type": "whiskey" | "wine" | "cocktail" | "vodka" | "gin" | "cigar",
   "name": "Product Name",
   "brand": "Brand/Producer",
   "category": "Sub-category",
@@ -24,7 +24,7 @@ For each item, output a JSON object with these exact fields:
 ```
 
 ## Validation Rules
-- "type" must be exactly one of: whiskey, wine, cocktail, cigar
+- "type" must be exactly one of: whiskey, wine, cocktail, vodka, gin, cigar
 - "name" is required and cannot be empty
 - "confidence" must be a number between 0.0 and 1.0
 - "tags" must be an array of lowercase strings

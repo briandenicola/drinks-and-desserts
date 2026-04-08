@@ -98,11 +98,13 @@ public static class ItemType
     public const string Whiskey = "whiskey";
     public const string Wine = "wine";
     public const string Cocktail = "cocktail";
+    public const string Vodka = "vodka";
+    public const string Gin = "gin";
     public const string Cigar = "cigar";
     public const string Venue = "venue";
     public const string Custom = "custom";
 
-    public static readonly string[] All = [Whiskey, Wine, Cocktail, Cigar, Venue, Custom];
+    public static readonly string[] All = [Whiskey, Wine, Cocktail, Vodka, Gin, Cigar, Venue, Custom];
 }
 
 public static class ItemStatus

@@ -382,6 +382,8 @@ public class WorkflowAgentService : IAgentService
             "whiskey" or "whisky" or "bourbon" or "scotch" or "rye" => ItemType.Whiskey,
             "wine" or "red wine" or "white wine" or "rosé" => ItemType.Wine,
             "cocktail" or "mixed drink" => ItemType.Cocktail,
+            "vodka" => ItemType.Vodka,
+            "gin" or "gin and tonic" or "g&t" => ItemType.Gin,
             "cigar" => ItemType.Cigar,
             "venue" or "bar" or "restaurant" or "lounge" => ItemType.Venue,
             _ => ItemType.Custom

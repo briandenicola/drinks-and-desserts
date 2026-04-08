@@ -23,6 +23,8 @@ const filterOptions = [
   { label: 'Whiskey', value: 'whiskey' as string | undefined },
   { label: 'Wine', value: 'wine' as string | undefined },
   { label: 'Cocktail', value: 'cocktail' as string | undefined },
+  { label: 'Vodka', value: 'vodka' as string | undefined },
+  { label: 'Gin', value: 'gin' as string | undefined },
   { label: 'Cigar', value: 'cigar' as string | undefined },
   { label: 'Venue', value: 'venue' as string | undefined },
   { label: 'Custom', value: 'custom' as string | undefined },
