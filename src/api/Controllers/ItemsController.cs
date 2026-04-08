@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+using System.Threading.Channels;
 using WhiskeyAndSmokes.Api;
 using WhiskeyAndSmokes.Api.Models;
 using WhiskeyAndSmokes.Api.Services;
-using System.Security.Claims;
 
 namespace WhiskeyAndSmokes.Api.Controllers;
 
@@ -14,15 +15,15 @@ public class ItemsController : ControllerBase
 {
     private readonly ICosmosDbService _cosmosDb;
     private readonly IBlobStorageService _blobStorage;
-    private readonly IWishlistUrlService _wishlistUrlService;
+    private readonly Channel<WishlistUrlWorkItem> _wishlistUrlQueue;
     private readonly ILogger<ItemsController> _logger;
     private const string ContainerName = "items";
 
-    public ItemsController(ICosmosDbService cosmosDb, IBlobStorageService blobStorage, IWishlistUrlService wishlistUrlService, ILogger<ItemsController> logger)
+    public ItemsController(ICosmosDbService cosmosDb, IBlobStorageService blobStorage, Channel<WishlistUrlWorkItem> wishlistUrlQueue, ILogger<ItemsController> logger)
     {
         _cosmosDb = cosmosDb;
         _blobStorage = blobStorage;
-        _wishlistUrlService = wishlistUrlService;
+        _wishlistUrlQueue = wishlistUrlQueue;
         _logger = logger;
     }
 
@@ -256,36 +257,30 @@ public class ItemsController : ControllerBase
         var userId = GetUserId();
         activity?.SetTag("user.id", userId);
 
-        _logger.LogInformation("Extracting wishlist item from URL for user {UserId}: {Url}", userId, request.Url);
+        _logger.LogInformation("Queuing wishlist URL extraction for user {UserId}: {Url}", userId, request.Url);
 
-        var result = await _wishlistUrlService.ExtractFromUrlAsync(request.Url);
-
-        if (!result.Success)
-        {
-            _logger.LogWarning("URL extraction failed for user {UserId}: {Error}", userId, result.Error);
-            return BadRequest(new { message = result.Error });
-        }
-
-        // Normalize the type
-        var type = result.Type?.ToLowerInvariant() ?? "custom";
-        if (!ItemType.All.Contains(type)) type = "custom";
-
+        // Create placeholder item immediately
         var item = new Item
         {
             UserId = userId,
-            Name = result.Name?.Trim() ?? "Unknown Product",
-            Type = type,
-            Brand = result.Brand?.Trim(),
-            Category = result.Category?.Trim(),
-            UserNotes = result.Notes?.Trim(),
-            Tags = result.SourceUrl != null ? ["from-url"] : [],
+            Name = "Extracting from URL...",
+            Type = "custom",
+            Tags = ["from-url"],
             Status = ItemStatus.Wishlist,
-            ProcessedBy = ProcessingSource.AiFoundry,
+            ProcessedBy = ProcessingSource.Pending,
         };
 
         item = await _cosmosDb.CreateAsync(ContainerName, item, item.PartitionKey);
 
-        _logger.LogInformation("Created wishlist item {ItemId} from URL for user {UserId}", item.Id, userId);
+        // Queue background extraction
+        await _wishlistUrlQueue.Writer.WriteAsync(new WishlistUrlWorkItem
+        {
+            ItemId = item.Id,
+            UserId = userId,
+            Url = request.Url,
+        });
+
+        _logger.LogInformation("Created placeholder wishlist item {ItemId} and queued URL extraction for user {UserId}", item.Id, userId);
         return CreatedAtAction(nameof(GetItem), new { id = item.Id }, item);
     }
 

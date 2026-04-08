@@ -218,6 +218,14 @@ builder.Services.AddSingleton(Channel.CreateBounded<Capture>(new BoundedChannelO
 }));
 builder.Services.AddHostedService<CaptureProcessingService>();
 
+// Background wishlist URL processing queue
+builder.Services.AddSingleton(Channel.CreateBounded<WishlistUrlWorkItem>(new BoundedChannelOptions(50)
+{
+    SingleReader = true,
+    FullMode = BoundedChannelFullMode.Wait
+}));
+builder.Services.AddHostedService<WishlistUrlProcessingService>();
+
 // Dependency health checks
 if (!useLocalStorage)
 {

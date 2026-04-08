@@ -241,7 +241,7 @@ async function save() {
       venue: editVenueName.value ? { name: editVenueName.value, address: editVenueAddress.value || undefined } : undefined,
       userRating: editRating.value || undefined,
       tags: editTags.value,
-      status: 'reviewed',
+      status: item.value.status,
     })
     item.value = updated
     pendingPhotoDeletes.value = new Set()

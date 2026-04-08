@@ -115,11 +115,8 @@ async function addWishlistFromUrl() {
     await itemsStore.createWishlistFromUrl(newUrl.value.trim())
     newUrl.value = ''
     showAddForm.value = false
-    if (activeTab.value === 'wishlist') {
-      itemsStore.loadWishlist(activeFilter.value, true)
-    }
   } catch (e: any) {
-    urlError.value = e.response?.data?.message ?? 'Failed to extract from URL'
+    urlError.value = e.response?.data?.message ?? 'Failed to submit URL'
   } finally {
     isExtractingUrl.value = false
   }
@@ -402,20 +399,22 @@ onUnmounted(() => {
           :key="item.id"
           class="bg-stone-900 border border-stone-800 rounded-xl p-4"
         >
-          <div class="flex items-start gap-3">
-            <div class="w-10 h-10 bg-stone-800 rounded-lg shrink-0 flex items-center justify-center text-xs text-stone-500 uppercase">
-              {{ item.type.slice(0, 1) }}
-            </div>
-
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2 mb-1">
-                <span class="text-xs px-2 py-0.5 rounded-full bg-stone-800 text-stone-400">{{ item.type }}</span>
+          <router-link :to="`/items/${item.id}`" class="block">
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 bg-stone-800 rounded-lg shrink-0 flex items-center justify-center text-xs text-stone-500 uppercase">
+                {{ item.type.slice(0, 1) }}
               </div>
-              <h3 class="font-medium text-stone-100 truncate">{{ item.name }}</h3>
-              <p v-if="item.brand" class="text-sm text-stone-500 truncate">{{ item.brand }}</p>
-              <p v-if="item.userNotes" class="text-xs text-stone-600 mt-1 truncate">{{ item.userNotes }}</p>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-xs px-2 py-0.5 rounded-full bg-stone-800 text-stone-400">{{ item.type }}</span>
+                </div>
+                <h3 class="font-medium text-stone-100 truncate">{{ item.name }}</h3>
+                <p v-if="item.brand" class="text-sm text-stone-500 truncate">{{ item.brand }}</p>
+                <p v-if="item.userNotes" class="text-xs text-stone-600 mt-1 truncate">{{ item.userNotes }}</p>
+                <p v-if="item.name === 'Extracting from URL...'" class="text-xs text-amber-500 mt-1">Processing...</p>
+              </div>
             </div>
-          </div>
+          </router-link>
 
           <div class="flex gap-2 mt-3">
             <button
