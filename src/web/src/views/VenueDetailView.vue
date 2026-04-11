@@ -2,7 +2,7 @@
 import { ref, inject, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { venuesApi, type Venue } from '../services/venues'
-import { type Item } from '../services/items'
+import { itemsApi, type Item } from '../services/items'
 import { RefreshKey } from '../composables/refreshKey'
 import StarRating from '../components/common/StarRating.vue'
 
@@ -25,6 +25,11 @@ const pendingPhotoDeletes = ref(new Set<string>())
 const pendingPhotoAdds = ref<{ file: File; previewUrl: string }[]>([])
 const photoFileInput = ref<HTMLInputElement | null>(null)
 const isUploadingPhoto = ref(false)
+
+// Item association
+const allItems = ref<Item[]>([])
+const selectedItemIds = ref<Set<string>>(new Set())
+const itemSearchQuery = ref('')
 
 const venueTypeOptions = [
   { label: 'Bar', value: 'bar' },
@@ -63,7 +68,41 @@ function startEditing() {
   if (venue.value) resetEditFields(venue.value)
   pendingPhotoDeletes.value = new Set()
   pendingPhotoAdds.value = []
+  selectedItemIds.value = new Set(linkedItems.value.map(i => i.id))
+  itemSearchQuery.value = ''
   isEditing.value = true
+  loadAllItems()
+}
+
+async function loadAllItems() {
+  try {
+    const { data } = await itemsApi.list(undefined, undefined, 'collected')
+    allItems.value = data.items
+  } catch {
+    allItems.value = []
+  }
+}
+
+const filteredItems = computed(() => {
+  const q = itemSearchQuery.value.toLowerCase().trim()
+  const items = allItems.value.filter(i => {
+    if (!q) return true
+    return i.name.toLowerCase().includes(q) || i.type.toLowerCase().includes(q)
+  })
+  // Show selected items first, then unselected
+  return items.sort((a, b) => {
+    const aSelected = selectedItemIds.value.has(a.id) ? 0 : 1
+    const bSelected = selectedItemIds.value.has(b.id) ? 0 : 1
+    return aSelected - bSelected
+  }).slice(0, 20)
+})
+
+function toggleItemLink(itemId: string) {
+  if (selectedItemIds.value.has(itemId)) {
+    selectedItemIds.value.delete(itemId)
+  } else {
+    selectedItemIds.value.add(itemId)
+  }
 }
 
 function markPhotoForDelete(url: string) {
@@ -139,6 +178,41 @@ async function saveEdits() {
       rating: editRating.value || undefined,
     })
     venue.value = data
+
+    // Update item associations
+    const currentLinkedIds = new Set(linkedItems.value.map(i => i.id))
+    const venueInfo = {
+      venueId: venue.value.id,
+      name: venue.value.name,
+      address: venue.value.address,
+    }
+
+    // Link newly selected items
+    for (const itemId of selectedItemIds.value) {
+      if (!currentLinkedIds.has(itemId)) {
+        try {
+          await itemsApi.update(itemId, { venue: venueInfo })
+        } catch { /* continue */ }
+      }
+    }
+
+    // Unlink removed items
+    for (const itemId of currentLinkedIds) {
+      if (!selectedItemIds.value.has(itemId)) {
+        try {
+          await itemsApi.update(itemId, { venue: { name: '' } })
+        } catch { /* continue */ }
+      }
+    }
+
+    // Refresh linked items
+    try {
+      const { data: itemsData } = await venuesApi.getItems(venue.value.id)
+      linkedItems.value = itemsData.items as Item[]
+    } catch {
+      linkedItems.value = []
+    }
+
     isEditing.value = false
   } finally {
     isSaving.value = false
@@ -352,6 +426,46 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
         <div>
           <label class="block text-sm text-stone-400 mb-1">Rating</label>
           <StarRating :rating="editRating" size="lg" interactive @update:rating="editRating = $event" />
+        </div>
+
+        <!-- Linked Items Picker -->
+        <div>
+          <label class="block text-sm text-stone-400 mb-2">Linked Collection Items</label>
+          <input
+            v-model="itemSearchQuery"
+            type="text"
+            placeholder="Search items..."
+            class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm focus:outline-none focus:border-amber-700 mb-2"
+          />
+          <div class="max-h-48 overflow-y-auto space-y-1 rounded-xl border border-stone-800 bg-stone-900/50 p-2">
+            <button
+              v-for="itm in filteredItems"
+              :key="itm.id"
+              @click="toggleItemLink(itm.id)"
+              class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors min-h-[44px]"
+              :class="selectedItemIds.has(itm.id) ? 'bg-amber-900/30 border border-amber-700/50' : 'hover:bg-stone-800'"
+            >
+              <div
+                class="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0"
+                :class="selectedItemIds.has(itm.id) ? 'border-amber-500 bg-amber-600' : 'border-stone-600'"
+              >
+                <svg v-if="selectedItemIds.has(itm.id)" class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <img
+                v-if="itm.photoUrls?.length"
+                :src="itm.photoUrls[0]"
+                class="w-8 h-8 object-cover rounded-lg flex-shrink-0"
+              />
+              <div class="flex-1 min-w-0">
+                <p class="text-sm text-stone-200 truncate">{{ itm.name }}</p>
+                <span class="text-xs text-stone-500 capitalize">{{ itm.type }}</span>
+              </div>
+            </button>
+            <p v-if="!filteredItems.length" class="text-xs text-stone-600 text-center py-3">No items found</p>
+          </div>
+          <p class="text-xs text-stone-600 mt-1">{{ selectedItemIds.size }} item{{ selectedItemIds.size === 1 ? '' : 's' }} selected</p>
         </div>
 
         <div class="flex gap-2">

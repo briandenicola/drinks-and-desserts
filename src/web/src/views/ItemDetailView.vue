@@ -256,7 +256,11 @@ async function save() {
       type: editType.value || undefined,
       brand: editBrand.value || undefined,
       userNotes: editNotes.value || undefined,
-      venue: editVenueName.value ? { name: editVenueName.value, address: editVenueAddress.value || undefined } : undefined,
+      venue: editVenueName.value ? {
+        venueId: venuesStore.venues.find(v => v.name === editVenueName.value)?.id,
+        name: editVenueName.value,
+        address: editVenueAddress.value || undefined,
+      } : undefined,
       userRating: editRating.value || undefined,
       tags: editTags.value,
       status: item.value.status,

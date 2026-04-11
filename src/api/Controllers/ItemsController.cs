@@ -145,29 +145,11 @@ public class ItemsController : ControllerBase
         if (request.Category != null) item.Category = request.Category;
         if (request.Venue != null)
         {
-            item.Venue = request.Venue;
-
-            // Auto-create venue if name provided without venueId
-            if (string.IsNullOrEmpty(request.Venue.VenueId) && !string.IsNullOrWhiteSpace(request.Venue.Name))
-            {
-                try
-                {
-                    var venue = new Venue
-                    {
-                        UserId = userId,
-                        Name = request.Venue.Name.Trim(),
-                        Address = request.Venue.Address?.Trim(),
-                        Type = VenueType.Restaurant,
-                    };
-                    venue = await _cosmosDb.CreateAsync("venues", venue, venue.PartitionKey);
-                    item.Venue.VenueId = venue.Id;
-                    _logger.LogInformation("Auto-created venue {VenueId} ({VenueName}) for item {ItemId}", venue.Id, venue.Name, id);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Failed to auto-create venue for item {ItemId}", id);
-                }
-            }
+            // Clear venue if empty name is provided
+            if (string.IsNullOrWhiteSpace(request.Venue.Name))
+                item.Venue = null;
+            else
+                item.Venue = request.Venue;
         }
         if (request.UserRating.HasValue) item.UserRating = request.UserRating;
         if (request.UserNotes != null) item.UserNotes = request.UserNotes;
