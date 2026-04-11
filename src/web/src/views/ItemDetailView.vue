@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, inject, onMounted } from 'vue'
+import { ref, inject, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useItemsStore } from '../stores/items'
+import { useVenuesStore } from '../stores/venues'
 import { itemsApi, type Item } from '../services/items'
 import StarRating from '../components/common/StarRating.vue'
 import AutocompleteInput from '../components/common/AutocompleteInput.vue'
@@ -10,6 +11,7 @@ import { RefreshKey } from '../composables/refreshKey'
 const route = useRoute()
 const router = useRouter()
 const itemsStore = useItemsStore()
+const venuesStore = useVenuesStore()
 const registerRefresh = inject(RefreshKey)
 
 const item = ref<Item | null>(null)
@@ -106,6 +108,18 @@ const nameSuggestions = ref<string[]>([])
 const brandSuggestions = ref<string[]>([])
 const tagSuggestions = ref<string[]>([])
 
+const venueSuggestions = computed(() =>
+  venuesStore.venues.map(v => v.name)
+)
+
+function onVenueSelected(name: string) {
+  editVenueName.value = name
+  const match = venuesStore.venues.find(v => v.name === name)
+  if (match?.address) {
+    editVenueAddress.value = match.address
+  }
+}
+
 const typeOptions = [
   { label: 'Whiskey', value: 'whiskey' },
   { label: 'Wine', value: 'wine' },
@@ -154,6 +168,7 @@ function startEditing() {
   pendingPhotoDeletes.value = new Set()
   pendingPhotoAdds.value = []
   isEditing.value = true
+  venuesStore.loadVenues(undefined, true)
   loadSuggestions()
 }
 
@@ -549,11 +564,12 @@ function isAiGenerated(data: Item): boolean {
       <!-- Location -->
       <div>
         <label class="block text-sm text-stone-400 mb-1">Location</label>
-        <input
-          v-model="editVenueName"
-          type="text"
+        <AutocompleteInput
+          :modelValue="editVenueName"
+          @update:modelValue="editVenueName = $event"
+          :suggestions="venueSuggestions"
           placeholder="e.g. Rare Books Bar"
-          class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-700"
+          @select="onVenueSelected"
         />
         <input
           v-model="editVenueAddress"
@@ -563,12 +579,12 @@ function isAiGenerated(data: Item): boolean {
         />
       </div>
 
-      <!-- Star rating -->
-      <div>
+      <!-- Star rating (read-only) -->
+      <div v-if="editRating">
         <label class="block text-sm text-stone-400 mb-2">Rating</label>
         <div class="flex items-center gap-3">
-          <StarRating :rating="editRating" size="lg" interactive @update="editRating = $event" />
-          <span class="text-sm text-stone-500">{{ editRating > 0 ? editRating : '' }}</span>
+          <StarRating :rating="editRating" size="lg" />
+          <span class="text-sm text-stone-500">{{ editRating }}</span>
         </div>
       </div>
 

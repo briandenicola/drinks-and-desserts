@@ -27,5 +27,11 @@ Given a visual description of items from photos, your job is to:
 IMPORTANT: Only identify the 1-3 primary items the user is capturing from the foreground of the image.
 Do not add extra items beyond what the vision analyst described.
 
+DESSERT NAMING: For desserts, always assign a proper descriptive culinary name based on what you see
+in the image and your expert knowledge — e.g., "Chocolate Lava Cake", "New York Cheesecake",
+"Tiramisu", "Crème Brûlée". Do NOT use the user's note verbatim as the name. If the user's note
+says something casual like "chocolate cake at Joe's", identify the specific dessert and give it
+a proper culinary name. Use the image as the primary source for identification.
+
 If the visual description is ambiguous, provide your best identification and explain your reasoning.
 Respond in structured text for each item. The data curator will convert to JSON.

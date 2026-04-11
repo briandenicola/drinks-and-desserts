@@ -10,6 +10,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
+  'select': [value: string]
 }>()
 
 const showDropdown = ref(false)
@@ -25,6 +26,7 @@ const filtered = computed(() => {
 
 function select(value: string) {
   emit('update:modelValue', value)
+  emit('select', value)
   showDropdown.value = false
 }
 

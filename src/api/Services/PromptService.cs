@@ -132,6 +132,8 @@ public static class DefaultPrompts
         For each distinct item you identify (maximum 3), extract:
         - type: "whiskey", "wine", "cocktail", "vodka", "gin", "cigar", "dessert", or "custom"
         - name: The specific product name (e.g., "Lagavulin 16 Year Old")
+          For desserts: Always use a proper culinary name derived from the image (e.g., "Chocolate Lava Cake",
+          "Tiramisu", "Crème Brûlée"). Do NOT copy the user's note verbatim as the name.
         - brand: The brand/producer (e.g., "Lagavulin")
         - category: Sub-category (e.g., "Single Malt Scotch", "Napa Valley Cabernet", "Robusto", "Cheesecake")
         - details: An object with type-specific fields:
@@ -202,6 +204,12 @@ public static class DefaultPrompts
            - 0.5-0.7 : Educated guess based on partial information
            - Below 0.5 : Speculative, note what's uncertain
 
+        DESSERT NAMING: For desserts, always assign a proper descriptive name based on what you see in
+        the image and your expert knowledge — e.g., "Chocolate Lava Cake", "New York Cheesecake",
+        "Tiramisu", "Crème Brûlée". Do NOT use the user's note verbatim as the name. If the user's note
+        says something casual like "chocolate cake at Joe's", identify the specific dessert and give it
+        a proper culinary name. Use the image as the primary source for identification.
+
         IMPORTANT: Only identify the 1-3 primary items the user is capturing from the foreground.
         Do not add extra items beyond what the vision analyst described. Combine related observations
         into a single item (e.g., a bottle and the glass poured from it are ONE item, not two).
@@ -235,6 +243,8 @@ public static class DefaultPrompts
         VALIDATION RULES:
         - "type" must be exactly one of: whiskey, wine, cocktail, vodka, gin, cigar, dessert, custom
         - "name" is required and cannot be empty
+        - For desserts: The "name" must be a proper culinary name (e.g., "Chocolate Lava Cake", "Tiramisu",
+          "Crème Brûlée") — NOT the user's raw note text. Derive the name from the image and expert analysis.
         - "confidence" must be a number between 0.0 and 1.0
         - "tags" must be an array of lowercase strings
         - "details" fields must match the type (don't put wine fields in a whiskey item)

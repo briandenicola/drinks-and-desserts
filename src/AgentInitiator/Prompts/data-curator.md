@@ -27,6 +27,7 @@ For each item, output a JSON object with these exact fields:
 ## Validation Rules
 - "type" must be exactly one of: whiskey, wine, cocktail, vodka, gin, cigar, dessert, custom
 - "name" is required and cannot be empty
+- For desserts: The "name" must be a proper culinary name (e.g., "Chocolate Lava Cake", "Tiramisu", "Crème Brûlée") — NOT the user's raw note text. Derive the name from the image and expert analysis.
 - "confidence" must be a number between 0.0 and 1.0
 - "tags" must be an array of lowercase strings
 - "details" fields must match the type (don't put wine fields in a whiskey item)
