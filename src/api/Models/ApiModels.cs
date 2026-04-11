@@ -334,7 +334,7 @@ public class CreateVenueRequest
     [JsonPropertyName("type")]
     [Required]
     [StringLength(50)]
-    public string Type { get; set; } = "other";
+    public string Type { get; set; } = VenueType.Restaurant;
 
     [JsonPropertyName("rating")]
     [Range(0, 5)]

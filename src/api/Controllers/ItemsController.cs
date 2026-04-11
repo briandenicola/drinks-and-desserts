@@ -157,6 +157,7 @@ public class ItemsController : ControllerBase
                         UserId = userId,
                         Name = request.Venue.Name.Trim(),
                         Address = request.Venue.Address?.Trim(),
+                        Type = VenueType.Restaurant,
                     };
                     venue = await _cosmosDb.CreateAsync("venues", venue, venue.PartitionKey);
                     item.Venue.VenueId = venue.Id;

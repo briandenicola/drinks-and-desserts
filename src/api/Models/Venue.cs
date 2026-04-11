@@ -20,7 +20,7 @@ public class Venue
     public string? Website { get; set; }
 
     [JsonPropertyName("type")]
-    public string Type { get; set; } = VenueType.Other;
+    public string Type { get; set; } = VenueType.Restaurant;
 
     [JsonPropertyName("rating")]
     public double? Rating { get; set; }
