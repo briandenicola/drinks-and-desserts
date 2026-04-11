@@ -583,12 +583,12 @@ function isAiGenerated(data: Item): boolean {
         />
       </div>
 
-      <!-- Star rating (read-only) -->
-      <div v-if="editRating">
+      <!-- Star rating -->
+      <div>
         <label class="block text-sm text-stone-400 mb-2">Rating</label>
         <div class="flex items-center gap-3">
-          <StarRating :rating="editRating" size="lg" />
-          <span class="text-sm text-stone-500">{{ editRating }}</span>
+          <StarRating :rating="editRating" size="lg" interactive @update:rating="editRating = $event" />
+          <span class="text-sm text-stone-500">{{ editRating > 0 ? editRating : '' }}</span>
         </div>
       </div>
 
