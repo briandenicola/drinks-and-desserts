@@ -143,7 +143,31 @@ public class ItemsController : ControllerBase
         if (request.Type != null) item.Type = request.Type;
         if (request.Brand != null) item.Brand = request.Brand;
         if (request.Category != null) item.Category = request.Category;
-        if (request.Venue != null) item.Venue = request.Venue;
+        if (request.Venue != null)
+        {
+            item.Venue = request.Venue;
+
+            // Auto-create venue if name provided without venueId
+            if (string.IsNullOrEmpty(request.Venue.VenueId) && !string.IsNullOrWhiteSpace(request.Venue.Name))
+            {
+                try
+                {
+                    var venue = new Venue
+                    {
+                        UserId = userId,
+                        Name = request.Venue.Name.Trim(),
+                        Address = request.Venue.Address?.Trim(),
+                    };
+                    venue = await _cosmosDb.CreateAsync("venues", venue, venue.PartitionKey);
+                    item.Venue.VenueId = venue.Id;
+                    _logger.LogInformation("Auto-created venue {VenueId} ({VenueName}) for item {ItemId}", venue.Id, venue.Name, id);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to auto-create venue for item {ItemId}", id);
+                }
+            }
+        }
         if (request.UserRating.HasValue) item.UserRating = request.UserRating;
         if (request.UserNotes != null) item.UserNotes = request.UserNotes;
         if (!string.IsNullOrWhiteSpace(request.JournalEntry))
@@ -225,7 +249,7 @@ public class ItemsController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Name))
             return BadRequest(new { message = "Name is required" });
         if (string.IsNullOrWhiteSpace(request.Type) || !ItemType.All.Contains(request.Type))
-            return BadRequest(new { message = "Valid type is required (whiskey, wine, cocktail, vodka, gin, cigar)" });
+            return BadRequest(new { message = "Valid type is required (whiskey, wine, cocktail, vodka, gin, cigar, dessert)" });
 
         var item = new Item
         {

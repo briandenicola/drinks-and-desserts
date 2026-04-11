@@ -20,7 +20,7 @@ public class WishlistUrlService : IWishlistUrlService
     private readonly ILogger<WishlistUrlService> _logger;
     private readonly bool _isFoundryConfigured;
 
-    private const string WishlistUrlAgentName = "whiskey-smokes-wishlist-url-extractor";
+    private const string WishlistUrlAgentName = "dd-wishlist-url-extractor";
 
     public WishlistUrlService(
         HttpClient httpClient,

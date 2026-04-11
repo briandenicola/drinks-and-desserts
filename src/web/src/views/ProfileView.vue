@@ -26,7 +26,7 @@ const filterOptions = [
   { label: 'Vodka', value: 'vodka' as string | undefined },
   { label: 'Gin', value: 'gin' as string | undefined },
   { label: 'Cigar', value: 'cigar' as string | undefined },
-  { label: 'Venue', value: 'venue' as string | undefined },
+  { label: 'Dessert', value: 'dessert' as string | undefined },
   { label: 'Custom', value: 'custom' as string | undefined },
 ]
 
@@ -108,7 +108,7 @@ async function exportData() {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `whiskey-and-smokes-export-${new Date().toISOString().slice(0, 10)}.zip`
+    link.download = `drinks-and-desserts-export-${new Date().toISOString().slice(0, 10)}.zip`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)

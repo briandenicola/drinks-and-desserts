@@ -224,7 +224,7 @@ public class AdminController : ControllerBase
 
             // Invoke the domain expert agent with a trivial prompt to validate the
             // full Foundry pipeline: auth → agent resolution → Responses API → response
-            const string healthCheckAgent = "whiskey-smokes-domain-expert";
+            const string healthCheckAgent = "dd-domain-expert";
             const string healthCheckPrompt = "Reply with exactly: OK";
 
             var agentRef = new Azure.AI.Projects.OpenAI.AgentReference(healthCheckAgent, "1");

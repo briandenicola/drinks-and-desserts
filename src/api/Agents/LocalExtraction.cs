@@ -184,7 +184,7 @@ internal static class LocalExtraction
         if (lower.Contains("vodka") || lower.Contains("smirnoff") || lower.Contains("absolut") || lower.Contains("grey goose")) return ItemType.Vodka;
         if (lower.Contains("gin") || lower.Contains("hendrick") || lower.Contains("tanqueray") || lower.Contains("bombay")) return ItemType.Gin;
         if (lower.Contains("whiskey") || lower.Contains("whisky") || lower.Contains("bourbon") || lower.Contains("scotch")) return ItemType.Whiskey;
-        if (lower.Contains("bar") || lower.Contains("restaurant") || lower.Contains("lounge") || lower.Contains("venue")) return ItemType.Venue;
+        if (lower.Contains("dessert") || lower.Contains("cake") || lower.Contains("pie") || lower.Contains("pastry") || lower.Contains("ice cream") || lower.Contains("cookie") || lower.Contains("brownie") || lower.Contains("cheesecake") || lower.Contains("tiramisu")) return ItemType.Dessert;
         return ItemType.Custom;
     }
 

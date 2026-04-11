@@ -313,3 +313,59 @@ public class RemovePhotoRequest
     [StringLength(2048)]
     public string BlobUrl { get; set; } = string.Empty;
 }
+
+// Venue
+public class CreateVenueRequest
+{
+    [JsonPropertyName("name")]
+    [Required]
+    [StringLength(200)]
+    public string Name { get; set; } = string.Empty;
+
+    [JsonPropertyName("address")]
+    [StringLength(500)]
+    public string? Address { get; set; }
+
+    [JsonPropertyName("website")]
+    [StringLength(2048)]
+    [Url]
+    public string? Website { get; set; }
+
+    [JsonPropertyName("type")]
+    [Required]
+    [StringLength(50)]
+    public string Type { get; set; } = "other";
+
+    [JsonPropertyName("rating")]
+    [Range(0, 5)]
+    public double? Rating { get; set; }
+
+    [JsonPropertyName("location")]
+    public GeoLocation? Location { get; set; }
+}
+
+public class UpdateVenueRequest
+{
+    [JsonPropertyName("name")]
+    [StringLength(200)]
+    public string? Name { get; set; }
+
+    [JsonPropertyName("address")]
+    [StringLength(500)]
+    public string? Address { get; set; }
+
+    [JsonPropertyName("website")]
+    [StringLength(2048)]
+    public string? Website { get; set; }
+
+    [JsonPropertyName("type")]
+    [StringLength(50)]
+    public string? Type { get; set; }
+
+    [JsonPropertyName("rating")]
+    [Range(0, 5)]
+    public double? Rating { get; set; }
+
+    [JsonPropertyName("location")]
+    public GeoLocation? Location { get; set; }
+}

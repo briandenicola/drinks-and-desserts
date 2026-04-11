@@ -25,7 +25,7 @@ const navItems = [
   { name: 'Collection', path: '/items' },
   { name: 'History', path: '/history' },
   { name: 'Capture', path: '/capture' },
-  { name: 'Stats', path: '/stats' },
+  { name: 'Venues', path: '/venues' },
   { name: 'Profile', path: '/profile' },
 ]
 </script>
@@ -34,7 +34,7 @@ const navItems = [
   <div class="min-h-screen flex flex-col">
     <!-- Header -->
     <header class="bg-stone-900 border-b border-stone-800 px-4 py-3 flex items-center justify-between safe-area-top">
-      <h1 class="text-lg font-bold text-amber-500">Whiskey &amp; Smokes</h1>
+      <h1 class="text-lg font-bold text-amber-500">Drinks &amp; Desserts</h1>
       <button
         v-if="auth.isAuthenticated"
         @click="auth.logout()"
@@ -121,6 +121,11 @@ const navItems = [
             <!-- Stats -->
             <svg v-else-if="item.path === '/stats'" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            <!-- Venues -->
+            <svg v-else-if="item.path === '/venues'" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
             <!-- Profile -->
             <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">

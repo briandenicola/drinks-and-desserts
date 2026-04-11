@@ -10,6 +10,7 @@ export interface Item {
   category?: string
   details?: Record<string, unknown>
   venue?: {
+    venueId?: string
     name: string
     address?: string
     placeId?: string
@@ -39,6 +40,7 @@ export interface UpdateItemRequest {
   brand?: string
   category?: string
   venue?: {
+    venueId?: string
     name: string
     address?: string
   }

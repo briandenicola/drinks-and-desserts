@@ -80,11 +80,11 @@ Console.WriteLine(new string('─', 70));
 
 var agentNames = new HashSet<string>
 {
-    "whiskey-smokes-vision-analyst",
-    "whiskey-smokes-domain-expert",
-    "whiskey-smokes-data-curator",
-    "whiskey-smokes-note-analyst",
-    "whiskey-smokes-wishlist-url-extractor",
+    "dd-vision-analyst",
+    "dd-domain-expert",
+    "dd-data-curator",
+    "dd-note-analyst",
+    "dd-wishlist-url-extractor",
 };
 
 try
@@ -142,27 +142,27 @@ string LoadPrompt(string filename)
 
 var agentSpecs = new AgentSpec[]
 {
-    new("whiskey-smokes-vision-analyst",
+    new("dd-vision-analyst",
         "Vision Analyst — examines photos, describes visible items",
         "gpt-4o",
         LoadPrompt("vision-analyst.md")),
 
-    new("whiskey-smokes-domain-expert",
+    new("dd-domain-expert",
         "Domain Expert — identifies products, adds expert knowledge",
         "gpt-5-mini",
         LoadPrompt("domain-expert.md")),
 
-    new("whiskey-smokes-data-curator",
+    new("dd-data-curator",
         "Data Curator — structures JSON output, validates quality",
         "gpt-5-mini",
         LoadPrompt("data-curator.md")),
 
-    new("whiskey-smokes-note-analyst",
+    new("dd-note-analyst",
         "Note Analyst — extracts venue, sentiment rating, and occasion from user notes",
         "gpt-5-mini",
         LoadPrompt("note-analyst.md")),
 
-    new("whiskey-smokes-wishlist-url-extractor",
+    new("dd-wishlist-url-extractor",
         "Wishlist URL Extractor — extracts product details from webpage content",
         "gpt-5-mini",
         LoadPrompt("wishlist-url-extractor.md")),

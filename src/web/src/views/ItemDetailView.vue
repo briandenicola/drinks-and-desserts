@@ -113,7 +113,7 @@ const typeOptions = [
   { label: 'Vodka', value: 'vodka' },
   { label: 'Gin', value: 'gin' },
   { label: 'Cigar', value: 'cigar' },
-  { label: 'Venue', value: 'venue' },
+  { label: 'Dessert', value: 'dessert' },
   { label: 'Custom', value: 'custom' },
 ]
 

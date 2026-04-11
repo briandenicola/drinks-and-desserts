@@ -15,11 +15,11 @@ public class AgentValidationService : IHostedService
 
     public static readonly string[] RequiredAgents =
     [
-        "whiskey-smokes-vision-analyst",
-        "whiskey-smokes-domain-expert",
-        "whiskey-smokes-data-curator",
-        "whiskey-smokes-note-analyst",
-        "whiskey-smokes-wishlist-url-extractor",
+        "dd-vision-analyst",
+        "dd-domain-expert",
+        "dd-data-curator",
+        "dd-note-analyst",
+        "dd-wishlist-url-extractor",
     ];
 
     public AgentValidationService(

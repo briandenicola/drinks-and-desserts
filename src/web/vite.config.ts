@@ -11,9 +11,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'favicon-64.png', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Whiskey & Smokes',
-        short_name: 'W&S',
-        description: 'Track your whiskey, vodka, gin, wine, cocktail, and cigar experiences',
+        name: 'Drinks & Desserts',
+        short_name: 'D&D',
+        description: 'Track your drinks, desserts, and cigar experiences',
         theme_color: '#0c0a09',
         background_color: '#0c0a09',
         display: 'standalone',

@@ -15,7 +15,7 @@ public class Item
     public string CaptureId { get; set; } = string.Empty;
 
     [JsonPropertyName("type")]
-    public string Type { get; set; } = string.Empty; // whiskey, wine, cocktail, cigar
+    public string Type { get; set; } = string.Empty; // whiskey, wine, cocktail, cigar, dessert
 
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
@@ -71,6 +71,9 @@ public class Item
 
 public class VenueInfo
 {
+    [JsonPropertyName("venueId")]
+    public string? VenueId { get; set; }
+
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
 
@@ -101,10 +104,10 @@ public static class ItemType
     public const string Vodka = "vodka";
     public const string Gin = "gin";
     public const string Cigar = "cigar";
-    public const string Venue = "venue";
+    public const string Dessert = "dessert";
     public const string Custom = "custom";
 
-    public static readonly string[] All = [Whiskey, Wine, Cocktail, Vodka, Gin, Cigar, Venue, Custom];
+    public static readonly string[] All = [Whiskey, Wine, Cocktail, Vodka, Gin, Cigar, Dessert, Custom];
 }
 
 public static class ItemStatus

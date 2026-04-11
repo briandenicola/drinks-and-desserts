@@ -84,6 +84,9 @@ const typeColors: Record<string, string> = {
   wine: 'bg-red-700',
   cocktail: 'bg-sky-600',
   cigar: 'bg-stone-600',
+  dessert: 'bg-pink-600',
+  vodka: 'bg-blue-500',
+  gin: 'bg-emerald-600',
 }
 
 const typeTextColors: Record<string, string> = {
@@ -91,6 +94,9 @@ const typeTextColors: Record<string, string> = {
   wine: 'text-red-400',
   cocktail: 'text-sky-400',
   cigar: 'text-stone-400',
+  dessert: 'text-pink-400',
+  vodka: 'text-blue-400',
+  gin: 'text-emerald-400',
 }
 
 function typeColor(type: string) {

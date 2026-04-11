@@ -30,10 +30,10 @@ public class WorkflowAgentService : IAgentService
 
     private const int MaxRefinements = 2;
 
-    private const string VisionAgentName = "whiskey-smokes-vision-analyst";
-    private const string ExpertAgentName = "whiskey-smokes-domain-expert";
-    private const string CuratorAgentName = "whiskey-smokes-data-curator";
-    private const string NoteAgentName = "whiskey-smokes-note-analyst";
+    private const string VisionAgentName = "dd-vision-analyst";
+    private const string ExpertAgentName = "dd-domain-expert";
+    private const string CuratorAgentName = "dd-data-curator";
+    private const string NoteAgentName = "dd-note-analyst";
 
     public WorkflowAgentService(
         ICosmosDbService cosmosDb,
@@ -385,7 +385,9 @@ public class WorkflowAgentService : IAgentService
             "vodka" => ItemType.Vodka,
             "gin" or "gin and tonic" or "g&t" => ItemType.Gin,
             "cigar" => ItemType.Cigar,
-            "venue" or "bar" or "restaurant" or "lounge" => ItemType.Venue,
+            "dessert" or "cake" or "pie" or "pastry" or "ice cream" or "cookie" or "brownie"
+                or "cheesecake" or "tiramisu" or "crème brûlée" or "mousse" or "tart"
+                or "pudding" or "soufflé" or "macaron" or "chocolate" => ItemType.Dessert,
             _ => ItemType.Custom
         };
     }
