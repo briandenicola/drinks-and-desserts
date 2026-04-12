@@ -53,3 +53,10 @@ public static class VenueType
 
     public static readonly string[] All = [Bar, Lounge, Restaurant, Other];
 }
+
+public class VenueUrlWorkItem
+{
+    public string VenueId { get; set; } = string.Empty;
+    public string UserId { get; set; } = string.Empty;
+    public string Url { get; set; } = string.Empty;
+}

@@ -1,3 +1,4 @@
+using System.Threading.Channels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -14,16 +15,18 @@ public class VenuesController : ControllerBase
 {
     private readonly ICosmosDbService _cosmosDb;
     private readonly IBlobStorageService _blobStorage;
+    private readonly Channel<VenueUrlWorkItem> _venueUrlChannel;
     private readonly ILogger<VenuesController> _logger;
     private const string ContainerName = "venues";
 
     private static readonly HashSet<string> AllowedImageExtensions =
         [".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif"];
 
-    public VenuesController(ICosmosDbService cosmosDb, IBlobStorageService blobStorage, ILogger<VenuesController> logger)
+    public VenuesController(ICosmosDbService cosmosDb, IBlobStorageService blobStorage, Channel<VenueUrlWorkItem> venueUrlChannel, ILogger<VenuesController> logger)
     {
         _cosmosDb = cosmosDb;
         _blobStorage = blobStorage;
+        _venueUrlChannel = venueUrlChannel;
         _logger = logger;
     }
 
@@ -87,6 +90,33 @@ public class VenuesController : ControllerBase
 
         _logger.LogInformation("Created venue {VenueId} ({VenueName}) for user {UserId}", venue.Id, venue.Name, userId);
         return CreatedAtAction(nameof(GetVenue), new { id = venue.Id }, venue);
+    }
+
+    [HttpPost("from-url")]
+    public async Task<ActionResult<Venue>> CreateVenueFromUrl([FromBody] CreateVenueFromUrlRequest request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        var userId = GetUserId();
+
+        var venue = new Venue
+        {
+            UserId = userId,
+            Name = $"Extracting from {new Uri(request.Url).Host}...",
+            Type = VenueType.Restaurant,
+        };
+
+        venue = await _cosmosDb.CreateAsync(ContainerName, venue, venue.PartitionKey);
+
+        await _venueUrlChannel.Writer.WriteAsync(new VenueUrlWorkItem
+        {
+            VenueId = venue.Id,
+            UserId = userId,
+            Url = request.Url,
+        });
+
+        _logger.LogInformation("Created placeholder venue {VenueId} for URL extraction: {Url}", venue.Id, request.Url);
+        return AcceptedAtAction(nameof(GetVenue), new { id = venue.Id }, venue);
     }
 
     [HttpPut("{id}")]

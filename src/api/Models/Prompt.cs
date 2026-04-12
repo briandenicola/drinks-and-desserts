@@ -33,4 +33,5 @@ public static class PromptIds
     public const string DomainExpert = "domain-expert";
     public const string DataCurator = "data-curator";
     public const string WishlistUrlExtractor = "wishlist-url-extractor";
+    public const string VenueUrlExtractor = "venue-url-extractor";
 }

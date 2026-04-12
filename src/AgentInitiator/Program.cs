@@ -85,6 +85,7 @@ var agentNames = new HashSet<string>
     "dd-data-curator",
     "dd-note-analyst",
     "dd-wishlist-url-extractor",
+    "dd-venue-url-extractor",
 };
 
 try
@@ -166,6 +167,11 @@ var agentSpecs = new AgentSpec[]
         "Wishlist URL Extractor — extracts product details from webpage content",
         "gpt-5-mini",
         LoadPrompt("wishlist-url-extractor.md")),
+
+    new("dd-venue-url-extractor",
+        "Venue URL Extractor — extracts venue details from Apple Maps or venue webpage content",
+        "gpt-5-mini",
+        LoadPrompt("venue-url-extractor.md")),
 };
 
 int successCount = 0;

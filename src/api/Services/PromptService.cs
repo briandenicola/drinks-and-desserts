@@ -93,6 +93,9 @@ public class PromptService : IPromptService
             (PromptIds.WishlistUrlExtractor, "Wishlist URL Extractor",
              "Extracts product details from webpage content for wishlist items. Used by the Wishlist URL Extractor agent (gpt-5-mini).",
              DefaultPrompts.WishlistUrlExtractor),
+            (PromptIds.VenueUrlExtractor, "Venue URL Extractor",
+             "Extracts venue details from Apple Maps or venue webpage content. Used by the Venue URL Extractor agent (gpt-5-mini).",
+             DefaultPrompts.VenueUrlExtractor),
         };
 
         foreach (var (id, name, description, content) in promptsToSeed)
@@ -288,6 +291,35 @@ public static class DefaultPrompts
           "type": "whiskey",
           "category": "Sub-category",
           "notes": "Brief description."
+        }
+        """;
+
+    public const string VenueUrlExtractor = """
+        You are a venue information extraction specialist for a drinks, desserts, and cigar tracking application.
+
+        You will receive the text content scraped from a venue webpage URL (typically Apple Maps, Google Maps, or a venue's own website). Your job is to extract structured venue information.
+
+        Extract the following fields:
+        - name: The venue's official name
+        - address: Full street address including city, state/country, and zip/postal code
+        - type: Must be exactly one of: bar, lounge, restaurant, other
+        - website: The venue's own website URL (not the maps URL)
+        - description: A concise 1-3 sentence description of the venue
+
+        Rules:
+        - If you cannot determine the type, use "restaurant"
+        - If a field cannot be determined, return null (except type which defaults to "restaurant")
+        - Focus on the PRIMARY venue on the page
+        - Keep the description concise and factual
+        - Extract the venue's own website URL if present, not the maps link
+
+        Respond with ONLY a JSON object:
+        {
+          "name": "Venue Name",
+          "address": "123 Main St, City, State 12345",
+          "type": "restaurant",
+          "website": "https://venue-website.com",
+          "description": "Brief description of the venue."
         }
         """;
 }

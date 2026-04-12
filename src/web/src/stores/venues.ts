@@ -44,6 +44,12 @@ export const useVenuesStore = defineStore('venues', () => {
     venues.value = venues.value.filter(v => v.id !== id)
   }
 
+  async function createVenueFromUrl(url: string): Promise<Venue> {
+    const { data } = await venuesApi.createFromUrl(url)
+    venues.value.unshift(data)
+    return data
+  }
+
   return {
     venues,
     isLoading,
@@ -52,5 +58,6 @@ export const useVenuesStore = defineStore('venues', () => {
     createVenue,
     updateVenue,
     deleteVenue,
+    createVenueFromUrl,
   }
 })

@@ -10,11 +10,14 @@ const venuesStore = useVenuesStore()
 const registerRefresh = inject(RefreshKey)
 
 const showAddForm = ref(false)
+const addMode = ref<'manual' | 'url'>('manual')
 const newName = ref('')
 const newType = ref('restaurant')
 const newAddress = ref('')
 const newWebsite = ref('')
+const newUrl = ref('')
 const isAdding = ref(false)
+const urlError = ref('')
 
 const venueTypeOptions = [
   { label: 'Bar', value: 'bar' },
@@ -50,14 +53,45 @@ async function addVenue() {
       address: newAddress.value.trim() || undefined,
       website: newWebsite.value.trim() || undefined,
     })
-    newName.value = ''
-    newAddress.value = ''
-    newWebsite.value = ''
-    showAddForm.value = false
+    resetForm()
     router.push(`/venues/${venue.id}`)
   } finally {
     isAdding.value = false
   }
+}
+
+async function addVenueFromUrl() {
+  const url = newUrl.value.trim()
+  if (!url) return
+  urlError.value = ''
+
+  try {
+    new URL(url)
+  } catch {
+    urlError.value = 'Please enter a valid URL'
+    return
+  }
+
+  isAdding.value = true
+  try {
+    const venue = await venuesStore.createVenueFromUrl(url)
+    resetForm()
+    router.push(`/venues/${venue.id}`)
+  } catch {
+    urlError.value = 'Failed to process URL. Please try again or add manually.'
+  } finally {
+    isAdding.value = false
+  }
+}
+
+function resetForm() {
+  newName.value = ''
+  newAddress.value = ''
+  newWebsite.value = ''
+  newUrl.value = ''
+  urlError.value = ''
+  showAddForm.value = false
+  addMode.value = 'manual'
 }
 </script>
 
@@ -76,48 +110,100 @@ async function addVenue() {
       </button>
 
       <div v-else class="bg-stone-900 border border-stone-800 rounded-xl p-4 space-y-3">
-        <input
-          v-model="newName"
-          placeholder="Name (required)"
-          class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm placeholder-stone-600 focus:outline-none focus:border-amber-700"
-        />
-
-        <select
-          v-model="newType"
-          class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm focus:outline-none focus:border-amber-700 appearance-none"
-        >
-          <option v-for="opt in venueTypeOptions" :key="opt.value" :value="opt.value">
-            {{ opt.label }}
-          </option>
-        </select>
-
-        <input
-          v-model="newAddress"
-          placeholder="Address (optional)"
-          class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm placeholder-stone-600 focus:outline-none focus:border-amber-700"
-        />
-
-        <input
-          v-model="newWebsite"
-          placeholder="Website (optional)"
-          class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm placeholder-stone-600 focus:outline-none focus:border-amber-700"
-        />
-
-        <div class="flex gap-2">
+        <!-- Mode toggle -->
+        <div class="flex rounded-lg bg-stone-800 p-0.5">
           <button
-            @click="addVenue"
-            :disabled="isAdding || !newName.trim()"
-            class="flex-1 bg-amber-700 hover:bg-amber-600 disabled:bg-stone-700 disabled:text-stone-500 text-white py-2.5 rounded-xl text-sm font-medium"
+            @click="addMode = 'manual'"
+            :class="[
+              'flex-1 py-1.5 text-xs font-medium rounded-md transition-colors',
+              addMode === 'manual' ? 'bg-amber-700 text-white' : 'text-stone-400 hover:text-stone-300'
+            ]"
           >
-            {{ isAdding ? 'Adding...' : 'Add' }}
+            Manual
           </button>
           <button
-            @click="showAddForm = false"
-            class="px-4 py-2.5 bg-stone-800 text-stone-400 rounded-xl text-sm hover:bg-stone-700"
+            @click="addMode = 'url'"
+            :class="[
+              'flex-1 py-1.5 text-xs font-medium rounded-md transition-colors',
+              addMode === 'url' ? 'bg-amber-700 text-white' : 'text-stone-400 hover:text-stone-300'
+            ]"
           >
-            Cancel
+            From URL
           </button>
         </div>
+
+        <!-- Manual form -->
+        <template v-if="addMode === 'manual'">
+          <input
+            v-model="newName"
+            placeholder="Name (required)"
+            class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm placeholder-stone-600 focus:outline-none focus:border-amber-700"
+          />
+
+          <select
+            v-model="newType"
+            class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm focus:outline-none focus:border-amber-700 appearance-none"
+          >
+            <option v-for="opt in venueTypeOptions" :key="opt.value" :value="opt.value">
+              {{ opt.label }}
+            </option>
+          </select>
+
+          <input
+            v-model="newAddress"
+            placeholder="Address (optional)"
+            class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm placeholder-stone-600 focus:outline-none focus:border-amber-700"
+          />
+
+          <input
+            v-model="newWebsite"
+            placeholder="Website (optional)"
+            class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm placeholder-stone-600 focus:outline-none focus:border-amber-700"
+          />
+
+          <div class="flex gap-2">
+            <button
+              @click="addVenue"
+              :disabled="isAdding || !newName.trim()"
+              class="flex-1 bg-amber-700 hover:bg-amber-600 disabled:bg-stone-700 disabled:text-stone-500 text-white py-2.5 rounded-xl text-sm font-medium"
+            >
+              {{ isAdding ? 'Adding...' : 'Add' }}
+            </button>
+            <button
+              @click="resetForm()"
+              class="px-4 py-2.5 bg-stone-800 text-stone-400 rounded-xl text-sm hover:bg-stone-700"
+            >
+              Cancel
+            </button>
+          </div>
+        </template>
+
+        <!-- URL form -->
+        <template v-else>
+          <p class="text-xs text-stone-500">Paste an Apple Maps, Google Maps, or venue website URL</p>
+          <input
+            v-model="newUrl"
+            placeholder="https://maps.apple.com/..."
+            class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm placeholder-stone-600 focus:outline-none focus:border-amber-700"
+          />
+          <p v-if="urlError" class="text-xs text-red-400">{{ urlError }}</p>
+
+          <div class="flex gap-2">
+            <button
+              @click="addVenueFromUrl"
+              :disabled="isAdding || !newUrl.trim()"
+              class="flex-1 bg-amber-700 hover:bg-amber-600 disabled:bg-stone-700 disabled:text-stone-500 text-white py-2.5 rounded-xl text-sm font-medium"
+            >
+              {{ isAdding ? 'Extracting...' : 'Extract Venue' }}
+            </button>
+            <button
+              @click="resetForm()"
+              class="px-4 py-2.5 bg-stone-800 text-stone-400 rounded-xl text-sm hover:bg-stone-700"
+            >
+              Cancel
+            </button>
+          </div>
+        </template>
       </div>
     </div>
 

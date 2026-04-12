@@ -369,3 +369,12 @@ public class UpdateVenueRequest
     [JsonPropertyName("location")]
     public GeoLocation? Location { get; set; }
 }
+
+public class CreateVenueFromUrlRequest
+{
+    [JsonPropertyName("url")]
+    [Required]
+    [StringLength(2048)]
+    [Url]
+    public string Url { get; set; } = string.Empty;
+}

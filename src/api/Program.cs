@@ -208,6 +208,7 @@ builder.Services.AddSingleton<IPromptService, PromptService>();
 builder.Services.AddSingleton<ExifLocationService>();
 builder.Services.AddSingleton<IAgentService, WorkflowAgentService>();
 builder.Services.AddHttpClient<IWishlistUrlService, WishlistUrlService>();
+builder.Services.AddHttpClient<IVenueUrlService, VenueUrlService>();
 builder.Services.AddHostedService<AgentValidationService>();
 
 // Background capture processing queue
@@ -225,6 +226,14 @@ builder.Services.AddSingleton(Channel.CreateBounded<WishlistUrlWorkItem>(new Bou
     FullMode = BoundedChannelFullMode.Wait
 }));
 builder.Services.AddHostedService<WishlistUrlProcessingService>();
+
+// Background venue URL processing queue
+builder.Services.AddSingleton(Channel.CreateBounded<VenueUrlWorkItem>(new BoundedChannelOptions(50)
+{
+    SingleReader = true,
+    FullMode = BoundedChannelFullMode.Wait
+}));
+builder.Services.AddHostedService<VenueUrlProcessingService>();
 
 // Dependency health checks
 if (!useLocalStorage)

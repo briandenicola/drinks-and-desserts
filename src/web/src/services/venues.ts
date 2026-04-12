@@ -64,4 +64,7 @@ export const venuesApi = {
 
   removePhoto: (id: string, blobUrl: string) =>
     api.delete<Venue>(`/venues/${id}/photos`, { data: { blobUrl } }),
+
+  createFromUrl: (url: string) =>
+    api.post<Venue>('/venues/from-url', { url }),
 }
