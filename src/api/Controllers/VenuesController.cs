@@ -10,7 +10,7 @@ namespace WhiskeyAndSmokes.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(AuthenticationSchemes = "MultiAuth,ApiKey")]
 public class VenuesController : ControllerBase
 {
     private readonly ICosmosDbService _cosmosDb;
