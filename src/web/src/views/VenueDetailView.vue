@@ -35,7 +35,7 @@ const itemSearchQuery = ref('')
 const editLabels = ref<string[]>([])
 const newLabelInput = ref('')
 const suggestedLabels = [
-  'date night', 'craft cocktails', 'outdoor seating', 'live music',
+  'to-try', 'date night', 'craft cocktails', 'outdoor seating', 'live music',
   'happy hour', 'brunch', 'fine dining', 'casual', 'rooftop',
   'speakeasy', 'sports bar', 'wine bar', 'tiki', 'gastropub',
   'late night', 'family friendly', 'dog friendly', 'waterfront',
@@ -123,10 +123,34 @@ function addLabel(label: string) {
     editLabels.value.push(normalized)
   }
   newLabelInput.value = ''
+  showLabelDropdown.value = false
 }
 
 function removeLabel(label: string) {
   editLabels.value = editLabels.value.filter(l => l !== label)
+}
+
+const showLabelDropdown = ref(false)
+
+const filteredSuggestions = computed(() => {
+  const q = newLabelInput.value.trim().toLowerCase()
+  const available = suggestedLabels.filter(l => !editLabels.value.includes(l))
+  if (!q) return available
+  return available.filter(l => l.includes(q))
+})
+
+const showCustomOption = computed(() => {
+  const q = newLabelInput.value.trim().toLowerCase()
+  return q && !suggestedLabels.includes(q) && !editLabels.value.includes(q)
+})
+
+function onLabelInputFocus() {
+  showLabelDropdown.value = true
+}
+
+function onLabelInputBlur() {
+  // Delay to allow click on dropdown item
+  setTimeout(() => { showLabelDropdown.value = false }, 200)
 }
 
 const availableSuggestions = computed(() =>
@@ -483,33 +507,37 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
             </span>
           </div>
 
-          <!-- Custom label input -->
-          <div class="flex gap-2 mb-2">
+          <!-- Typeahead label input -->
+          <div class="relative mb-2">
             <input
               v-model="newLabelInput"
-              placeholder="Add custom label..."
-              class="flex-1 bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-3 py-2 text-white text-sm placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
+              placeholder="Type to search or add labels..."
+              class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-3 py-2 text-white text-sm placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
               @keydown.enter.prevent="addLabel(newLabelInput)"
+              @focus="onLabelInputFocus"
+              @blur="onLabelInputBlur"
             />
-            <button
-              @click="addLabel(newLabelInput)"
-              :disabled="!newLabelInput.trim()"
-              class="px-3 py-2 bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl text-white/80 text-sm hover:border-[#1e407c] disabled:opacity-40"
+            <!-- Dropdown -->
+            <div
+              v-if="showLabelDropdown && (filteredSuggestions.length || showCustomOption)"
+              class="absolute left-0 right-0 top-full mt-1 bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl overflow-hidden z-10 max-h-48 overflow-y-auto"
             >
-              Add
-            </button>
-          </div>
-
-          <!-- Suggested labels -->
-          <div v-if="availableSuggestions.length" class="flex flex-wrap gap-1.5">
-            <button
-              v-for="label in availableSuggestions"
-              :key="label"
-              @click="addLabel(label)"
-              class="text-xs px-2.5 py-1 rounded-full border border-dashed border-[#1e407c]/50 text-[#96BEE6]/70 hover:border-[#1e407c] hover:text-[#96BEE6] transition-colors"
-            >
-              + {{ label }}
-            </button>
+              <button
+                v-if="showCustomOption"
+                @mousedown.prevent="addLabel(newLabelInput)"
+                class="w-full text-left px-3 py-2 text-sm text-white hover:bg-[#1e407c]/30 border-b border-[#1e407c]/30"
+              >
+                Add "{{ newLabelInput.trim().toLowerCase() }}"
+              </button>
+              <button
+                v-for="label in filteredSuggestions"
+                :key="label"
+                @mousedown.prevent="addLabel(label)"
+                class="w-full text-left px-3 py-2 text-sm text-[#96BEE6] hover:bg-[#1e407c]/30"
+              >
+                {{ label }}
+              </button>
+            </div>
           </div>
         </div>
 
