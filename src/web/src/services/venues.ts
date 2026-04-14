@@ -1,5 +1,14 @@
 import api from './api'
 
+export interface VenueWorkflowStep {
+  stepId: string
+  agentName: string
+  status: 'pending' | 'running' | 'complete' | 'error'
+  summary?: string
+  detail?: string
+  timestamp: string
+}
+
 export interface Venue {
   id: string
   userId: string
@@ -12,6 +21,9 @@ export interface Venue {
   labels: string[]
   location?: { latitude: number; longitude: number }
   placeId?: string
+  status: string
+  workflowSteps: VenueWorkflowStep[]
+  processingError?: string
   createdAt: string
   updatedAt: string
 }

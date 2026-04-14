@@ -16,50 +16,6 @@ const activeTab = ref<'users' | 'prompts' | 'logging' | 'foundry' | 'activity'>(
 const captures = ref<CaptureResponse[]>([])
 const venues = ref<Venue[]>([])
 const activityLoading = ref(false)
-const expandedCaptureId = ref<string | null>(null)
-
-interface ActivityEntry {
-  type: 'capture' | 'venue'
-  id: string
-  title: string
-  subtitle?: string
-  status?: string
-  timestamp: string
-  data: CaptureResponse | Venue
-}
-
-const activityFeed = computed<ActivityEntry[]>(() => {
-  const entries: ActivityEntry[] = []
-
-  for (const c of captures.value) {
-    const stepsSummary = c.workflowSteps?.length
-      ? `${c.workflowSteps.filter(s => s.status === 'complete').length}/${c.workflowSteps.length} steps complete`
-      : undefined
-    entries.push({
-      type: 'capture',
-      id: c.id,
-      title: c.userNote || 'Photo capture',
-      subtitle: stepsSummary,
-      status: c.status,
-      timestamp: c.createdAt,
-      data: c,
-    })
-  }
-
-  for (const v of venues.value) {
-    entries.push({
-      type: 'venue',
-      id: v.id,
-      title: v.name || 'Unnamed venue',
-      subtitle: [v.type, v.address].filter(Boolean).join(' — '),
-      timestamp: v.createdAt,
-      data: v,
-    })
-  }
-
-  entries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-  return entries
-})
 
 // Reset password state
 const resetPasswordUserId = ref<string | null>(null)
@@ -234,46 +190,6 @@ async function loadActivity() {
   } finally {
     activityLoading.value = false
   }
-}
-
-function captureStatusColor(status: string) {
-  switch (status) {
-    case 'completed': return 'text-green-400'
-    case 'processing': return 'text-[#96BEE6]'
-    case 'failed': return 'text-red-400'
-    default: return 'text-[#96BEE6]'
-  }
-}
-
-function captureStatusLabel(status: string) {
-  switch (status) {
-    case 'completed': return 'Complete'
-    case 'processing': return 'Processing'
-    case 'failed': return 'Failed'
-    default: return 'Pending'
-  }
-}
-
-function workflowStepIcon(status: string) {
-  switch (status) {
-    case 'complete': return '●'
-    case 'running': return '◎'
-    case 'error': return '✕'
-    default: return '○'
-  }
-}
-
-function workflowStepColor(status: string) {
-  switch (status) {
-    case 'complete': return 'text-green-400'
-    case 'running': return 'text-[#96BEE6]'
-    case 'error': return 'text-red-400'
-    default: return 'text-[#4a7aa5]'
-  }
-}
-
-function toggleCaptureExpand(id: string) {
-  expandedCaptureId.value = expandedCaptureId.value === id ? null : id
 }
 </script>
 
@@ -621,10 +537,6 @@ function toggleCaptureExpand(id: string) {
     <template v-else-if="activeTab === 'activity'">
       <div v-if="activityLoading" class="text-[#96BEE6]/70 text-center py-12">Loading activity...</div>
 
-      <div v-else-if="!activityFeed.length" class="text-[#96BEE6]/70 text-center py-12">
-        <p>No activity recorded yet.</p>
-      </div>
-
       <div v-else class="space-y-3">
         <!-- Quick stats -->
         <div class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 flex justify-around text-center mb-2">
@@ -649,111 +561,10 @@ function toggleCaptureExpand(id: string) {
         <!-- View full history link -->
         <router-link
           to="/history"
-          class="block text-center text-sm text-[#96BEE6] hover:text-white py-2 bg-[#041e3e] border border-[#0a2a52] rounded-xl hover:border-[#1e407c]/50 transition-colors"
+          class="block text-center text-sm text-[#96BEE6] hover:text-white py-3 bg-[#041e3e] border border-[#0a2a52] rounded-xl hover:border-[#1e407c]/50 transition-colors"
         >
-          View full capture history →
+          View full activity history →
         </router-link>
-
-        <!-- Activity feed -->
-        <div
-          v-for="entry in activityFeed"
-          :key="entry.type + '-' + entry.id"
-          class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4"
-          :class="entry.type === 'capture' ? 'cursor-pointer hover:border-[#1e407c]/50' : ''"
-          @click="entry.type === 'capture' ? toggleCaptureExpand(entry.id) : undefined"
-        >
-          <div class="flex items-start justify-between mb-1">
-            <div class="flex items-center gap-2">
-              <span
-                class="text-xs px-2 py-0.5 rounded-full"
-                :class="entry.type === 'capture'
-                  ? 'bg-[#1e407c]/30 text-[#96BEE6]'
-                  : 'bg-[#0a2a52] text-[#96BEE6]'"
-              >
-                {{ entry.type === 'capture' ? 'Capture' : 'Venue' }}
-              </span>
-              <span v-if="entry.status" :class="captureStatusColor(entry.status)" class="text-xs">
-                {{ captureStatusLabel(entry.status) }}
-              </span>
-            </div>
-            <span class="text-xs text-[#4a7aa5]/60">
-              {{ new Date(entry.timestamp).toLocaleDateString() }}
-              {{ new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }}
-            </span>
-          </div>
-
-          <p class="text-sm text-white font-medium line-clamp-2">{{ entry.title }}</p>
-          <p v-if="entry.subtitle" class="text-xs text-[#96BEE6]/70 mt-0.5">{{ entry.subtitle }}</p>
-
-          <!-- Capture photos -->
-          <template v-if="entry.type === 'capture'">
-            <div v-if="(entry.data as CaptureResponse).photos?.length" class="flex gap-1 mt-2 overflow-x-auto">
-              <img
-                v-for="(photo, i) in (entry.data as CaptureResponse).photos.slice(0, 4)"
-                :key="i"
-                :src="photo"
-                class="w-10 h-10 object-cover rounded"
-              />
-              <span v-if="(entry.data as CaptureResponse).photos.length > 4" class="text-[#96BEE6]/70 text-xs self-center ml-1">
-                +{{ (entry.data as CaptureResponse).photos.length - 4 }}
-              </span>
-            </div>
-
-            <!-- Expanded workflow steps -->
-            <div v-if="expandedCaptureId === entry.id && (entry.data as CaptureResponse).workflowSteps?.length" class="mt-3 border-t border-[#0a2a52] pt-3">
-              <p class="text-xs text-[#96BEE6]/70 mb-2 font-medium">Agent Workflow</p>
-              <div class="space-y-2">
-                <div
-                  v-for="step in (entry.data as CaptureResponse).workflowSteps"
-                  :key="step.stepId"
-                  class="flex items-start gap-2"
-                >
-                  <span :class="workflowStepColor(step.status)" class="text-sm mt-0.5">{{ workflowStepIcon(step.status) }}</span>
-                  <div class="min-w-0 flex-1">
-                    <p class="text-xs text-white">{{ step.agentName }}</p>
-                    <p v-if="step.summary" class="text-xs text-[#96BEE6]/70 line-clamp-2">{{ step.summary }}</p>
-                    <p v-if="step.detail" class="text-xs text-[#4a7aa5]/60 line-clamp-1">{{ step.detail }}</p>
-                    <p class="text-xs text-[#4a7aa5]/60">
-                      {{ new Date(step.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) }}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Processing error -->
-              <div v-if="(entry.data as CaptureResponse).processingError" class="mt-2 p-2 bg-red-900/20 border border-red-800/30 rounded-lg">
-                <p class="text-xs text-red-400">{{ (entry.data as CaptureResponse).processingError }}</p>
-              </div>
-
-              <!-- Items produced -->
-              <div v-if="(entry.data as CaptureResponse).itemIds.length" class="mt-2">
-                <p class="text-xs text-[#96BEE6]">
-                  {{ (entry.data as CaptureResponse).itemIds.length }} item(s) created
-                </p>
-              </div>
-            </div>
-
-            <p v-if="(entry.data as CaptureResponse).workflowSteps?.length && expandedCaptureId !== entry.id" class="text-xs text-[#4a7aa5]/60 mt-1">
-              Tap to view workflow details
-            </p>
-          </template>
-
-          <!-- Venue labels -->
-          <template v-if="entry.type === 'venue' && (entry.data as Venue).labels?.length">
-            <div class="flex flex-wrap gap-1 mt-2">
-              <span
-                v-for="label in (entry.data as Venue).labels.slice(0, 3)"
-                :key="label"
-                class="text-xs px-2 py-0.5 rounded-full bg-[#1e407c]/30 text-[#96BEE6]"
-              >
-                {{ label }}
-              </span>
-              <span v-if="(entry.data as Venue).labels.length > 3" class="text-xs text-[#4a7aa5]/60 self-center">
-                +{{ (entry.data as Venue).labels.length - 3 }}
-              </span>
-            </div>
-          </template>
-        </div>
       </div>
     </template>
 

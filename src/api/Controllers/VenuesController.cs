@@ -105,6 +105,7 @@ public class VenuesController : ControllerBase
             UserId = userId,
             Name = $"Extracting from {new Uri(request.Url).Host}...",
             Type = VenueType.Restaurant,
+            Status = VenueStatus.Processing,
         };
 
         venue = await _cosmosDb.CreateAsync(ContainerName, venue, venue.PartitionKey);

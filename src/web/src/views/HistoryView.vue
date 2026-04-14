@@ -75,9 +75,43 @@ function captureStatusLabel(status: string) {
   }
 }
 
-function venueExtractionStatus(venue: Venue): 'processing' | 'complete' {
-  return venue.name?.includes('Extracting from') ? 'processing' : 'complete'
+function venueStatusColor(status: string) {
+  switch (status) {
+    case 'completed': return 'text-green-400'
+    case 'processing': return 'text-[#96BEE6]'
+    case 'failed': return 'text-red-400'
+    default: return 'text-[#96BEE6]'
+  }
 }
+
+function venueStatusLabel(status: string) {
+  switch (status) {
+    case 'completed': return 'Complete'
+    case 'processing': return 'Processing'
+    case 'failed': return 'Failed'
+    default: return 'Manual'
+  }
+}
+
+function workflowStepIcon(status: string) {
+  switch (status) {
+    case 'complete': return '●'
+    case 'running': return '◎'
+    case 'error': return '✕'
+    default: return '○'
+  }
+}
+
+function workflowStepColor(status: string) {
+  switch (status) {
+    case 'complete': return 'text-green-400'
+    case 'running': return 'text-[#96BEE6]'
+    case 'error': return 'text-red-400'
+    default: return 'text-[#4a7aa5]'
+  }
+}
+
+const expandedVenueId = ref<string | null>(null)
 </script>
 
 <template>
@@ -157,19 +191,17 @@ function venueExtractionStatus(venue: Venue): 'processing' | 'complete' {
         </router-link>
 
         <!-- Venue entry -->
-        <router-link
+        <div
           v-else
-          :to="`/venues/${entry.id}`"
-          class="block bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 hover:border-[#1e407c]/50 transition-colors"
+          class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 hover:border-[#1e407c]/50 transition-colors"
+          :class="(entry.data as Venue).workflowSteps?.length ? 'cursor-pointer' : ''"
+          @click="(entry.data as Venue).workflowSteps?.length ? (expandedVenueId = expandedVenueId === entry.id ? null : entry.id) : $router.push(`/venues/${entry.id}`)"
         >
           <div class="flex items-start justify-between mb-2">
             <div class="flex items-center gap-2">
               <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6]">Venue</span>
-              <span
-                :class="venueExtractionStatus(entry.data as Venue) === 'processing' ? 'text-[#96BEE6]' : 'text-green-400'"
-                class="text-sm"
-              >
-                {{ venueExtractionStatus(entry.data as Venue) === 'processing' ? 'Extracting...' : (entry.data as Venue).type }}
+              <span :class="venueStatusColor((entry.data as Venue).status)" class="text-sm">
+                {{ venueStatusLabel((entry.data as Venue).status) }}
               </span>
             </div>
             <span class="text-xs text-[#4a7aa5]/60">
@@ -194,7 +226,43 @@ function venueExtractionStatus(venue: Venue): 'processing' | 'complete' {
               +{{ (entry.data as Venue).labels.length - 3 }}
             </span>
           </div>
-        </router-link>
+
+          <!-- Workflow steps (expandable) -->
+          <div v-if="(entry.data as Venue).workflowSteps?.length">
+            <div v-if="expandedVenueId === entry.id" class="mt-3 border-t border-[#0a2a52] pt-3">
+              <p class="text-xs text-[#96BEE6]/70 mb-2 font-medium">Agent Workflow</p>
+              <div class="space-y-2">
+                <div
+                  v-for="step in (entry.data as Venue).workflowSteps"
+                  :key="step.stepId"
+                  class="flex items-start gap-2"
+                >
+                  <span :class="workflowStepColor(step.status)" class="text-sm mt-0.5">{{ workflowStepIcon(step.status) }}</span>
+                  <div class="min-w-0 flex-1">
+                    <p class="text-xs text-white">{{ step.agentName }}</p>
+                    <p v-if="step.summary" class="text-xs text-[#96BEE6]/70 line-clamp-2">{{ step.summary }}</p>
+                    <p v-if="step.detail" class="text-xs text-[#4a7aa5]/60 line-clamp-1">{{ step.detail }}</p>
+                    <p class="text-xs text-[#4a7aa5]/60">
+                      {{ new Date(step.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="(entry.data as Venue).processingError" class="mt-2 p-2 bg-red-900/20 border border-red-800/30 rounded-lg">
+                <p class="text-xs text-red-400">{{ (entry.data as Venue).processingError }}</p>
+              </div>
+
+              <router-link :to="`/venues/${entry.id}`" class="block text-xs text-[#96BEE6] mt-2 hover:text-white">
+                View venue details →
+              </router-link>
+            </div>
+
+            <p v-else class="text-xs text-[#4a7aa5]/60 mt-1">
+              {{ (entry.data as Venue).workflowSteps.filter(s => s.status === 'complete').length }}/{{ (entry.data as Venue).workflowSteps.length }} workflow steps — tap to expand
+            </p>
+          </div>
+        </div>
 
       </template>
     </div>
