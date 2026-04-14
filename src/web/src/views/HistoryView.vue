@@ -1,18 +1,63 @@
 <script setup lang="ts">
-import { inject, onMounted } from 'vue'
+import { ref, computed, inject, onMounted } from 'vue'
 import { useCapturesStore } from '../stores/captures'
+import { venuesApi, type Venue } from '../services/venues'
+import { type CaptureResponse } from '../services/captures'
 import { RefreshKey } from '../composables/refreshKey'
 
 const capturesStore = useCapturesStore()
 const registerRefresh = inject(RefreshKey)
 
-registerRefresh?.(() => capturesStore.loadCaptures(true))
+const venues = ref<Venue[]>([])
+const venuesLoading = ref(false)
+const activeFilter = ref<'all' | 'captures' | 'venues'>('all')
 
-onMounted(() => {
-  capturesStore.loadCaptures(true)
+interface ActivityEntry {
+  type: 'capture' | 'venue'
+  id: string
+  timestamp: string
+  data: CaptureResponse | Venue
+}
+
+const activityFeed = computed<ActivityEntry[]>(() => {
+  const entries: ActivityEntry[] = []
+
+  if (activeFilter.value !== 'venues') {
+    for (const c of capturesStore.captures) {
+      entries.push({ type: 'capture', id: c.id, timestamp: c.createdAt, data: c })
+    }
+  }
+
+  if (activeFilter.value !== 'captures') {
+    for (const v of venues.value) {
+      entries.push({ type: 'venue', id: v.id, timestamp: v.createdAt, data: v })
+    }
+  }
+
+  entries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+  return entries
 })
 
-function statusColor(status: string) {
+const captureCount = computed(() => capturesStore.captures.length)
+const venueCount = computed(() => venues.value.length)
+
+registerRefresh?.(() => loadAll(true))
+
+onMounted(() => loadAll(true))
+
+async function loadAll(reset = false) {
+  venuesLoading.value = true
+  try {
+    await Promise.all([
+      capturesStore.loadCaptures(reset),
+      venuesApi.list().then(res => { venues.value = res.data.items }),
+    ])
+  } finally {
+    venuesLoading.value = false
+  }
+}
+
+function captureStatusColor(status: string) {
   switch (status) {
     case 'completed': return 'text-green-400'
     case 'processing': return 'text-[#96BEE6]'
@@ -21,7 +66,7 @@ function statusColor(status: string) {
   }
 }
 
-function statusLabel(status: string) {
+function captureStatusLabel(status: string) {
   switch (status) {
     case 'completed': return 'Complete'
     case 'processing': return 'Processing'
@@ -29,61 +74,129 @@ function statusLabel(status: string) {
     default: return 'Pending'
   }
 }
+
+function venueExtractionStatus(venue: Venue): 'processing' | 'complete' {
+  return venue.name?.includes('Extracting from') ? 'processing' : 'complete'
+}
 </script>
 
 <template>
   <div class="p-4 max-w-lg mx-auto">
-    <h2 class="text-xl font-semibold mb-4">Capture History</h2>
+    <h2 class="text-xl font-semibold mb-4">History</h2>
 
-    <div v-if="capturesStore.isLoading && !capturesStore.captures.length" class="text-[#96BEE6]/70 text-center py-12">
+    <!-- Filter tabs -->
+    <div class="flex gap-2 mb-4">
+      <button
+        v-for="filter in (['all', 'captures', 'venues'] as const)"
+        :key="filter"
+        @click="activeFilter = filter"
+        class="flex-1 py-2 min-h-[44px] rounded-xl text-sm font-medium transition-colors"
+        :class="activeFilter === filter
+          ? 'bg-[#1e407c]/30 text-[#96BEE6] border border-[#1e407c]'
+          : 'bg-[#0a2a52] text-[#96BEE6] border border-[#1e407c]/50 hover:bg-[#0a2a52]'"
+      >
+        {{ filter === 'all' ? `All (${captureCount + venueCount})` :
+           filter === 'captures' ? `Captures (${captureCount})` :
+           `Venues (${venueCount})` }}
+      </button>
+    </div>
+
+    <div v-if="(capturesStore.isLoading || venuesLoading) && !activityFeed.length" class="text-[#96BEE6]/70 text-center py-12">
       Loading...
     </div>
 
-    <div v-else-if="!capturesStore.captures.length" class="text-[#96BEE6]/70 text-center py-12">
-      <p>No captures yet. Head to Capture to get started!</p>
+    <div v-else-if="!activityFeed.length" class="text-[#96BEE6]/70 text-center py-12">
+      <p>No activity yet. Head to Capture to get started!</p>
     </div>
 
     <div v-else class="space-y-3">
-      <router-link
-        v-for="capture in capturesStore.captures"
-        :key="capture.id"
-        :to="`/history/${capture.id}`"
-        class="block bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 hover:border-[#1e407c]/50 transition-colors"
-      >
-        <div class="flex items-start justify-between mb-2">
-          <span :class="statusColor(capture.status)" class="text-sm">
-            {{ statusLabel(capture.status) }}
-          </span>
-          <span class="text-xs text-[#4a7aa5]/60">
-            {{ new Date(capture.createdAt).toLocaleDateString() }}
-          </span>
-        </div>
+      <template v-for="entry in activityFeed" :key="entry.type + '-' + entry.id">
 
-        <div v-if="capture.photos.length" class="flex gap-1 mb-2 overflow-x-auto">
-          <img
-            v-for="(photo, i) in capture.photos.slice(0, 4)"
-            :key="i"
-            :src="photo"
-            class="w-12 h-12 object-cover rounded"
-          />
-          <span v-if="capture.photos.length > 4" class="text-[#96BEE6]/70 text-xs self-center ml-1">
-            +{{ capture.photos.length - 4 }}
-          </span>
-        </div>
+        <!-- Capture entry -->
+        <router-link
+          v-if="entry.type === 'capture'"
+          :to="`/history/${entry.id}`"
+          class="block bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 hover:border-[#1e407c]/50 transition-colors"
+        >
+          <div class="flex items-start justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <span class="text-xs px-2 py-0.5 rounded-full bg-[#1e407c]/30 text-[#96BEE6]">Capture</span>
+              <span :class="captureStatusColor((entry.data as CaptureResponse).status)" class="text-sm">
+                {{ captureStatusLabel((entry.data as CaptureResponse).status) }}
+              </span>
+            </div>
+            <span class="text-xs text-[#4a7aa5]/60">
+              {{ new Date(entry.timestamp).toLocaleDateString() }}
+            </span>
+          </div>
 
-        <p v-if="capture.userNote" class="text-sm text-[#96BEE6] line-clamp-2">
-          {{ capture.userNote }}
-        </p>
+          <div v-if="(entry.data as CaptureResponse).photos.length" class="flex gap-1 mb-2 overflow-x-auto">
+            <img
+              v-for="(photo, i) in (entry.data as CaptureResponse).photos.slice(0, 4)"
+              :key="i"
+              :src="photo"
+              class="w-12 h-12 object-cover rounded"
+            />
+            <span v-if="(entry.data as CaptureResponse).photos.length > 4" class="text-[#96BEE6]/70 text-xs self-center ml-1">
+              +{{ (entry.data as CaptureResponse).photos.length - 4 }}
+            </span>
+          </div>
 
-        <div class="flex items-center justify-between mt-2">
-          <span v-if="capture.workflowSteps?.length" class="text-xs text-[#4a7aa5]/60">
-            {{ capture.workflowSteps.length }} workflow step(s)
-          </span>
-          <span v-if="capture.itemIds.length" class="text-xs text-[#96BEE6]">
-            {{ capture.itemIds.length }} item(s) →
-          </span>
-        </div>
-      </router-link>
+          <p v-if="(entry.data as CaptureResponse).userNote" class="text-sm text-[#96BEE6] line-clamp-2">
+            {{ (entry.data as CaptureResponse).userNote }}
+          </p>
+
+          <div class="flex items-center justify-between mt-2">
+            <span v-if="(entry.data as CaptureResponse).workflowSteps?.length" class="text-xs text-[#4a7aa5]/60">
+              {{ (entry.data as CaptureResponse).workflowSteps.filter(s => s.status === 'complete').length }}/{{ (entry.data as CaptureResponse).workflowSteps.length }} workflow steps
+            </span>
+            <span v-if="(entry.data as CaptureResponse).itemIds.length" class="text-xs text-[#96BEE6]">
+              {{ (entry.data as CaptureResponse).itemIds.length }} item(s) →
+            </span>
+          </div>
+        </router-link>
+
+        <!-- Venue entry -->
+        <router-link
+          v-else
+          :to="`/venues/${entry.id}`"
+          class="block bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 hover:border-[#1e407c]/50 transition-colors"
+        >
+          <div class="flex items-start justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6]">Venue</span>
+              <span
+                :class="venueExtractionStatus(entry.data as Venue) === 'processing' ? 'text-[#96BEE6]' : 'text-green-400'"
+                class="text-sm"
+              >
+                {{ venueExtractionStatus(entry.data as Venue) === 'processing' ? 'Extracting...' : (entry.data as Venue).type }}
+              </span>
+            </div>
+            <span class="text-xs text-[#4a7aa5]/60">
+              {{ new Date(entry.timestamp).toLocaleDateString() }}
+            </span>
+          </div>
+
+          <p class="text-sm text-white font-medium">{{ (entry.data as Venue).name }}</p>
+          <p v-if="(entry.data as Venue).address" class="text-xs text-[#96BEE6]/70 mt-0.5">
+            {{ (entry.data as Venue).address }}
+          </p>
+
+          <div v-if="(entry.data as Venue).labels?.length" class="flex flex-wrap gap-1 mt-2">
+            <span
+              v-for="label in (entry.data as Venue).labels.slice(0, 3)"
+              :key="label"
+              class="text-xs px-2 py-0.5 rounded-full bg-[#1e407c]/30 text-[#96BEE6]"
+            >
+              {{ label }}
+            </span>
+            <span v-if="(entry.data as Venue).labels.length > 3" class="text-xs text-[#4a7aa5]/60 self-center">
+              +{{ (entry.data as Venue).labels.length - 3 }}
+            </span>
+          </div>
+        </router-link>
+
+      </template>
     </div>
   </div>
 </template>
