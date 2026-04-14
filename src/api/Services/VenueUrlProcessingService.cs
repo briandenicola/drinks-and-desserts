@@ -53,6 +53,7 @@ public class VenueUrlProcessingService : BackgroundService
                     $"Fetching content from {new Uri(workItem.Url).Host}");
 
                 var fetchResult = await _urlService.FetchPageContentAsync(workItem.Url);
+                var resolvedUrl = fetchResult.ResolvedUrl ?? workItem.Url;
 
                 if (!fetchResult.Success)
                 {
@@ -60,7 +61,7 @@ public class VenueUrlProcessingService : BackgroundService
                         "Failed to fetch page content", fetchResult.Error);
 
                     if (IsPlaceholderName(venue.Name))
-                        venue.Name = ExtractDomainLabel(workItem.Url);
+                        venue.Name = ExtractDomainLabel(resolvedUrl);
 
                     venue.Status = VenueStatus.Failed;
                     venue.ProcessingError = fetchResult.Error;
@@ -75,7 +76,7 @@ public class VenueUrlProcessingService : BackgroundService
                 await LogStep(venue, "V02", "Venue URL Extractor", WorkflowStepStatus.Running,
                     "AI agent analyzing page content for venue details");
 
-                var result = await _urlService.ExtractFromContentAsync(workItem.Url, fetchResult.Content!);
+                var result = await _urlService.ExtractFromContentAsync(resolvedUrl, fetchResult.Content!);
 
                 if (result.Success)
                 {
@@ -158,7 +159,7 @@ public class VenueUrlProcessingService : BackgroundService
                         result.Error);
 
                     if (IsPlaceholderName(venue.Name))
-                        venue.Name = ExtractDomainLabel(workItem.Url);
+                        venue.Name = ExtractDomainLabel(resolvedUrl);
 
                     venue.Status = VenueStatus.Failed;
                     venue.ProcessingError = result.Error;

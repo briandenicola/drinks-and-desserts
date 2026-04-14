@@ -50,21 +50,38 @@ public class VenueUrlService : IVenueUrlService
             response.EnsureSuccessStatusCode();
             var html = await response.Content.ReadAsStringAsync(cts.Token);
 
+            // Capture the final URL after redirects (short URLs like goo.gl resolve here)
+            var finalUrl = response.RequestMessage?.RequestUri?.ToString() ?? url;
+
             // Extract image candidates before stripping HTML
-            var imageUrls = ExtractImageCandidates(html, url);
+            var imageUrls = ExtractImageCandidates(html, finalUrl);
+
+            // Extract structured metadata from HTML before stripping
+            var metadata = ExtractHtmlMetadata(html, finalUrl);
 
             var pageContent = StripHtmlToText(html);
+
+            // Prepend metadata so the AI has structured context even for JS-heavy pages
+            if (!string.IsNullOrWhiteSpace(metadata))
+                pageContent = metadata + "\n\n" + pageContent;
 
             if (pageContent.Length > 8000)
                 pageContent = pageContent[..8000];
 
-            _logger.LogInformation("Fetched {Length} chars of text content and {ImageCount} image candidates from {Url}",
-                pageContent.Length, imageUrls.Count, url);
+            _logger.LogInformation("Fetched {Length} chars of text content and {ImageCount} image candidates from {Url} (final: {FinalUrl})",
+                pageContent.Length, imageUrls.Count, url, finalUrl);
 
             if (string.IsNullOrWhiteSpace(pageContent) || pageContent.Length < 50)
                 return new VenueUrlFetchResult { Success = false, Error = "The page did not contain enough text content to extract venue information." };
 
-            return new VenueUrlFetchResult { Success = true, Content = pageContent, ContentLength = pageContent.Length, ImageUrls = imageUrls };
+            return new VenueUrlFetchResult
+            {
+                Success = true,
+                Content = pageContent,
+                ContentLength = pageContent.Length,
+                ImageUrls = imageUrls,
+                ResolvedUrl = finalUrl,
+            };
         }
         catch (Exception ex)
         {
@@ -220,6 +237,91 @@ public class VenueUrlService : IVenueUrlService
     }
 
     /// <summary>
+    /// Extracts structured metadata from HTML (meta tags, title, URL path) for JS-heavy pages
+    /// like Google Maps that yield little text after HTML stripping.
+    /// </summary>
+    private static string ExtractHtmlMetadata(string html, string finalUrl)
+    {
+        var parts = new List<string>();
+
+        parts.Add($"Resolved URL: {finalUrl}");
+
+        // Extract venue name from Google Maps URL path: /maps/place/Venue+Name/
+        if (finalUrl.Contains("/maps/place/", StringComparison.OrdinalIgnoreCase))
+        {
+            var placeMatch = Regex.Match(finalUrl, @"/maps/place/([^/@]+)", RegexOptions.IgnoreCase);
+            if (placeMatch.Success)
+            {
+                var placeName = Uri.UnescapeDataString(placeMatch.Groups[1].Value.Replace('+', ' '));
+                parts.Add($"Place name from URL: {placeName}");
+            }
+        }
+
+        // Apple Maps: /place/ pattern
+        if (finalUrl.Contains("maps.apple.com", StringComparison.OrdinalIgnoreCase))
+        {
+            var appleMatch = Regex.Match(finalUrl, @"/place/([^/?]+)", RegexOptions.IgnoreCase);
+            if (appleMatch.Success)
+            {
+                var placeName = Uri.UnescapeDataString(appleMatch.Groups[1].Value.Replace('-', ' '));
+                parts.Add($"Place name from URL: {placeName}");
+            }
+        }
+
+        // <title>
+        var titleMatch = Regex.Match(html, @"<title[^>]*>([^<]+)</title>", RegexOptions.IgnoreCase);
+        if (titleMatch.Success)
+        {
+            var title = System.Net.WebUtility.HtmlDecode(titleMatch.Groups[1].Value).Trim();
+            if (!string.IsNullOrWhiteSpace(title) && title.Length < 200)
+                parts.Add($"Page title: {title}");
+        }
+
+        // Meta tags: og:title, og:description, description, itemprop values
+        var metaPatterns = new[]
+        {
+            (@"<meta[^>]+property=[""']og:title[""'][^>]+content=[""']([^""']+)[""']", "og:title"),
+            (@"<meta[^>]+content=[""']([^""']+)[""'][^>]+property=[""']og:title[""']", "og:title"),
+            (@"<meta[^>]+property=[""']og:description[""'][^>]+content=[""']([^""']+)[""']", "og:description"),
+            (@"<meta[^>]+content=[""']([^""']+)[""'][^>]+property=[""']og:description[""']", "og:description"),
+            (@"<meta[^>]+name=[""']description[""'][^>]+content=[""']([^""']+)[""']", "description"),
+            (@"<meta[^>]+content=[""']([^""']+)[""'][^>]+name=[""']description[""']", "description"),
+        };
+
+        var seen = new HashSet<string>();
+        foreach (var (pattern, label) in metaPatterns)
+        {
+            if (seen.Contains(label)) continue;
+            var match = Regex.Match(html, pattern, RegexOptions.IgnoreCase);
+            if (match.Success)
+            {
+                var value = System.Net.WebUtility.HtmlDecode(match.Groups[1].Value).Trim();
+                if (!string.IsNullOrWhiteSpace(value) && value.Length < 500)
+                {
+                    parts.Add($"{label}: {value}");
+                    seen.Add(label);
+                }
+            }
+        }
+
+        // Schema.org/LD+JSON
+        var ldMatches = Regex.Matches(html, @"<script[^>]+type=""application/ld\+json""[^>]*>([\s\S]*?)</script>", RegexOptions.IgnoreCase);
+        foreach (Match m in ldMatches)
+        {
+            var jsonText = m.Groups[1].Value.Trim();
+            if (jsonText.Length < 2000)
+                parts.Add($"Structured data (JSON-LD): {jsonText}");
+        }
+
+        // GPS coordinates from URL (Google Maps pattern: @lat,lng)
+        var coordMatch = Regex.Match(finalUrl, @"@(-?\d+\.\d+),(-?\d+\.\d+)");
+        if (coordMatch.Success)
+            parts.Add($"Coordinates: {coordMatch.Groups[1].Value}, {coordMatch.Groups[2].Value}");
+
+        return string.Join("\n", parts);
+    }
+
+    /// <summary>
     /// Extracts candidate image URLs from HTML before stripping tags.
     /// Prioritizes: og:image, apple-touch-icon, then img tags with "logo" in attributes.
     /// </summary>
@@ -278,6 +380,7 @@ public class VenueUrlFetchResult
     public string? Content { get; set; }
     public int ContentLength { get; set; }
     public List<string> ImageUrls { get; set; } = [];
+    public string? ResolvedUrl { get; set; }
 }
 
 public class VenueUrlResult
