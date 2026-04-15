@@ -3,6 +3,7 @@ import { ref, inject, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useVenuesStore } from '../stores/venues'
 import { RefreshKey } from '../composables/refreshKey'
+import { useVirtualizer } from '@tanstack/vue-virtual'
 import StarRating from '../components/common/StarRating.vue'
 
 const router = useRouter()
@@ -42,6 +43,16 @@ const sortedVenues = computed(() => {
     return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   })
 })
+
+const scrollContainerRef = ref<HTMLElement | null>(null)
+
+const virtualizer = useVirtualizer(computed(() => ({
+  count: sortedVenues.value.length,
+  getScrollElement: () => scrollContainerRef.value,
+  estimateSize: () => 100,
+  overscan: 5,
+  gap: 12,
+})))
 
 async function addVenue() {
   if (!newName.value.trim()) return
@@ -119,51 +130,66 @@ function resetForm() {
       <p>No venues yet. Add your favorite spots.</p>
     </div>
 
-    <!-- Venue list -->
-    <div v-else class="space-y-3">
-      <router-link
-        v-for="venue in sortedVenues"
-        :key="venue.id"
-        :to="`/venues/${venue.id}`"
-        class="block bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 hover:border-[#1e407c]/50 transition-colors"
+    <!-- Venue list (virtual scroll) -->
+    <div
+      v-else
+      ref="scrollContainerRef"
+      class="virtual-list-container overflow-y-auto"
+    >
+      <div
+        :style="{ height: `${virtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }"
       >
-        <div class="flex items-start gap-3">
-          <img
-            v-if="venue.photoUrls.length"
-            :src="venue.photoUrls[0]"
-            class="w-16 h-16 object-cover rounded-lg shrink-0"
-          />
-          <div v-else class="w-16 h-16 bg-[#0a2a52] rounded-lg shrink-0 flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-[#4a7aa5]/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </div>
+        <div
+          v-for="row in virtualizer.getVirtualItems()"
+          :key="sortedVenues[row.index].id"
+          :data-index="row.index"
+          :ref="(el: any) => { if (el?.$el || el) virtualizer.measureElement(el?.$el ?? el) }"
+          :style="{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${row.start}px)` }"
+        >
+          <router-link
+            :to="`/venues/${sortedVenues[row.index].id}`"
+            class="block bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 hover:border-[#1e407c]/50 transition-colors"
+          >
+            <div class="flex items-start gap-3">
+              <img
+                v-if="sortedVenues[row.index].photoUrls.length"
+                :src="sortedVenues[row.index].photoUrls[0]"
+                class="w-16 h-16 object-cover rounded-lg shrink-0"
+                loading="lazy"
+              />
+              <div v-else class="w-16 h-16 bg-[#0a2a52] rounded-lg shrink-0 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-[#4a7aa5]/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
 
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 mb-1">
-              <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6] capitalize">{{ venue.type }}</span>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6] capitalize">{{ sortedVenues[row.index].type }}</span>
+                </div>
+                <h3 class="font-medium text-white truncate">{{ sortedVenues[row.index].name }}</h3>
+                <p v-if="sortedVenues[row.index].address" class="text-sm text-[#96BEE6]/70 truncate">{{ sortedVenues[row.index].address }}</p>
+                <div v-if="sortedVenues[row.index].rating" class="mt-1">
+                  <StarRating :rating="sortedVenues[row.index].rating!" size="sm" />
+                </div>
+                <div v-if="sortedVenues[row.index].labels?.length" class="flex flex-wrap gap-1 mt-1.5">
+                  <span
+                    v-for="label in sortedVenues[row.index].labels!.slice(0, 3)"
+                    :key="label"
+                    class="text-[10px] px-1.5 py-0.5 rounded-full bg-[#1e407c]/30 text-[#96BEE6]/80"
+                  >
+                    {{ label }}
+                  </span>
+                  <span v-if="sortedVenues[row.index].labels!.length > 3" class="text-[10px] text-[#4a7aa5]/60">
+                    +{{ sortedVenues[row.index].labels!.length - 3 }}
+                  </span>
+                </div>
+              </div>
             </div>
-            <h3 class="font-medium text-white truncate">{{ venue.name }}</h3>
-            <p v-if="venue.address" class="text-sm text-[#96BEE6]/70 truncate">{{ venue.address }}</p>
-            <div v-if="venue.rating" class="mt-1">
-              <StarRating :rating="venue.rating" size="sm" />
-            </div>
-            <div v-if="venue.labels?.length" class="flex flex-wrap gap-1 mt-1.5">
-              <span
-                v-for="label in venue.labels.slice(0, 3)"
-                :key="label"
-                class="text-[10px] px-1.5 py-0.5 rounded-full bg-[#1e407c]/30 text-[#96BEE6]/80"
-              >
-                {{ label }}
-              </span>
-              <span v-if="venue.labels.length > 3" class="text-[10px] text-[#4a7aa5]/60">
-                +{{ venue.labels.length - 3 }}
-              </span>
-            </div>
-          </div>
+          </router-link>
         </div>
-      </router-link>
+      </div>
     </div>
 
     <!-- Add Venue Modal -->
@@ -273,5 +299,9 @@ function resetForm() {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+.virtual-list-container {
+  height: calc(100vh - 200px);
+  height: calc(100dvh - 200px);
 }
 </style>
