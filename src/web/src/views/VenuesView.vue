@@ -97,19 +97,21 @@ function resetForm() {
 
 <template>
   <div class="p-4 max-w-lg mx-auto">
-    <h2 class="text-xl font-bold text-white mb-4">Venues</h2>
-
-    <!-- Add button + form -->
-    <div class="mb-4">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-xl font-bold text-white">Venues</h2>
       <button
-        v-if="!showAddForm"
-        @click="showAddForm = true"
-        class="w-full bg-[#041e3e] border border-dashed border-[#1e407c]/50 rounded-xl p-3 text-[#96BEE6] hover:border-[#96BEE6]/50 hover:text-white/80 transition-colors text-sm"
+        @click="showAddForm = !showAddForm"
+        class="text-[#96BEE6] hover:text-white transition-colors"
       >
-        + Add venue
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+        </svg>
       </button>
+    </div>
 
-      <div v-else class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 space-y-3">
+    <!-- Add form -->
+    <div v-if="showAddForm" class="mb-4">
+      <div class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 space-y-3">
         <!-- Mode toggle -->
         <div class="flex rounded-lg bg-[#0a2a52] p-0.5">
           <button
