@@ -1,17 +1,32 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
 const show = ref(false)
+const browser = ref<'safari' | 'chrome' | 'edge' | 'firefox' | 'other'>('safari')
 const DISMISSED_KEY = 'pwa-install-dismissed'
 
 onMounted(() => {
-  const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent)
+  const ua = navigator.userAgent
+  const isIos = /iphone|ipad|ipod/i.test(ua)
   const isStandalone = ('standalone' in window.navigator && (window.navigator as any).standalone) ||
     window.matchMedia('(display-mode: standalone)').matches
   const wasDismissed = localStorage.getItem(DISMISSED_KEY)
 
   if (isIos && !isStandalone && !wasDismissed) {
+    if (/EdgiOS/i.test(ua)) browser.value = 'edge'
+    else if (/CriOS/i.test(ua)) browser.value = 'chrome'
+    else if (/FxiOS/i.test(ua)) browser.value = 'firefox'
+    else browser.value = 'safari'
     show.value = true
+  }
+})
+
+const instruction = computed(() => {
+  switch (browser.value) {
+    case 'edge': return 'Tap the menu (\u22EF) button, then "Add to Home Screen"'
+    case 'chrome': return 'Tap the share button, then "Add to Home Screen"'
+    case 'firefox': return 'Tap the menu (\u2261) button, then "Share" and "Add to Home Screen"'
+    default: return 'Tap the share button, then "Add to Home Screen"'
   }
 })
 
@@ -34,11 +49,7 @@ function dismiss() {
           <div class="flex-1">
             <p class="text-sm text-white font-medium mb-1">Install Drinks & Desserts</p>
             <p class="text-xs text-[#5a8ab5] leading-relaxed">
-              Tap the
-              <svg xmlns="http://www.w3.org/2000/svg" class="inline w-4 h-4 text-[#96BEE6] align-text-bottom" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-              </svg>
-              share button, then "Add to Home Screen" for the best experience.
+              {{ instruction }} for the best experience.
             </p>
           </div>
           <button @click="dismiss" class="flex-shrink-0 text-[#4a7aa5] hover:text-white p-1">
