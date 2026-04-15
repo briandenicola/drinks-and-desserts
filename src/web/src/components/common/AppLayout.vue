@@ -4,6 +4,7 @@ import { useAuthStore } from '../../stores/auth'
 import { useRoute } from 'vue-router'
 import { usePullToRefresh } from '../../composables/usePullToRefresh'
 import { RefreshKey } from '../../composables/refreshKey'
+import NotificationBell from './NotificationBell.vue'
 
 const auth = useAuthStore()
 const route = useRoute()
@@ -35,13 +36,16 @@ const navItems = [
     <!-- Header -->
     <header class="bg-[#041e3e] border-b border-[#0a2a52] px-4 py-3 flex items-center justify-between safe-area-top">
       <h1 class="text-lg font-bold text-[#96BEE6]">Drinks &amp; Desserts</h1>
-      <button
-        v-if="auth.isAuthenticated"
-        @click="auth.logout()"
-        class="text-sm text-[#96BEE6] hover:text-white"
-      >
-        Sign Out
-      </button>
+      <div class="flex items-center gap-3">
+        <NotificationBell v-if="auth.isAuthenticated" />
+        <button
+          v-if="auth.isAuthenticated"
+          @click="auth.logout()"
+          class="text-sm text-[#96BEE6] hover:text-white"
+        >
+          Sign Out
+        </button>
+      </div>
     </header>
 
     <!-- Pull-to-refresh indicator -->

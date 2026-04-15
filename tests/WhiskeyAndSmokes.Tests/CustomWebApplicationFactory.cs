@@ -23,6 +23,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     public IAuthService AuthService { get; } = Substitute.For<IAuthService>();
     public IPromptService PromptService { get; } = Substitute.For<IPromptService>();
     public IAgentService AgentService { get; } = Substitute.For<IAgentService>();
+    public INotificationService NotificationService { get; } = Substitute.For<INotificationService>();
 
     public const string TestUserId = "test-user-id";
     public const string TestUserEmail = "test@example.com";
@@ -62,6 +63,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             ReplaceService<IAuthService>(services, AuthService);
             ReplaceService<IPromptService>(services, PromptService);
             ReplaceService<IAgentService>(services, AgentService);
+            ReplaceService<INotificationService>(services, NotificationService);
 
             // Ensure bounded channel is available
             var channelDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(Channel<Capture>));
@@ -94,7 +96,10 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
                 options.DefaultAuthenticateScheme = "TestScheme";
                 options.DefaultChallengeScheme = "TestScheme";
                 options.DefaultScheme = "TestScheme";
-            }).AddScheme<AuthenticationSchemeOptions, TestAuthHandler>("TestScheme", null);
+            })
+            .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>("TestScheme", null)
+            .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>("MultiAuth", null)
+            .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>("ApiKey", null);
 
             services.AddAuthorizationBuilder()
                 .AddPolicy("AdminOnly", policy =>

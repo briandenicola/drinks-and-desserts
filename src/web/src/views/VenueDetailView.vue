@@ -3,11 +3,15 @@ import { ref, inject, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { venuesApi, type Venue } from '../services/venues'
 import { itemsApi, type Item } from '../services/items'
+import { thoughtsApi, type Thought } from '../services/thoughts'
+import { useAuthStore } from '../stores/auth'
 import { RefreshKey } from '../composables/refreshKey'
 import StarRating from '../components/common/StarRating.vue'
+import ThoughtsList from '../components/common/ThoughtsList.vue'
 
 const route = useRoute()
 const router = useRouter()
+const auth = useAuthStore()
 const registerRefresh = inject(RefreshKey)
 
 const venue = ref<Venue | null>(null)
@@ -15,6 +19,8 @@ const linkedItems = ref<Item[]>([])
 const isEditing = ref(false)
 const isDeleting = ref(false)
 const isSaving = ref(false)
+const friendThoughts = ref<Thought[]>([])
+const isLoadingThoughts = ref(false)
 
 const editName = ref('')
 const editAddress = ref('')
@@ -64,7 +70,27 @@ async function refreshVenue() {
 
 registerRefresh?.(refreshVenue)
 
-onMounted(refreshVenue)
+onMounted(async () => {
+  await refreshVenue()
+  loadThoughts()
+})
+
+async function loadThoughts() {
+  if (!venue.value || !auth.user) return
+  isLoadingThoughts.value = true
+  try {
+    const res = await thoughtsApi.getForTarget('venue', venue.value.id, auth.user.id)
+    friendThoughts.value = res.data
+  } catch { /* silent */ }
+  isLoadingThoughts.value = false
+}
+
+async function handleDeleteThought(thought: Thought) {
+  try {
+    await thoughtsApi.remove(thought.id)
+    friendThoughts.value = friendThoughts.value.filter(t => t.id !== thought.id)
+  } catch { /* silent */ }
+}
 
 function resetEditFields(data: Venue) {
   editName.value = data.name
@@ -374,6 +400,14 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
         </div>
       </div>
     </template>
+
+    <!-- Friend Thoughts (read-only mode only) -->
+    <div v-if="!isEditing && friendThoughts.length > 0" class="mt-6">
+      <h3 class="text-sm font-medium text-[#96BEE6] uppercase tracking-wide mb-3">
+        Friend Thoughts ({{ friendThoughts.length }})
+      </h3>
+      <ThoughtsList :thoughts="friendThoughts" @delete="handleDeleteThought" />
+    </div>
 
     <!-- Edit mode -->
     <template v-else>

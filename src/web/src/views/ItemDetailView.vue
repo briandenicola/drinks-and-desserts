@@ -4,7 +4,10 @@ import { useRoute, useRouter } from 'vue-router'
 import { useItemsStore } from '../stores/items'
 import { useVenuesStore } from '../stores/venues'
 import { itemsApi, type Item } from '../services/items'
+import { thoughtsApi, type Thought } from '../services/thoughts'
+import { useAuthStore } from '../stores/auth'
 import StarRating from '../components/common/StarRating.vue'
+import ThoughtsList from '../components/common/ThoughtsList.vue'
 import AutocompleteInput from '../components/common/AutocompleteInput.vue'
 import { RefreshKey } from '../composables/refreshKey'
 
@@ -29,6 +32,11 @@ const editVenueAddress = ref('')
 const editTags = ref<string[]>([])
 const newTag = ref('')
 const newJournalEntry = ref('')
+
+// Friend thoughts
+const auth = useAuthStore()
+const friendThoughts = ref<Thought[]>([])
+const isLoadingThoughts = ref(false)
 
 // Photo management
 const isUploadingPhoto = ref(false)
@@ -150,7 +158,25 @@ registerRefresh?.(refreshItem)
 
 onMounted(async () => {
   await refreshItem()
+  loadThoughts()
 })
+
+async function loadThoughts() {
+  if (!item.value || !auth.user) return
+  isLoadingThoughts.value = true
+  try {
+    const res = await thoughtsApi.getForTarget('item', item.value.id, auth.user.id)
+    friendThoughts.value = res.data
+  } catch { /* silent */ }
+  isLoadingThoughts.value = false
+}
+
+async function handleDeleteThought(thought: Thought) {
+  try {
+    await thoughtsApi.remove(thought.id)
+    friendThoughts.value = friendThoughts.value.filter(t => t.id !== thought.id)
+  } catch { /* silent */ }
+}
 
 function resetEditFields(data: Item) {
   editRating.value = data.userRating ?? 0
@@ -627,6 +653,14 @@ function isAiGenerated(data: Item): boolean {
       <span v-for="tag in item.tags" :key="tag" class="text-xs bg-[#0a2a52] text-[#96BEE6] px-2 py-1 rounded-full">
         {{ tag }}
       </span>
+    </div>
+
+    <!-- Friend Thoughts -->
+    <div v-if="!isEditing && friendThoughts.length > 0" class="mt-6">
+      <h3 class="text-sm font-medium text-[#96BEE6] uppercase tracking-wide mb-3">
+        Friend Thoughts ({{ friendThoughts.length }})
+      </h3>
+      <ThoughtsList :thoughts="friendThoughts" @delete="handleDeleteThought" />
     </div>
 
     <!-- Delete Confirmation Modal -->
