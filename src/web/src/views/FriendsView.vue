@@ -15,6 +15,7 @@ const isCreatingInvite = ref(false)
 const linkCopied = ref(false)
 const error = ref('')
 const activeTab = ref<'friends' | 'requests'>('friends')
+const showInviteModal = ref(false)
 
 const pendingCount = computed(() => receivedRequests.value.length)
 const inviteLink = computed(() => invite.value ? `${window.location.origin}/friends/join/${invite.value.id}` : '')
@@ -36,6 +37,13 @@ async function load() {
     error.value = 'Failed to load friends'
   } finally {
     isLoading.value = false
+  }
+}
+
+async function openInviteModal() {
+  showInviteModal.value = true
+  if (!invite.value) {
+    await createInvite()
   }
 }
 
@@ -93,8 +101,13 @@ onMounted(load)
 <template>
   <div class="p-4 max-w-lg mx-auto">
     <div class="flex items-center justify-between mb-6">
-      <h2 class="text-xl font-semibold">Friends</h2>
       <button @click="router.back()" class="text-[#96BEE6] text-sm">Back</button>
+      <h2 class="text-xl font-semibold">Friends</h2>
+      <button @click="openInviteModal" class="text-[#96BEE6] hover:text-white">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+        </svg>
+      </button>
     </div>
 
     <!-- Tabs -->
@@ -124,45 +137,10 @@ onMounted(load)
 
     <!-- Friends tab -->
     <template v-else-if="activeTab === 'friends'">
-      <!-- Invite section -->
-      <section class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 mb-4 space-y-3">
-        <h3 class="text-sm font-medium text-[#96BEE6] uppercase tracking-wide">Invite a Friend</h3>
-        <p class="text-sm text-[#5a8ab5]">Generate a link to share with someone you want to add as a friend.</p>
-
-        <div v-if="invite" class="space-y-3">
-          <div class="bg-[#0a2a52] rounded-lg p-3">
-            <p class="text-xs text-[#5a8ab5] mb-1">Invite Code</p>
-            <p class="text-lg font-mono font-bold text-[#96BEE6] tracking-widest">{{ invite.id }}</p>
-          </div>
-
-          <div class="flex gap-2">
-            <button
-              @click="copyLink"
-              class="flex-1 bg-[#1e407c] hover:bg-[#2a5299] text-white py-2.5 rounded-xl text-sm font-medium transition-colors"
-            >
-              {{ linkCopied ? 'Copied' : 'Copy Link' }}
-            </button>
-          </div>
-
-          <p class="text-xs text-[#4a7aa5]">
-            Expires {{ new Date(invite.expiresAt).toLocaleDateString() }}
-          </p>
-        </div>
-
-        <button
-          v-else
-          @click="createInvite"
-          :disabled="isCreatingInvite"
-          class="w-full bg-[#1e407c] hover:bg-[#2a5299] disabled:bg-[#0a2a52] text-white py-3 rounded-xl font-medium transition-colors"
-        >
-          {{ isCreatingInvite ? 'Creating...' : 'Generate Invite Link' }}
-        </button>
-      </section>
-
       <!-- Friends list -->
       <div v-if="friends.length === 0" class="text-center text-[#5a8ab5] py-8">
         <p>No friends yet</p>
-        <p class="text-sm mt-1">Share an invite link to get started</p>
+        <p class="text-sm mt-1">Tap + to generate an invite link</p>
       </div>
 
       <div v-else class="space-y-3">
@@ -220,5 +198,62 @@ onMounted(load)
         No pending requests
       </div>
     </template>
+
+    <!-- Invite Modal -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showInviteModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" @click.self="showInviteModal = false">
+          <div class="bg-[#041e3e] border border-[#1e407c] rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold text-white">Invite a Friend</h3>
+              <button @click="showInviteModal = false" class="text-[#4a7aa5] hover:text-white p-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div v-if="isCreatingInvite" class="text-center text-[#5a8ab5] py-8">
+              Generating invite...
+            </div>
+
+            <div v-else-if="invite" class="space-y-4">
+              <p class="text-sm text-[#5a8ab5]">Share this link with someone to add them as a friend.</p>
+
+              <div class="bg-[#0a2a52] rounded-xl p-4 text-center">
+                <p class="text-xs text-[#4a7aa5] mb-1">Invite Code</p>
+                <p class="text-2xl font-mono font-bold text-[#96BEE6] tracking-[0.25em]">{{ invite.id }}</p>
+              </div>
+
+              <button
+                @click="copyLink"
+                class="w-full bg-[#1e407c] hover:bg-[#2a5299] text-white py-3 rounded-xl font-medium transition-colors"
+              >
+                {{ linkCopied ? 'Copied' : 'Copy Invite Link' }}
+              </button>
+
+              <p class="text-xs text-[#4a7aa5] text-center">
+                Expires {{ new Date(invite.expiresAt).toLocaleDateString() }}
+              </p>
+            </div>
+
+            <div v-else class="text-center text-red-400 py-4">
+              Failed to generate invite. Try again.
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>
