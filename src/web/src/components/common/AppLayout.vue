@@ -5,6 +5,7 @@ import { useRoute } from 'vue-router'
 import { usePullToRefresh } from '../../composables/usePullToRefresh'
 import { RefreshKey } from '../../composables/refreshKey'
 import NotificationBell from './NotificationBell.vue'
+import PwaInstallPrompt from './PwaInstallPrompt.vue'
 
 const auth = useAuthStore()
 const route = useRoute()
@@ -82,6 +83,9 @@ const navItems = [
     >
       <slot />
     </main>
+
+    <!-- PWA Install Prompt (iOS Safari) -->
+    <PwaInstallPrompt />
 
     <!-- Bottom Navigation -->
     <nav v-if="auth.isAuthenticated" class="fixed bottom-0 inset-x-0 bg-[#041e3e] border-t border-[#0a2a52] safe-area-bottom">
