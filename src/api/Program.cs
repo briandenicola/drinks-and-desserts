@@ -207,6 +207,7 @@ builder.Services.AddSingleton<IAuthService, AuthService>();
 builder.Services.AddSingleton<IPromptService, PromptService>();
 builder.Services.AddSingleton<ExifLocationService>();
 builder.Services.AddSingleton<IAgentService, WorkflowAgentService>();
+builder.Services.AddSingleton<INotificationService, NotificationService>();
 builder.Services.AddHttpClient<IWishlistUrlService, WishlistUrlService>();
 builder.Services.AddHttpClient<IVenueUrlService, VenueUrlService>();
 builder.Services.AddHostedService<AgentValidationService>();
@@ -326,8 +327,8 @@ static async Task InitializeCosmosDb(WebApplication app)
 
         var database = await client.CreateDatabaseIfNotExistsAsync(dbName);
 
-        string[] containers = ["users", "captures", "items", "venues"];
-        string[] partitionKeys = ["/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey"];
+        string[] containers = ["users", "captures", "items", "venues", "friendships", "friend-invites", "thoughts", "notifications"];
+        string[] partitionKeys = ["/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey"];
 
         for (int i = 0; i < containers.Length; i++)
         {

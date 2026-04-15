@@ -400,6 +400,20 @@ async function changePassword() {
         </button>
       </section>
 
+      <!-- Friends -->
+      <router-link
+        to="/friends"
+        class="block bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 hover:border-[#1e407c]/50 transition-colors"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-medium text-[#96BEE6] uppercase tracking-wide">Friends</h3>
+            <p class="text-sm text-[#5a8ab5] mt-1">View friends, invites, and shared collections</p>
+          </div>
+          <span class="text-[#96BEE6]">&rarr;</span>
+        </div>
+      </router-link>
+
       <!-- Admin link -->
       <router-link
         v-if="auth.isAdmin"

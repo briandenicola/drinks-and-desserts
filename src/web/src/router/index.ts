@@ -71,6 +71,41 @@ const routes = [
     component: () => import('../views/AdminView.vue'),
     meta: { requiresAdmin: true },
   },
+  {
+    path: '/friends',
+    name: 'Friends',
+    component: () => import('../views/FriendsView.vue'),
+  },
+  {
+    path: '/friends/join/:code',
+    name: 'JoinFriend',
+    component: () => import('../views/JoinFriendView.vue'),
+    props: true,
+  },
+  {
+    path: '/friends/:friendId',
+    name: 'FriendCollection',
+    component: () => import('../views/FriendCollectionView.vue'),
+    props: true,
+  },
+  {
+    path: '/friends/:friendId/items/:id',
+    name: 'FriendItemDetail',
+    component: () => import('../views/FriendItemDetailView.vue'),
+    props: true,
+  },
+  {
+    path: '/friends/:friendId/venues',
+    name: 'FriendVenues',
+    component: () => import('../views/FriendVenuesView.vue'),
+    props: true,
+  },
+  {
+    path: '/friends/:friendId/venues/:id',
+    name: 'FriendVenueDetail',
+    component: () => import('../views/FriendVenuesView.vue'),
+    props: true,
+  },
 ]
 
 const router = createRouter({
