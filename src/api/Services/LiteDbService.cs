@@ -23,7 +23,7 @@ public class LiteDbService : ICosmosDbService, IDisposable
     }
 
     private ILiteCollection<BsonDocument> GetCollection(string containerName) =>
-        _db.GetCollection(containerName);
+        _db.GetCollection(containerName.Replace("-", "_"));
 
     private static T Deserialize<T>(BsonDocument doc)
     {
