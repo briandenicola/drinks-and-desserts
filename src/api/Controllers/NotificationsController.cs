@@ -27,8 +27,9 @@ public class NotificationsController : ControllerBase
     public async Task<ActionResult<object>> ListNotifications([FromQuery] int limit = 50)
     {
         var userId = GetUserId();
+        var clampedLimit = Math.Clamp(limit, 1, 200);
         var (notifications, _) = await _cosmosDb.QueryAsync<Notification>(
-            ContainerName, userId, maxItems: limit);
+            ContainerName, userId, maxItems: clampedLimit);
 
         var sorted = notifications.OrderByDescending(n => n.CreatedAt).ToList();
         var unreadCount = sorted.Count(n => !n.IsRead);

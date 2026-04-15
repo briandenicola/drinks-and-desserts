@@ -174,7 +174,6 @@ onMounted(load)
           <div class="flex items-center justify-between">
             <button @click="router.push(`/friends/${friend.friendId}`)" class="flex-1 text-left">
               <h3 class="font-medium text-white">{{ friend.friendDisplayName }}</h3>
-              <p v-if="friend.friendEmail" class="text-sm text-[#5a8ab5]">{{ friend.friendEmail }}</p>
               <p class="text-xs text-[#4a7aa5] mt-1">Friends since {{ new Date(friend.createdAt).toLocaleDateString() }}</p>
             </button>
             <button @click="removeFriend(friend)" class="text-red-400 text-sm ml-4 hover:text-red-300">Remove</button>
@@ -193,7 +192,6 @@ onMounted(load)
           class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4"
         >
           <h3 class="font-medium text-white mb-1">{{ req.friendDisplayName }}</h3>
-          <p v-if="req.friendEmail" class="text-sm text-[#5a8ab5] mb-3">{{ req.friendEmail }}</p>
           <div class="flex gap-2">
             <button @click="acceptRequest(req)" class="flex-1 bg-[#1e407c] hover:bg-[#2a5299] text-white py-2 rounded-xl text-sm font-medium">
               Accept

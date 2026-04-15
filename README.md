@@ -1,35 +1,60 @@
-# Whiskey & Smokes
+# Drinks & Desserts
 
-Track your whiskey, wine, cocktails, cigars, and venues. Snap a photo at the bar, let AI do the rest, refine later.
+Track your drinks, desserts, and venues. Snap a photo, let AI do the rest, refine later. Share your collection with friends.
 
 ## Features
 
 - **Photo Capture** with AI-powered item identification (1-3 items per capture)
-- **Six item types**: Whiskey, Wine, Cocktail, Cigar, Venue, and Custom
+- **Seven item types**: Whiskey, Wine, Cocktail, Cigar, Dessert, Venue, and Custom
+- **Venues** — capture bars, restaurants, and lounges with name, address, website, type, rating, and linked items. Create from photos or extract from URLs (including Google Maps links)
+- **Friends** — invite friends via shareable links, browse each other's collections and venues, leave thoughts (comments + ratings) on items
+- **Notifications** — in-app notification bell for friend requests, new thoughts, and social activity
 - **Star ratings** with half/quarter star precision
 - **Journal entries** for tasting notes and thoughts
 - **Wishlist** to track items you want to try
 - **Collection stats** with breakdowns by type
+- **Search** across your entire collection
 - **Sorting** by rating, date added, or date updated (configurable default in settings)
 - **Filtering** by item type via dropdown menu
-- **Autocomplete** for name, brand, and tags based on your existing collection
+- **Autocomplete** for name, brand, tags, and venue labels based on your existing data
 - **Photo management** on items (add, remove photos after capture)
 - **External API** for iOS Shortcuts and other integrations (API key auth)
-- **PWA support** — installable on iOS/Android with offline-capable service worker
+- **PWA support** — installable on iOS/Android with offline-capable service worker and refresh tokens
 
 ## Architecture
 
-- **Frontend**: Vue 3 + TypeScript + TailwindCSS (mobile-first PWA)
+- **Frontend**: Vue 3.5 + TypeScript + Tailwind CSS 4 (mobile-first PWA)
 - **Backend**: .NET 10 Web API
 - **AI Pipeline**: Multi-agent workflow via [Microsoft Agent Framework](https://github.com/microsoft/agent-framework) (1.0.0-rc4)
 - **Orchestration**: .NET Aspire AppHost (OpenTelemetry dashboard)
-- **Database**: Azure CosmosDB (prod) / LiteDB (local dev)
+- **Database**: Azure CosmosDB (prod) / LiteDB (local dev) — 8 containers
 - **Storage**: Azure Blob Storage (prod) / local filesystem (local dev)
 - **AI Models**: Azure AI Foundry — gpt-4o (vision) + gpt-5-mini (reasoning)
 - **Observability**: OpenTelemetry → Azure Application Insights + Aspire Dashboard
-- **Auth**: JWT (local/self-hosted) / Azure Entra ID (prod) / API keys (external integrations)
+- **Auth**: JWT with refresh tokens (local/self-hosted) / Azure Entra ID (prod) / API keys (external integrations)
 - **Infra**: Terraform → Azure Container Apps (API) + Static Web App (frontend)
 - **CI/CD**: GitHub Actions — PR checks, Azure deployment, Docker Hub publishing
+
+### CosmosDB Containers
+
+| Container | Partition Key | Description |
+|-----------|--------------|-------------|
+| `users` | `/partitionKey` (userId) | User accounts and preferences |
+| `captures` | `/partitionKey` (userId) | Photo captures and AI workflow results |
+| `items` | `/partitionKey` (userId) | Collection items (drinks, desserts, cigars) |
+| `venues` | `/partitionKey` (userId) | Venues (bars, restaurants, lounges) |
+| `friendships` | `/partitionKey` (userId) | Dual-document friendship records |
+| `friend-invites` | `/partitionKey` (invite code) | Invite codes for friend discovery |
+| `thoughts` | `/partitionKey` (targetUserId) | Friend thoughts/comments on items and venues |
+| `notifications` | `/partitionKey` (userId) | In-app notification records |
+
+### Friendship Dual-Document Pattern
+
+Each friendship creates two CosmosDB documents — one in each user's partition. This enables efficient per-user queries (list my friends) without cross-partition reads. When User A and User B become friends:
+- Document in A's partition: `{ userId: A, friendId: B, status: "accepted" }`
+- Document in B's partition: `{ userId: B, friendId: A, status: "accepted" }`
+
+Invite flow: sharing a link auto-accepts (the inviter pre-approved by sharing). The joiner clicking the link creates the friendship immediately.
 
 ## AI Pipeline
 
@@ -73,6 +98,45 @@ When AI Foundry is not configured, the system falls back to keyword-based local 
 | [Local Docker Deployment](docs/local-docker-deployment.md) | Self-hosted deployment with Docker Compose and Portainer |
 | [Azure Deployment](docs/azure-deployment.md) | Terraform stacks, GitHub Actions, OIDC setup, secrets & variables |
 
+## Friends API
+
+Friends feature enables social sharing between users. All endpoints require authentication (`MultiAuth` or `ApiKey`).
+
+### Friends
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/friends` | List accepted friends |
+| `GET` | `/api/friends/requests` | List sent and received friend requests |
+| `POST` | `/api/friends/invite` | Generate an 8-char invite code (7-day expiry) |
+| `POST` | `/api/friends/join/{code}` | Join via invite code (auto-accepts) |
+| `PUT` | `/api/friends/{id}/accept` | Accept a pending friend request |
+| `PUT` | `/api/friends/{id}/decline` | Decline a pending friend request |
+| `DELETE` | `/api/friends/{id}` | Remove a friend (deletes both sides) |
+| `GET` | `/api/friends/{friendId}/items` | Browse a friend's collection items |
+| `GET` | `/api/friends/{friendId}/items/{itemId}` | Get a specific friend's item |
+| `GET` | `/api/friends/{friendId}/venues` | Browse a friend's venues |
+| `GET` | `/api/friends/{friendId}/venues/{venueId}` | Get a specific friend's venue |
+
+### Thoughts
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/thoughts/{targetType}/{targetId}?targetUserId=` | Get thoughts on an item or venue (`targetType`: `item` or `venue`) |
+| `POST` | `/api/thoughts` | Leave a thought on a friend's item/venue (body: `content`, `targetUserId`, `targetType`, `targetId`, optional `rating` 1-5) |
+| `PUT` | `/api/thoughts/{id}` | Edit own thought (body: `content`, optional `rating`) |
+| `DELETE` | `/api/thoughts/{id}` | Delete own thought |
+| `GET` | `/api/thoughts/mine` | Get all thoughts you've written |
+| `GET` | `/api/thoughts/on-my-items` | Get all thoughts others left on your items/venues |
+
+### Notifications
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/notifications?limit=50` | List notifications (max 200, returns `{ notifications, unreadCount }`) |
+| `PUT` | `/api/notifications/{id}/read` | Mark a single notification as read |
+| `PUT` | `/api/notifications/read-all` | Mark all notifications as read |
+
 ## Quick Start
 
 ```bash
@@ -111,13 +175,16 @@ Access the admin panel at `/admin` (requires admin role — the first registered
 
 ## Security
 
-- JWT tokens for authentication; API key auth for external integrations
+- JWT tokens with refresh token rotation for authentication; API key auth for external integrations
+- Friendship validation on all cross-user data access endpoints (IDOR protection)
 - Path traversal protection on all file upload/download endpoints
 - Server-side file type validation (allowlisted image extensions only)
 - Blob URL ownership validation (users can only modify their own photos)
 - AI call timeouts (3 minutes) to prevent thread starvation
 - Prompt injection mitigation with explicit input delimiters
 - Constant-time API key hash comparison
+- Invite codes: 8-char alphanumeric (no ambiguous chars), 7-day expiry, single-use
+- Thought content validated (500 char limit, rating 1-5 range)
 - Production startup fails if JWT secret is not configured
 
 ## Project Structure
@@ -130,17 +197,25 @@ src/
       AuthController            Registration, login, Entra ID sign-in
       CapturesController        Photo capture + AI processing
       ItemsController           Collection CRUD, photo management, suggestions
+      VenuesController          Venue CRUD, URL extraction, logo extraction
+      FriendsController         Friend invites, accept/decline, browse friend data
+      ThoughtsController        Comments + ratings on friends' items and venues
+      NotificationsController   In-app notification list and read status
       ExternalController        External API for iOS Shortcuts (API key auth)
       UsersController           Profile, preferences, API key management
       AdminController           User management, prompts, logging, diagnostics
       UploadsController         Local file upload/download (dev/self-hosted)
-    Models/                     Domain models (Capture, Item, User, Prompt)
-    Services/                   Business logic (Auth, CosmosDB, Blob, Prompts)
+    Models/                     Domain models (Capture, Item, User, Venue, Friendship, Thought, Notification)
+    Services/                   Business logic (Auth, CosmosDB, Blob, Prompts, Notifications)
   AgentInitiator/               CLI tool -- creates/recreates agents in Foundry
     Prompts/                    Agent prompt markdown files
   AppHost/                      .NET Aspire orchestrator
   ServiceDefaults/              Shared OpenTelemetry, health checks
-  web/                          Vue 3 Frontend (PWA)
+  web/                          Vue 3.5 Frontend (PWA)
+    src/views/                  Page views (Collection, ItemDetail, Venues, Friends, etc.)
+    src/components/common/      Reusable components (StarRating, NotificationBell, ThoughtsList, etc.)
+    src/services/               API client modules (items, venues, friends, thoughts, notifications)
+    src/stores/                 Pinia state stores (auth, items, venues)
   WhiskeyAndSmokes.sln
 infrastructure/
   local/                        Terraform -- local dev (AI Foundry only)
@@ -150,6 +225,8 @@ tasks/                          Taskfile configs + Docker Compose files
   docker-compose.local.test.yml   Local dev services (Aspire dashboard)
   docker-compose.local.prod.yml   Self-hosted build-from-source deployment
   docker-compose.portainer.yml    Self-hosted pre-built image deployment
+tests/
+  WhiskeyAndSmokes.Tests/       xUnit v3 integration tests (55 tests)
 docs/
   local-development.md
   local-docker-deployment.md

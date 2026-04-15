@@ -34,6 +34,8 @@ public class FriendInvite
     private static string GenerateCode()
     {
         const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        return new string(Random.Shared.GetItems<char>(chars.AsSpan(), 8));
+        var bytes = new byte[8];
+        System.Security.Cryptography.RandomNumberGenerator.Fill(bytes);
+        return new string(bytes.Select(b => chars[b % chars.Length]).ToArray());
     }
 }

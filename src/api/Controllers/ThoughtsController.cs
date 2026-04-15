@@ -58,6 +58,9 @@ public class ThoughtsController : ControllerBase
 
         var userId = GetUserId();
 
+        if (string.IsNullOrWhiteSpace(request.Content))
+            return BadRequest(new { error = "Content cannot be empty." });
+
         if (request.TargetUserId == userId)
             return BadRequest(new { error = "You cannot leave a thought on your own item." });
 
@@ -108,6 +111,9 @@ public class ThoughtsController : ControllerBase
     public async Task<ActionResult<Thought>> UpdateThought(string id, [FromBody] UpdateThoughtRequest request)
     {
         if (!ModelState.IsValid) return ValidationProblem();
+
+        if (string.IsNullOrWhiteSpace(request.Content))
+            return BadRequest(new { error = "Content cannot be empty." });
 
         var userId = GetUserId();
 
