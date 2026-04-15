@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, inject, onMounted, onUnmounted, computed } from 'vue'
+import { ref, inject, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useItemsStore } from '../stores/items'
 import { useAuthStore } from '../stores/auth'
 import { RefreshKey } from '../composables/refreshKey'
+import { useVirtualizer } from '@tanstack/vue-virtual'
 import StarRating from '../components/common/StarRating.vue'
 
 const router = useRouter()
@@ -163,7 +164,21 @@ const displayItems = computed(() => {
   return sorted
 })
 
-const isLoadingList = computed(() =>
+const scrollContainerRef = ref<HTMLElement | null>(null)
+
+const virtualizer = useVirtualizer(computed(() => ({
+  count: displayItems.value.length,
+  getScrollElement: () => scrollContainerRef.value,
+  estimateSize: () => activeTab.value === 'wishlist' ? 140 : 100,
+  overscan: 5,
+  gap: 12,
+})))
+
+watch([activeTab, activeFilter], () => {
+  virtualizer.value.scrollToOffset(0)
+})
+
+const isLoadingList= computed(() =>
   activeTab.value === 'wishlist' ? itemsStore.isLoadingWishlist : itemsStore.isLoading
 )
 
@@ -371,81 +386,99 @@ onUnmounted(() => {
       <p v-else>No items yet. Capture something first!</p>
     </div>
 
-    <!-- Item list -->
-    <div v-else class="space-y-3">
-      <!-- Collection items -->
-      <template v-if="activeTab === 'collection'">
-        <router-link
-          v-for="item in displayItems"
-          :key="item.id"
-          :to="`/items/${item.id}`"
-          class="block bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 hover:border-[#1e407c]/50 transition-colors"
-        >
-          <div class="flex items-start gap-3">
-            <img
-              v-if="item.photoUrls.length"
-              :src="item.photoUrls[0]"
-              class="w-16 h-16 object-cover rounded-lg shrink-0"
-            />
-            <div v-else class="w-16 h-16 bg-[#0a2a52] rounded-lg shrink-0 flex items-center justify-center text-xs text-[#96BEE6]/70 uppercase">
-              {{ item.type }}
-            </div>
-
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2 mb-1">
-                <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6]">{{ item.type }}</span>
-                <span v-if="item.status === 'ai-draft'" class="text-xs text-[#96BEE6]">AI Draft</span>
-              </div>
-              <h3 class="font-medium text-white truncate">{{ item.name }}</h3>
-              <p v-if="item.brand" class="text-sm text-[#96BEE6]/70 truncate">{{ item.brand }}</p>
-              <div v-if="item.userRating" class="mt-1">
-                <StarRating :rating="item.userRating" size="sm" />
-              </div>
-            </div>
-          </div>
-        </router-link>
-      </template>
-
-      <!-- Wishlist items -->
-      <template v-else>
+    <!-- Item list (virtual scroll) -->
+    <div
+      v-else
+      ref="scrollContainerRef"
+      class="virtual-list-container overflow-y-auto"
+    >
+      <div
+        :style="{ height: `${virtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }"
+      >
         <div
-          v-for="item in displayItems"
-          :key="item.id"
-          class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4"
+          v-for="row in virtualizer.getVirtualItems()"
+          :key="displayItems[row.index].id"
+          :data-index="row.index"
+          :ref="(el: any) => { if (el?.$el || el) virtualizer.measureElement(el?.$el ?? el) }"
+          :style="{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${row.start}px)` }"
         >
-          <router-link :to="`/items/${item.id}`" class="block">
+          <!-- Collection item -->
+          <router-link
+            v-if="activeTab === 'collection'"
+            :to="`/items/${displayItems[row.index].id}`"
+            class="block bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 hover:border-[#1e407c]/50 transition-colors"
+          >
             <div class="flex items-start gap-3">
-              <div class="w-10 h-10 bg-[#0a2a52] rounded-lg shrink-0 flex items-center justify-center text-xs text-[#96BEE6]/70 uppercase">
-                {{ item.type.slice(0, 1) }}
+              <img
+                v-if="displayItems[row.index].photoUrls.length"
+                :src="displayItems[row.index].photoUrls[0]"
+                class="w-16 h-16 object-cover rounded-lg shrink-0"
+                loading="lazy"
+              />
+              <div v-else class="w-16 h-16 bg-[#0a2a52] rounded-lg shrink-0 flex items-center justify-center text-xs text-[#96BEE6]/70 uppercase">
+                {{ displayItems[row.index].type }}
               </div>
+
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 mb-1">
-                  <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6]">{{ item.type }}</span>
+                  <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6]">{{ displayItems[row.index].type }}</span>
+                  <span v-if="displayItems[row.index].status === 'ai-draft'" class="text-xs text-[#96BEE6]">AI Draft</span>
                 </div>
-                <h3 class="font-medium text-white truncate">{{ item.name }}</h3>
-                <p v-if="item.brand" class="text-sm text-[#96BEE6] truncate">{{ item.brand }}</p>
-                <p v-if="item.userNotes" class="text-xs text-[#96BEE6]/70 mt-1 line-clamp-2">{{ item.userNotes }}</p>
-                <p v-if="item.processedBy === 'pending'" class="text-xs text-[#96BEE6] mt-1">Processing...</p>
+                <h3 class="font-medium text-white truncate">{{ displayItems[row.index].name }}</h3>
+                <p v-if="displayItems[row.index].brand" class="text-sm text-[#96BEE6]/70 truncate">{{ displayItems[row.index].brand }}</p>
+                <div v-if="displayItems[row.index].userRating" class="mt-1">
+                  <StarRating :rating="displayItems[row.index].userRating!" size="sm" />
+                </div>
               </div>
             </div>
           </router-link>
 
-          <div class="flex gap-2 mt-3">
-            <button
-              @click="convertItem(item.id)"
-              class="flex-1 bg-[#1e407c] hover:bg-[#2a5299] text-white py-2 min-h-[44px] rounded-xl text-sm font-medium transition-colors"
-            >
-              Add to Collection
-            </button>
-            <button
-              @click="deleteItem(item.id)"
-              class="px-4 py-2 min-h-[44px] bg-[#0a2a52] text-red-400 hover:bg-[#1e407c] rounded-xl text-sm transition-colors"
-            >
-              Remove
-            </button>
+          <!-- Wishlist item -->
+          <div
+            v-else
+            class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4"
+          >
+            <router-link :to="`/items/${displayItems[row.index].id}`" class="block">
+              <div class="flex items-start gap-3">
+                <div class="w-10 h-10 bg-[#0a2a52] rounded-lg shrink-0 flex items-center justify-center text-xs text-[#96BEE6]/70 uppercase">
+                  {{ displayItems[row.index].type.slice(0, 1) }}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6]">{{ displayItems[row.index].type }}</span>
+                  </div>
+                  <h3 class="font-medium text-white truncate">{{ displayItems[row.index].name }}</h3>
+                  <p v-if="displayItems[row.index].brand" class="text-sm text-[#96BEE6] truncate">{{ displayItems[row.index].brand }}</p>
+                  <p v-if="displayItems[row.index].userNotes" class="text-xs text-[#96BEE6]/70 mt-1 line-clamp-2">{{ displayItems[row.index].userNotes }}</p>
+                  <p v-if="displayItems[row.index].processedBy === 'pending'" class="text-xs text-[#96BEE6] mt-1">Processing...</p>
+                </div>
+              </div>
+            </router-link>
+
+            <div class="flex gap-2 mt-3">
+              <button
+                @click="convertItem(displayItems[row.index].id)"
+                class="flex-1 bg-[#1e407c] hover:bg-[#2a5299] text-white py-2 min-h-[44px] rounded-xl text-sm font-medium transition-colors"
+              >
+                Add to Collection
+              </button>
+              <button
+                @click="deleteItem(displayItems[row.index].id)"
+                class="px-4 py-2 min-h-[44px] bg-[#0a2a52] text-red-400 hover:bg-[#1e407c] rounded-xl text-sm transition-colors"
+              >
+                Remove
+              </button>
+            </div>
           </div>
         </div>
-      </template>
+      </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.virtual-list-container {
+  height: calc(100vh - 280px);
+  height: calc(100dvh - 280px);
+}
+</style>
