@@ -240,22 +240,6 @@ async function loadActivity() {
     <!-- Click-away overlay for menu -->
     <div v-if="showMenu" class="fixed inset-0 z-40" @click="showMenu = false" />
 
-    <!-- Stats -->
-    <div class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 mb-4 flex justify-around text-center">
-      <div>
-        <p class="text-2xl font-bold text-[#96BEE6]">{{ users.length }}</p>
-        <p class="text-xs text-[#96BEE6]/70">Total Users</p>
-      </div>
-      <div>
-        <p class="text-2xl font-bold text-[#96BEE6]">{{ users.filter(u => u.role === 'admin').length }}</p>
-        <p class="text-xs text-[#96BEE6]/70">Admins</p>
-      </div>
-      <div>
-        <p class="text-2xl font-bold text-[#96BEE6]">{{ prompts.length }}</p>
-        <p class="text-xs text-[#96BEE6]/70">Prompts</p>
-      </div>
-    </div>
-
     <div v-if="isLoading" class="text-[#96BEE6]/70 text-center py-12">Loading...</div>
 
     <!-- ── Users Tab ─────────────────────────────── -->
