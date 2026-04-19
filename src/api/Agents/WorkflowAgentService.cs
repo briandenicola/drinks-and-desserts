@@ -23,6 +23,7 @@ public class WorkflowAgentService : IAgentService
     private readonly IPromptService _promptService;
     private readonly IBlobStorageService _blobService;
     private readonly ExifLocationService _exifLocation;
+    private readonly INotificationService _notificationService;
     private readonly ILogger<WorkflowAgentService> _logger;
     private readonly AiFoundryOptions _foundryOptions;
     private readonly ILoggerFactory _loggerFactory;
@@ -40,6 +41,7 @@ public class WorkflowAgentService : IAgentService
         IPromptService promptService,
         IBlobStorageService blobService,
         ExifLocationService exifLocation,
+        INotificationService notificationService,
         ILogger<WorkflowAgentService> logger,
         IOptions<AiFoundryOptions> foundryOptions,
         ILoggerFactory loggerFactory)
@@ -48,6 +50,7 @@ public class WorkflowAgentService : IAgentService
         _promptService = promptService;
         _blobService = blobService;
         _exifLocation = exifLocation;
+        _notificationService = notificationService;
         _logger = logger;
         _foundryOptions = foundryOptions.Value;
         _loggerFactory = loggerFactory;
@@ -113,6 +116,21 @@ public class WorkflowAgentService : IAgentService
             capture.UpdatedAt = DateTime.UtcNow;
             await _cosmosDb.UpsertAsync("captures", capture, capture.PartitionKey);
 
+            // Create notification for workflow completion
+            var itemTypes = items.Select(i => i.Type).Distinct().ToList();
+            var itemTypesStr = itemTypes.Count > 0 ? string.Join(", ", itemTypes) : "items";
+            await _notificationService.CreateAsync(new Notification
+            {
+                UserId = capture.UserId,
+                Type = NotificationType.WorkflowCompleted,
+                Title = $"Workflow completed: {items.Count} {(items.Count == 1 ? "item" : "items")} processed",
+                Detail = $"Created {items.Count} {itemTypesStr} from your capture",
+                SourceUserId = capture.UserId,
+                SourceDisplayName = "System",
+                ReferenceType = "capture",
+                ReferenceId = capture.Id
+            });
+
             _logger.LogInformation(
                 "Capture {CaptureId} completed: {ItemCount} items, types=[{Types}]",
                 capture.Id, items.Count, string.Join(", ", items.Select(i => i.Type).Distinct()));
@@ -140,6 +158,21 @@ public class WorkflowAgentService : IAgentService
                 capture.ProcessingError = $"AI workflow failed ({ex.Message}), used local extraction";
                 capture.UpdatedAt = DateTime.UtcNow;
                 await _cosmosDb.UpsertAsync("captures", capture, capture.PartitionKey);
+
+                // Create notification for fallback completion
+                var fallbackItemTypes = fallbackItems.Select(i => i.Type).Distinct().ToList();
+                var fallbackItemTypesStr = fallbackItemTypes.Count > 0 ? string.Join(", ", fallbackItemTypes) : "items";
+                await _notificationService.CreateAsync(new Notification
+                {
+                    UserId = capture.UserId,
+                    Type = NotificationType.WorkflowCompleted,
+                    Title = $"Workflow completed: {fallbackItems.Count} {(fallbackItems.Count == 1 ? "item" : "items")} processed",
+                    Detail = $"Created {fallbackItems.Count} {fallbackItemTypesStr} using fallback extraction",
+                    SourceUserId = capture.UserId,
+                    SourceDisplayName = "System",
+                    ReferenceType = "capture",
+                    ReferenceId = capture.Id
+                });
             }
             catch (Exception fallbackEx)
             {

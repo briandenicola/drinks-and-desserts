@@ -53,6 +53,9 @@ async function handleNotificationClick(n: AppNotification) {
   } else if (n.type === 'new-thought' && n.referenceType && n.referenceId) {
     // Navigate to the item/venue that got the thought
     router.push(`/${n.referenceType}s/${n.referenceId}`)
+  } else if (n.type === 'workflow-completed' && n.referenceId) {
+    // Navigate to the capture details or collection view
+    router.push('/collection')
   }
 }
 

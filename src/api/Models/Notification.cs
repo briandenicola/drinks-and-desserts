@@ -46,4 +46,5 @@ public static class NotificationType
     public const string FriendRequest = "friend-request";
     public const string FriendAccepted = "friend-accepted";
     public const string NewThought = "new-thought";
+    public const string WorkflowCompleted = "workflow-completed";
 }
