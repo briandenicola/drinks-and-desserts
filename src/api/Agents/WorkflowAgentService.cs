@@ -26,6 +26,7 @@ public class WorkflowAgentService : IAgentService
     private readonly ILogger<WorkflowAgentService> _logger;
     private readonly AiFoundryOptions _foundryOptions;
     private readonly ILoggerFactory _loggerFactory;
+    private readonly INotificationService _notificationService;
     private readonly bool _isFoundryConfigured;
 
     private const int MaxRefinements = 2;
@@ -42,7 +43,8 @@ public class WorkflowAgentService : IAgentService
         ExifLocationService exifLocation,
         ILogger<WorkflowAgentService> logger,
         IOptions<AiFoundryOptions> foundryOptions,
-        ILoggerFactory loggerFactory)
+        ILoggerFactory loggerFactory,
+        INotificationService notificationService)
     {
         _cosmosDb = cosmosDb;
         _promptService = promptService;
@@ -51,6 +53,7 @@ public class WorkflowAgentService : IAgentService
         _logger = logger;
         _foundryOptions = foundryOptions.Value;
         _loggerFactory = loggerFactory;
+        _notificationService = notificationService;
         _isFoundryConfigured = !string.IsNullOrEmpty(_foundryOptions.ProjectEndpoint);
     }
 
@@ -113,6 +116,9 @@ public class WorkflowAgentService : IAgentService
             capture.UpdatedAt = DateTime.UtcNow;
             await _cosmosDb.UpsertAsync("captures", capture, capture.PartitionKey);
 
+            // Notify user that the workflow completed
+            await NotifyCaptureWorkflowCompleted(capture, items);
+
             _logger.LogInformation(
                 "Capture {CaptureId} completed: {ItemCount} items, types=[{Types}]",
                 capture.Id, items.Count, string.Join(", ", items.Select(i => i.Type).Distinct()));
@@ -140,6 +146,9 @@ public class WorkflowAgentService : IAgentService
                 capture.ProcessingError = $"AI workflow failed ({ex.Message}), used local extraction";
                 capture.UpdatedAt = DateTime.UtcNow;
                 await _cosmosDb.UpsertAsync("captures", capture, capture.PartitionKey);
+
+                // Notify user that the fallback workflow completed
+                await NotifyCaptureWorkflowCompleted(capture, fallbackItems);
             }
             catch (Exception fallbackEx)
             {
@@ -150,6 +159,23 @@ public class WorkflowAgentService : IAgentService
                 await _cosmosDb.UpsertAsync("captures", capture, capture.PartitionKey);
             }
         }
+    }
+
+    private async Task NotifyCaptureWorkflowCompleted(Capture capture, List<Item> items)
+    {
+        var itemTypes = items.Select(i => i.Type).Distinct().ToList();
+        var itemTypesStr = itemTypes.Count > 0 ? string.Join(", ", itemTypes) : "items";
+        await _notificationService.CreateAsync(new Notification
+        {
+            UserId = capture.UserId,
+            Type = NotificationType.WorkflowCompleted,
+            Title = $"Workflow completed: {items.Count} {(items.Count == 1 ? "item" : "items")} processed",
+            Detail = $"Created {items.Count} {itemTypesStr} from your capture",
+            SourceUserId = capture.UserId,
+            SourceDisplayName = "System",
+            ReferenceType = "capture",
+            ReferenceId = capture.Id
+        });
     }
 
     private async Task<List<Item>> RunWorkflowAsync(Capture capture)

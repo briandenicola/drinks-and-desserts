@@ -12,6 +12,7 @@ public class WishlistUrlProcessingService : BackgroundService
     private readonly Channel<WishlistUrlWorkItem> _channel;
     private readonly IWishlistUrlService _urlService;
     private readonly ICosmosDbService _cosmosDb;
+    private readonly INotificationService _notificationService;
     private readonly ILogger<WishlistUrlProcessingService> _logger;
     private const string ContainerName = "items";
     private const string CapturesContainerName = "captures";
@@ -20,11 +21,13 @@ public class WishlistUrlProcessingService : BackgroundService
         Channel<WishlistUrlWorkItem> channel,
         IWishlistUrlService urlService,
         ICosmosDbService cosmosDb,
+        INotificationService notificationService,
         ILogger<WishlistUrlProcessingService> logger)
     {
         _channel = channel;
         _urlService = urlService;
         _cosmosDb = cosmosDb;
+        _notificationService = notificationService;
         _logger = logger;
     }
 
@@ -148,6 +151,22 @@ public class WishlistUrlProcessingService : BackgroundService
 
                 await _cosmosDb.UpsertAsync(ContainerName, item, item.PartitionKey);
                 await _cosmosDb.UpsertAsync(CapturesContainerName, capture, capture.PartitionKey);
+
+                // Notify user when wishlist analysis completes successfully
+                if (capture.Status == CaptureStatus.Completed)
+                {
+                    await _notificationService.CreateAsync(new Notification
+                    {
+                        UserId = workItem.UserId,
+                        Type = NotificationType.WorkflowCompleted,
+                        Title = $"Wishlist item analysis complete: {item.Name}",
+                        Detail = $"Added {item.Type ?? "item"} from {new Uri(workItem.Url).Host}",
+                        SourceUserId = workItem.UserId,
+                        SourceDisplayName = "System",
+                        ReferenceType = "item",
+                        ReferenceId = item.Id
+                    });
+                }
             }
             catch (Exception ex)
             {

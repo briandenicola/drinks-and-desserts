@@ -18,7 +18,7 @@ async function loadCount() {
 
 async function toggleDropdown() {
   showDropdown.value = !showDropdown.value
-  if (showDropdown.value && notifications.value.length === 0) {
+  if (showDropdown.value) {
     isLoading.value = true
     try {
       const res = await notificationsApi.list(20)
@@ -50,9 +50,20 @@ async function handleNotificationClick(n: AppNotification) {
 
   if (n.type === 'friend-request' || n.type === 'friend-accepted') {
     router.push('/friends')
-  } else if (n.type === 'new-thought' && n.referenceType && n.referenceId) {
-    // Navigate to the item/venue that got the thought
-    router.push(`/${n.referenceType}s/${n.referenceId}`)
+  } else if (n.type === 'new-thought') {
+    if (n.referenceType && n.referenceId) {
+      // Navigate to the item/venue that got the thought
+      router.push(`/${n.referenceType}s/${n.referenceId}`)
+    }
+  } else if (n.type === 'workflow-completed') {
+    // Navigate to the relevant resource or collection
+    if (n.referenceType === 'venue' && n.referenceId) {
+      router.push(`/venues/${n.referenceId}`)
+    } else if (n.referenceType === 'item' && n.referenceId) {
+      router.push(`/items/${n.referenceId}`)
+    } else {
+      router.push('/collection')
+    }
   }
 }
 

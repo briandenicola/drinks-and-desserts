@@ -13,6 +13,7 @@ public class VenueUrlProcessingService : BackgroundService
     private readonly IVenueUrlService _urlService;
     private readonly ICosmosDbService _cosmosDb;
     private readonly IBlobStorageService _blobStorage;
+    private readonly INotificationService _notificationService;
     private readonly ILogger<VenueUrlProcessingService> _logger;
     private const string ContainerName = "venues";
 
@@ -21,12 +22,14 @@ public class VenueUrlProcessingService : BackgroundService
         IVenueUrlService urlService,
         ICosmosDbService cosmosDb,
         IBlobStorageService blobStorage,
+        INotificationService notificationService,
         ILogger<VenueUrlProcessingService> logger)
     {
         _channel = channel;
         _urlService = urlService;
         _cosmosDb = cosmosDb;
         _blobStorage = blobStorage;
+        _notificationService = notificationService;
         _logger = logger;
     }
 
@@ -167,6 +170,22 @@ public class VenueUrlProcessingService : BackgroundService
 
                 venue.UpdatedAt = DateTime.UtcNow;
                 await _cosmosDb.UpsertAsync(ContainerName, venue, venue.PartitionKey);
+
+                // Notify user when venue analysis completes successfully
+                if (venue.Status == VenueStatus.Completed)
+                {
+                    await _notificationService.CreateAsync(new Notification
+                    {
+                        UserId = workItem.UserId,
+                        Type = NotificationType.WorkflowCompleted,
+                        Title = $"Venue analysis complete: {venue.Name}",
+                        Detail = $"Type: {venue.Type}{(!string.IsNullOrEmpty(venue.Address) ? $", {venue.Address}" : "")}",
+                        SourceUserId = workItem.UserId,
+                        SourceDisplayName = "System",
+                        ReferenceType = "venue",
+                        ReferenceId = venue.Id
+                    });
+                }
             }
             catch (Exception ex)
             {
