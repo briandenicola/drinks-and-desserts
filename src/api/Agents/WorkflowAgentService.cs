@@ -23,6 +23,7 @@ public class WorkflowAgentService : IAgentService
     private readonly IPromptService _promptService;
     private readonly IBlobStorageService _blobService;
     private readonly ExifLocationService _exifLocation;
+    private readonly INotificationService _notificationService;
     private readonly ILogger<WorkflowAgentService> _logger;
     private readonly AiFoundryOptions _foundryOptions;
     private readonly ILoggerFactory _loggerFactory;
@@ -41,6 +42,7 @@ public class WorkflowAgentService : IAgentService
         IPromptService promptService,
         IBlobStorageService blobService,
         ExifLocationService exifLocation,
+        INotificationService notificationService,
         ILogger<WorkflowAgentService> logger,
         IOptions<AiFoundryOptions> foundryOptions,
         ILoggerFactory loggerFactory,
@@ -50,6 +52,7 @@ public class WorkflowAgentService : IAgentService
         _promptService = promptService;
         _blobService = blobService;
         _exifLocation = exifLocation;
+        _notificationService = notificationService;
         _logger = logger;
         _foundryOptions = foundryOptions.Value;
         _loggerFactory = loggerFactory;
