@@ -186,6 +186,20 @@ public class VenueUrlProcessingService : BackgroundService
                         ReferenceId = venue.Id
                     });
                 }
+                else if (venue.Status == VenueStatus.Failed)
+                {
+                    await _notificationService.CreateAsync(new Notification
+                    {
+                        UserId = workItem.UserId,
+                        Type = NotificationType.WorkflowFailed,
+                        Title = $"Venue analysis failed: {venue.Name}",
+                        Detail = venue.ProcessingError ?? "Could not extract venue details from URL",
+                        SourceUserId = workItem.UserId,
+                        SourceDisplayName = "System",
+                        ReferenceType = "venue",
+                        ReferenceId = venue.Id
+                    });
+                }
             }
             catch (Exception ex)
             {

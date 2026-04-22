@@ -167,6 +167,20 @@ public class WishlistUrlProcessingService : BackgroundService
                         ReferenceId = item.Id
                     });
                 }
+                else if (capture.Status == CaptureStatus.Failed)
+                {
+                    await _notificationService.CreateAsync(new Notification
+                    {
+                        UserId = workItem.UserId,
+                        Type = NotificationType.WorkflowFailed,
+                        Title = $"Wishlist extraction failed: {item.Name}",
+                        Detail = capture.ProcessingError ?? "Could not extract item details from URL",
+                        SourceUserId = workItem.UserId,
+                        SourceDisplayName = "System",
+                        ReferenceType = "item",
+                        ReferenceId = item.Id
+                    });
+                }
             }
             catch (Exception ex)
             {

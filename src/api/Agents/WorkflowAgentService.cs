@@ -157,6 +157,18 @@ public class WorkflowAgentService : IAgentService
                 capture.ProcessingError = ex.Message;
                 capture.UpdatedAt = DateTime.UtcNow;
                 await _cosmosDb.UpsertAsync("captures", capture, capture.PartitionKey);
+
+                await _notificationService.CreateAsync(new Notification
+                {
+                    UserId = capture.UserId,
+                    Type = NotificationType.WorkflowFailed,
+                    Title = "Capture processing failed",
+                    Detail = "AI analysis and local extraction both failed. Check History for details.",
+                    SourceUserId = capture.UserId,
+                    SourceDisplayName = "System",
+                    ReferenceType = "capture",
+                    ReferenceId = capture.Id
+                });
             }
         }
     }

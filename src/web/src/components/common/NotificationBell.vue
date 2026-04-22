@@ -55,7 +55,7 @@ async function handleNotificationClick(n: AppNotification) {
       // Navigate to the item/venue that got the thought
       router.push(`/${n.referenceType}s/${n.referenceId}`)
     }
-  } else if (n.type === 'workflow-completed') {
+  } else if (n.type === 'workflow-completed' || n.type === 'workflow-failed') {
     // Navigate to the relevant resource
     if (n.referenceType === 'venue' && n.referenceId) {
       router.push(`/venues/${n.referenceId}`)
