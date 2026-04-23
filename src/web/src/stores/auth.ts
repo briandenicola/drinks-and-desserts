@@ -15,6 +15,7 @@ import {
 } from '../services/auth'
 import { usersApi, type User } from '../services/users'
 import { loginWithEntra, logoutEntra, isEntraConfigured } from '../services/msal'
+import { getErrorMessage } from '../services/errors'
 import router from '../router'
 
 const REFRESH_BUFFER_MS = 60_000 // refresh 1 minute before expiry
@@ -106,8 +107,8 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = response.data.user
       scheduleRefresh()
       router.push('/')
-    } catch (e: any) {
-      error.value = e.response?.data?.message ?? 'Registration failed'
+    } catch (e: unknown) {
+      error.value = getErrorMessage(e, 'Registration failed')
       throw e
     }
   }
@@ -121,8 +122,8 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = response.data.user
       scheduleRefresh()
       router.push('/')
-    } catch (e: any) {
-      error.value = e.response?.data?.message ?? 'Login failed'
+    } catch (e: unknown) {
+      error.value = getErrorMessage(e, 'Login failed')
       throw e
     }
   }
@@ -137,8 +138,8 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = response.data.user
       scheduleRefresh()
       router.push('/')
-    } catch (e: any) {
-      error.value = e.response?.data?.message ?? e.message ?? 'Microsoft sign-in failed'
+    } catch (e: unknown) {
+      error.value = getErrorMessage(e, 'Microsoft sign-in failed')
       throw e
     }
   }

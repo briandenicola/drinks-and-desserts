@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { friendsApi } from '../services/friends'
 import { useAuthStore } from '../stores/auth'
+import { getErrorMessage } from '../services/errors'
 
 const route = useRoute()
 const router = useRouter()
@@ -21,8 +22,8 @@ async function join() {
     const res = await friendsApi.joinViaInvite(code.value)
     friendName.value = res.data.friendDisplayName
     success.value = true
-  } catch (e: any) {
-    error.value = e.response?.data?.error || 'Failed to join. The invite may be expired or invalid.'
+  } catch (e: unknown) {
+    error.value = getErrorMessage(e, 'Failed to join. The invite may be expired or invalid.')
   } finally {
     isJoining.value = false
   }

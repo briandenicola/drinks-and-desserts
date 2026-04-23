@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { isEntraConfigured } from '../services/msal'
+import { getErrorMessage } from '../services/errors'
 
 const auth = useAuthStore()
 
@@ -37,8 +38,8 @@ async function submit() {
         password: password.value,
       })
     }
-  } catch (e: any) {
-    errorMessage.value = e.response?.data?.message ?? (isRegister.value ? 'Registration failed' : 'Login failed')
+  } catch (e: unknown) {
+    errorMessage.value = getErrorMessage(e, isRegister.value ? 'Registration failed' : 'Login failed')
   } finally {
     isSubmitting.value = false
   }
@@ -49,8 +50,8 @@ async function signInWithMicrosoft() {
   errorMessage.value = ''
   try {
     await auth.loginEntra()
-  } catch (e: any) {
-    errorMessage.value = e.response?.data?.message ?? e.message ?? 'Microsoft sign-in failed'
+  } catch (e: unknown) {
+    errorMessage.value = getErrorMessage(e, 'Microsoft sign-in failed')
   } finally {
     isSubmitting.value = false
   }

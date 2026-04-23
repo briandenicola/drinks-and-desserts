@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useItemsStore } from '../stores/items'
 import { useAuthStore } from '../stores/auth'
 import { RefreshKey } from '../composables/refreshKey'
+import { getErrorMessage } from '../services/errors'
 import { useVirtualizer } from '@tanstack/vue-virtual'
 import StarRating from '../components/common/StarRating.vue'
 
@@ -126,8 +127,8 @@ async function addWishlistFromUrl() {
     await itemsStore.createWishlistFromUrl(newUrl.value.trim())
     newUrl.value = ''
     showAddForm.value = false
-  } catch (e: any) {
-    urlError.value = e.response?.data?.message ?? 'Failed to submit URL'
+  } catch (e: unknown) {
+    urlError.value = getErrorMessage(e, 'Failed to submit URL')
   } finally {
     isExtractingUrl.value = false
   }

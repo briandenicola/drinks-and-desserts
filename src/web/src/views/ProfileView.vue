@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/auth'
 import { usersApi } from '../services/users'
 import type { ApiKeyResponse, CreateApiKeyResponse } from '../services/users'
 import { RefreshKey } from '../composables/refreshKey'
+import { getErrorMessage } from '../services/errors'
 
 const auth = useAuthStore()
 const displayName = ref('')
@@ -73,8 +74,8 @@ async function createApiKey() {
     keyCopied.value = false
     newKeyName.value = ''
     await loadApiKeys()
-  } catch (e: any) {
-    keyMessage.value = e.response?.data?.message ?? 'Failed to create key'
+  } catch (e: unknown) {
+    keyMessage.value = getErrorMessage(e, 'Failed to create key')
   } finally {
     isCreatingKey.value = false
   }
@@ -180,8 +181,8 @@ async function changePassword() {
     newPassword.value = ''
     confirmPassword.value = ''
     setTimeout(() => { passwordMessage.value = '' }, 3000)
-  } catch (e: any) {
-    passwordMessage.value = e.response?.data?.message ?? 'Failed to change password'
+  } catch (e: unknown) {
+    passwordMessage.value = getErrorMessage(e, 'Failed to change password')
     passwordError.value = true
   } finally {
     isChangingPassword.value = false
