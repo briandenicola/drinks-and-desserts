@@ -226,6 +226,12 @@ public class VenuesController : ControllerBase
         if (venue == null)
             return NotFound();
 
+        if (string.IsNullOrWhiteSpace(request.BlobUrl))
+            return BadRequest(new { message = "blobUrl is required" });
+
+        if (!ValidateBlobOwnership(request.BlobUrl, userId))
+            return BadRequest(new { message = "Invalid blob URL" });
+
         if (!venue.PhotoUrls.Contains(request.BlobUrl))
         {
             venue.PhotoUrls.Add(request.BlobUrl);
@@ -247,6 +253,9 @@ public class VenuesController : ControllerBase
         if (venue == null)
             return NotFound();
 
+        if (string.IsNullOrWhiteSpace(request.BlobUrl))
+            return BadRequest(new { message = "blobUrl is required" });
+
         if (venue.PhotoUrls.Remove(request.BlobUrl))
         {
             venue.UpdatedAt = DateTime.UtcNow;
@@ -263,5 +272,31 @@ public class VenuesController : ControllerBase
         }
 
         return Ok(venue);
+    }
+
+    /// <summary>
+    /// Validates that a blob URL belongs to the specified user by parsing URL segments structurally.
+    /// Blob naming convention: {baseUrl}/{userId}/yyyy/MM/dd/{guid}.{ext}
+    /// </summary>
+    private static bool ValidateBlobOwnership(string blobUrl, string userId)
+    {
+        try
+        {
+            string[] segments;
+            if (Uri.TryCreate(blobUrl, UriKind.Absolute, out var uri))
+            {
+                segments = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            }
+            else
+            {
+                segments = blobUrl.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            }
+
+            return segments.Any(s => s.Equals(userId, StringComparison.OrdinalIgnoreCase));
+        }
+        catch
+        {
+            return false;
+        }
     }
 }

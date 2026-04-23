@@ -38,7 +38,13 @@ export function getStoredExpiresAt(): string | null {
 
 export function getStoredUser(): User | null {
   const data = localStorage.getItem(USER_KEY)
-  return data ? JSON.parse(data) : null
+  if (!data) return null
+  try {
+    return JSON.parse(data)
+  } catch {
+    localStorage.removeItem(USER_KEY)
+    return null
+  }
 }
 
 export function storeAuth(auth: AuthResponse) {

@@ -11,15 +11,21 @@ public class CaptureProcessingService : BackgroundService
 {
     private readonly Channel<Capture> _channel;
     private readonly IAgentService _agentService;
+    private readonly ICosmosDbService _cosmosDb;
+    private readonly INotificationService _notificationService;
     private readonly ILogger<CaptureProcessingService> _logger;
 
     public CaptureProcessingService(
         Channel<Capture> channel,
         IAgentService agentService,
+        ICosmosDbService cosmosDb,
+        INotificationService notificationService,
         ILogger<CaptureProcessingService> logger)
     {
         _channel = channel;
         _agentService = agentService;
+        _cosmosDb = cosmosDb;
+        _notificationService = notificationService;
         _logger = logger;
     }
 
@@ -57,6 +63,30 @@ public class CaptureProcessingService : BackgroundService
                     _logger.LogError(ex,
                         "Capture {CaptureId} failed after {Max} attempts. UserId={UserId}, PhotoCount={PhotoCount}",
                         capture.Id, maxRetries, capture.UserId, capture.Photos.Count);
+
+                    try
+                    {
+                        capture.Status = CaptureStatus.Failed;
+                        capture.ProcessingError = ex.Message;
+                        capture.UpdatedAt = DateTime.UtcNow;
+                        await _cosmosDb.UpsertAsync("captures", capture, capture.PartitionKey);
+
+                        await _notificationService.CreateAsync(new Notification
+                        {
+                            UserId = capture.UserId,
+                            Type = NotificationType.WorkflowFailed,
+                            Title = "Capture processing failed",
+                            Detail = $"Failed after {maxRetries} attempts: {ex.Message}",
+                            SourceUserId = capture.UserId,
+                            SourceDisplayName = "System",
+                            ReferenceType = "capture",
+                            ReferenceId = capture.Id
+                        });
+                    }
+                    catch (Exception statusEx)
+                    {
+                        _logger.LogWarning(statusEx, "Failed to update status for capture {CaptureId}", capture.Id);
+                    }
                 }
             }
         }

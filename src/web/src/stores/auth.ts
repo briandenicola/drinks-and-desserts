@@ -97,6 +97,14 @@ export const useAuthStore = defineStore('auth', () => {
     document.addEventListener('visibilitychange', handleVisibilityChange)
   }
 
+  function dispose() {
+    document.removeEventListener('visibilitychange', handleVisibilityChange)
+    if (refreshTimer) {
+      clearTimeout(refreshTimer)
+      refreshTimer = null
+    }
+  }
+
   async function register(data: RegisterRequest) {
     error.value = null
     try {
@@ -187,5 +195,5 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { user, isLoading, error, isAuthenticated, isAdmin, initialize, register, login, loginEntra, logout, loadUser }
+  return { user, isLoading, error, isAuthenticated, isAdmin, initialize, dispose, register, login, loginEntra, logout, loadUser }
 })
