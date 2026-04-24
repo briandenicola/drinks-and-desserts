@@ -7,6 +7,13 @@ import { RefreshKey } from '../composables/refreshKey'
 import { getErrorMessage } from '../services/errors'
 import { useVirtualizer } from '@tanstack/vue-virtual'
 import StarRating from '../components/common/StarRating.vue'
+import { useBreakpoint } from '../composables/useBreakpoint'
+import FilterSidebar from '../components/collection/FilterSidebar.vue'
+import type { CollectionFilters } from '../components/collection/FilterSidebar.vue'
+import CollectionGrid from '../components/collection/CollectionGrid.vue'
+import DetailPanel from '../components/collection/DetailPanel.vue'
+
+const { isDesktop } = useBreakpoint()
 
 const router = useRouter()
 const itemsStore = useItemsStore()
@@ -205,9 +212,54 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('click', closeSortMenu)
 })
+
+// Desktop collection state
+const selectedItemId = ref<string | null>(null)
+const desktopFilters = ref<CollectionFilters>({ category: undefined, minRating: 0, labels: '' })
+
+const desktopFilteredItems = computed(() => {
+  const f = desktopFilters.value
+  return displayItems.value.filter(item => {
+    if (f.category && item.type !== f.category) return false
+    if (f.minRating > 0 && (item.userRating ?? 0) < f.minRating) return false
+    if (f.labels.trim()) {
+      const search = f.labels.toLowerCase()
+      if (!item.tags.some(t => t.toLowerCase().includes(search))) return false
+    }
+    return true
+  })
+})
+
+function selectItem(id: string) {
+  selectedItemId.value = selectedItemId.value === id ? null : id
+}
+
+function navigateToItem(id: string) {
+  router.push(`/items/${id}`)
+}
 </script>
 
 <template>
+  <!-- Desktop layout (>= 1024px) -->
+  <template v-if="isDesktop">
+    <div class="flex h-[calc(100vh-0px)]">
+      <FilterSidebar v-model="desktopFilters" />
+      <CollectionGrid
+        :items="desktopFilteredItems"
+        :selected-id="selectedItemId"
+        @select="selectItem"
+      />
+      <DetailPanel
+        v-if="selectedItemId"
+        :item-id="selectedItemId"
+        @close="selectedItemId = null"
+        @navigate="navigateToItem"
+      />
+    </div>
+  </template>
+
+  <!-- Mobile layout (< 1024px) -->
+  <template v-else>
   <div class="p-4 max-w-lg mx-auto">
     <!-- Collection / Wishlist toggle -->
     <div class="flex bg-[#041e3e] border border-[#0a2a52] rounded-xl p-1 mb-4">
@@ -475,6 +527,7 @@ onUnmounted(() => {
       </div>
     </div>
   </div>
+  </template>
 </template>
 
 <style scoped>

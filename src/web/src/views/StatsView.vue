@@ -3,10 +3,16 @@ import { ref, inject, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { usersApi } from '../services/users'
 import { RefreshKey } from '../composables/refreshKey'
+import { useBreakpoint } from '../composables/useBreakpoint'
 import StarRating from '../components/common/StarRating.vue'
+import CategoryBreakdown from '../components/stats/CategoryBreakdown.vue'
+import RatingTrends from '../components/stats/RatingTrends.vue'
+import CaptureHeatmap from '../components/stats/CaptureHeatmap.vue'
+import StatsLeaderboards from '../components/stats/StatsLeaderboards.vue'
 
 const router = useRouter()
 const registerRefresh = inject(RefreshKey)
+const { isDesktop } = useBreakpoint()
 
 interface TopItem {
   id: string
@@ -109,13 +115,64 @@ function typeTextColor(type: string) {
 </script>
 
 <template>
-  <div class="p-4 max-w-lg mx-auto space-y-6">
+  <div class="p-4 max-w-lg mx-auto space-y-6" :class="{ 'lg:max-w-6xl': isDesktop }">
     <h2 class="text-xl font-semibold">Stats</h2>
 
     <div v-if="isLoading" class="text-center py-12 text-[#96BEE6]/70">Loading stats...</div>
     <div v-else-if="error" class="text-center py-12 text-red-400">{{ error }}</div>
 
     <template v-else-if="stats">
+      <!-- Desktop enhanced stats -->
+      <template v-if="isDesktop">
+        <!-- Overview Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 text-center">
+            <div class="text-2xl font-bold text-[#96BEE6]">{{ stats.overview.totalItems }}</div>
+            <div class="text-xs text-[#96BEE6]/70 mt-1">Items</div>
+          </div>
+          <div class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 text-center">
+            <div class="text-2xl font-bold text-[#96BEE6]">{{ stats.overview.totalCaptures }}</div>
+            <div class="text-xs text-[#96BEE6]/70 mt-1">Captures</div>
+          </div>
+          <div class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 text-center">
+            <div class="text-2xl font-bold text-[#96BEE6]">{{ stats.overview.uniqueBrands }}</div>
+            <div class="text-xs text-[#96BEE6]/70 mt-1">Brands</div>
+          </div>
+          <div class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 text-center">
+            <div class="text-2xl font-bold text-[#96BEE6]">{{ memberDuration }}</div>
+            <div class="text-xs text-[#96BEE6]/70 mt-1">Member</div>
+          </div>
+        </div>
+
+        <!-- Charts row -->
+        <div class="grid lg:grid-cols-2 gap-6">
+          <CategoryBreakdown :type-breakdown="stats.typeBreakdown" />
+          <RatingTrends :rating-trend="stats.ratingTrend" />
+        </div>
+
+        <!-- Heatmap -->
+        <CaptureHeatmap :activity-by-day="stats.activityByDay" :monthly-trend="stats.monthlyTrend" />
+
+        <!-- Leaderboards -->
+        <StatsLeaderboards :top-rated="stats.topRated" :top-venues="stats.topVenues" />
+
+        <!-- Tags -->
+        <section v-if="stats.topTags.length" class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 space-y-3">
+          <h3 class="text-sm font-medium text-[#96BEE6] uppercase tracking-wide">Top Tags</h3>
+          <div class="flex flex-wrap gap-2">
+            <span
+              v-for="t in stats.topTags"
+              :key="t.tag"
+              class="px-2.5 py-1 rounded-full text-xs border border-[#1e407c]/50 text-[#96BEE6]"
+            >
+              {{ t.tag }} <span class="text-[#4a7aa5]/60">({{ t.count }})</span>
+            </span>
+          </div>
+        </section>
+      </template>
+
+      <!-- Mobile stats (original) -->
+      <template v-else>
       <!-- Overview Cards -->
       <div class="grid grid-cols-2 gap-3">
         <div class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 text-center">
@@ -267,6 +324,7 @@ function typeTextColor(type: string) {
       <div v-if="stats.overview.totalItems === 0" class="text-center py-8 text-[#96BEE6]/70">
         <p>No data yet. Start capturing to see your stats.</p>
       </div>
+      </template>
     </template>
   </div>
 </template>

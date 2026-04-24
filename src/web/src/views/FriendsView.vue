@@ -3,8 +3,10 @@ import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { friendsApi, type Friendship, type FriendInvite } from '../services/friends'
 import { notificationsApi } from '../services/notifications'
 import { useRouter } from 'vue-router'
+import { useBreakpoint } from '../composables/useBreakpoint'
 
 const router = useRouter()
+const { isDesktop } = useBreakpoint()
 let copyTimer: ReturnType<typeof setTimeout> | undefined
 const friends = ref<Friendship[]>([])
 const sentRequests = ref<Friendship[]>([])
@@ -105,7 +107,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="p-4 max-w-lg mx-auto">
+  <div class="p-4 mx-auto" :class="isDesktop ? 'max-w-6xl' : 'max-w-lg'">
     <div class="flex items-center justify-between mb-6">
       <button @click="router.back()" class="text-[#96BEE6] text-sm">Back</button>
       <h2 class="text-xl font-semibold">Friends</h2>

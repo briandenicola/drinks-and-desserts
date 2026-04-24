@@ -3,12 +3,16 @@ import { ref, inject, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useVenuesStore } from '../stores/venues'
 import { RefreshKey } from '../composables/refreshKey'
+import { useBreakpoint } from '../composables/useBreakpoint'
 import { useVirtualizer } from '@tanstack/vue-virtual'
 import StarRating from '../components/common/StarRating.vue'
+import VenueLeaderboard from '../components/venues/VenueLeaderboard.vue'
 
 const router = useRouter()
 const venuesStore = useVenuesStore()
 const registerRefresh = inject(RefreshKey)
+const { isDesktop } = useBreakpoint()
+const leaderboardSort = ref<'rating' | 'items'>('rating')
 
 const showAddForm = ref(false)
 const addMode = ref<'manual' | 'url'>('manual')
@@ -42,6 +46,16 @@ const sortedVenues = computed(() => {
     if (rb !== ra) return rb - ra
     return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   })
+})
+
+const leaderboardVenues = computed(() => {
+  return sortedVenues.value.map(v => ({
+    id: v.id,
+    name: v.name,
+    type: v.type,
+    rating: v.rating ?? null,
+    itemCount: 0,
+  }))
 })
 
 const scrollContainerRef = ref<HTMLElement | null>(null)
@@ -107,7 +121,7 @@ function resetForm() {
 </script>
 
 <template>
-  <div class="p-4 max-w-lg mx-auto">
+  <div class="p-4 mx-auto" :class="isDesktop ? 'max-w-6xl' : 'max-w-lg'">
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-xl font-bold text-white">Venues</h2>
       <button
@@ -191,6 +205,16 @@ function resetForm() {
         </div>
       </div>
     </div>
+
+    <!-- Desktop: Leaderboard sidebar -->
+    <VenueLeaderboard
+      v-if="isDesktop && sortedVenues.length"
+      :venues="leaderboardVenues"
+      :sort-by="leaderboardSort"
+      @sort="leaderboardSort = $event"
+      @select="(id: string) => router.push(`/venues/${id}`)"
+      class="mt-6"
+    />
 
     <!-- Add Venue Modal -->
     <Teleport to="body">
