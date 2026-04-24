@@ -13,6 +13,11 @@ const routes = [
     redirect: '/items',
   },
   {
+    path: '/dashboard',
+    name: 'Dashboard',
+    component: () => import('../views/DashboardView.vue'),
+  },
+  {
     path: '/capture',
     name: 'Capture',
     component: () => import('../views/CaptureView.vue'),

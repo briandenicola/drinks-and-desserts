@@ -3,12 +3,15 @@ import { provide } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 import { useRoute } from 'vue-router'
 import { usePullToRefresh } from '../../composables/usePullToRefresh'
+import { useBreakpoint } from '../../composables/useBreakpoint'
 import { RefreshKey } from '../../composables/refreshKey'
 import NotificationBell from './NotificationBell.vue'
 import PwaInstallPrompt from './PwaInstallPrompt.vue'
+import DesktopSidebar from './DesktopSidebar.vue'
 
 const auth = useAuthStore()
 const route = useRoute()
+const { isDesktop } = useBreakpoint()
 
 const isPwa = ('standalone' in window.navigator && (window.navigator as any).standalone) ||
   window.matchMedia('(display-mode: standalone)').matches
@@ -37,8 +40,14 @@ const navItems = [
 
 <template>
   <div class="min-h-screen flex flex-col">
-    <!-- Header -->
-    <header class="bg-[#041e3e] border-b border-[#0a2a52] px-4 py-3 flex items-center justify-between safe-area-top">
+    <!-- Desktop Sidebar -->
+    <DesktopSidebar v-if="isDesktop && auth.isAuthenticated" />
+
+    <!-- Header (mobile only, or desktop with offset) -->
+    <header
+      class="bg-[#041e3e] border-b border-[#0a2a52] px-4 py-3 flex items-center justify-between safe-area-top"
+      :class="{ 'lg:ml-64': isDesktop && auth.isAuthenticated, 'lg:hidden': isDesktop && auth.isAuthenticated }"
+    >
       <h1 class="text-lg font-bold text-[#96BEE6]">Drinks &amp; Desserts</h1>
       <div class="flex items-center gap-3">
         <router-link v-if="auth.isAuthenticated" to="/friends" class="text-[#96BEE6] hover:text-white">
@@ -88,7 +97,11 @@ const navItems = [
 
     <!-- Main Content -->
     <main
-      class="flex-1 overflow-y-auto pb-20"
+      class="flex-1 overflow-y-auto transition-[margin] duration-300"
+      :class="[
+        isDesktop && auth.isAuthenticated ? 'lg:ml-64' : 'pb-20',
+        { 'pb-20': !isDesktop }
+      ]"
       @touchstart.passive="onTouchStart"
       @touchmove.passive="onTouchMove"
       @touchend="onTouchEnd"
@@ -99,8 +112,8 @@ const navItems = [
     <!-- PWA Install Prompt (iOS Safari) -->
     <PwaInstallPrompt />
 
-    <!-- Bottom Navigation -->
-    <nav v-if="auth.isAuthenticated" class="fixed bottom-0 inset-x-0 bg-[#041e3e] border-t border-[#0a2a52] safe-area-bottom">
+    <!-- Bottom Navigation (mobile only) -->
+    <nav v-if="auth.isAuthenticated && !isDesktop" class="fixed bottom-0 inset-x-0 bg-[#041e3e] border-t border-[#0a2a52] safe-area-bottom">
       <div class="flex justify-around items-end pt-1 pb-2">
         <template v-for="item in navItems" :key="item.path">
           <!-- Raised Capture FAB -->

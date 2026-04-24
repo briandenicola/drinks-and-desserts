@@ -314,6 +314,123 @@ public class UsersController : ControllerBase
         return Ok(stats);
     }
 
+    private static readonly HashSet<string> DrinkTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ItemType.Whiskey, ItemType.Wine, ItemType.Cocktail, ItemType.Vodka, ItemType.Gin
+    };
+
+    private static string ClassifyItem(Item item) =>
+        item.Type.Equals(ItemType.Dessert, StringComparison.OrdinalIgnoreCase) ? "dessert" :
+        DrinkTypes.Contains(item.Type) ? "drink" : "drink";
+
+    [HttpGet("me/dashboard")]
+    public async Task<ActionResult<DashboardStats>> GetDashboard()
+    {
+        using var activity = Diagnostics.Auth.StartActivity("UserGetDashboard");
+        var userId = GetUserId();
+        activity?.SetTag("user.id", userId);
+
+        var allItems = await QueryAllAsync<Item>("items", userId);
+        var allCaptures = await QueryAllAsync<Capture>("captures", userId);
+        var allVenues = await QueryAllAsync<Venue>("venues", userId);
+
+        var collectionItems = allItems.Where(i => i.Status != ItemStatus.Wishlist).ToList();
+        var wishlistItems = allItems.Where(i => i.Status == ItemStatus.Wishlist).ToList();
+        var drinkItems = collectionItems.Where(i => ClassifyItem(i) == "drink").ToList();
+        var dessertItems = collectionItems.Where(i => ClassifyItem(i) == "dessert").ToList();
+
+        var ratedDrinks = drinkItems.Where(i => i.UserRating.HasValue && i.UserRating > 0).ToList();
+        var ratedDesserts = dessertItems.Where(i => i.UserRating.HasValue && i.UserRating > 0).ToList();
+
+        var now = DateTime.UtcNow;
+        var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        var thisMonthItems = collectionItems.Where(i => i.CreatedAt >= monthStart).ToList();
+        var thisMonthVenues = thisMonthItems
+            .Where(i => i.Venue != null && !string.IsNullOrEmpty(i.Venue.Name))
+            .Select(i => i.Venue!.Name)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Count();
+
+        var stats = new DashboardStats
+        {
+            Summary = new DashboardSummary
+            {
+                TotalItems = collectionItems.Count,
+                DrinkCount = drinkItems.Count,
+                DessertCount = dessertItems.Count,
+                AvgDrinkRating = ratedDrinks.Count > 0 ? Math.Round(ratedDrinks.Average(i => i.UserRating!.Value), 1) : 0,
+                AvgDessertRating = ratedDesserts.Count > 0 ? Math.Round(ratedDesserts.Average(i => i.UserRating!.Value), 1) : 0,
+                WishlistSize = wishlistItems.Count,
+                TotalVenues = allVenues.Count,
+            },
+            ThisMonth = new MonthlySnapshot
+            {
+                NewItemsCaptured = thisMonthItems.Count,
+                VenuesVisited = thisMonthVenues,
+                WishlistConversions = 0, // No conversion tracking yet
+                Month = now.ToString("yyyy-MM"),
+            },
+            RecentActivity = allCaptures
+                .OrderByDescending(c => c.CreatedAt)
+                .Take(20)
+                .Select(c =>
+                {
+                    var captureItems = allItems.Where(i => i.CaptureId == c.Id).ToList();
+                    var venueName = captureItems
+                        .Where(i => i.Venue != null && !string.IsNullOrEmpty(i.Venue.Name))
+                        .Select(i => i.Venue!.Name)
+                        .FirstOrDefault();
+
+                    return new Models.RecentActivity
+                    {
+                        CaptureId = c.Id,
+                        Status = c.Status switch
+                        {
+                            CaptureStatus.Completed => "complete",
+                            CaptureStatus.Failed => "failed",
+                            _ => "processing",
+                        },
+                        ThumbnailUrls = c.Photos.Take(3).ToList(),
+                        ItemCount = captureItems.Count,
+                        CreatedAt = c.CreatedAt,
+                        VenueName = venueName,
+                    };
+                })
+                .ToList(),
+        };
+
+        _logger.LogInformation("Generated dashboard for user {UserId}: {ItemCount} items, {CaptureCount} captures, {VenueCount} venues",
+            userId, collectionItems.Count, allCaptures.Count, allVenues.Count);
+        return Ok(stats);
+    }
+
+    [HttpGet("me/stats/ratings-distribution")]
+    public async Task<ActionResult<RatingDistribution>> GetRatingsDistribution()
+    {
+        using var activity = Diagnostics.Auth.StartActivity("UserGetRatingsDistribution");
+        var userId = GetUserId();
+        activity?.SetTag("user.id", userId);
+
+        var allItems = await QueryAllAsync<Item>("items", userId);
+
+        var buckets = allItems
+            .Where(i => i.Status != ItemStatus.Wishlist && i.UserRating.HasValue && i.UserRating > 0)
+            .GroupBy(i => new { Rating = Math.Round(i.UserRating!.Value * 2, MidpointRounding.AwayFromZero) / 2, Category = ClassifyItem(i) })
+            .Select(g => new RatingBucket
+            {
+                Rating = g.Key.Rating,
+                Category = g.Key.Category,
+                Count = g.Count(),
+            })
+            .OrderBy(b => b.Rating)
+            .ThenBy(b => b.Category)
+            .ToList();
+
+        _logger.LogInformation("Generated ratings distribution for user {UserId}: {BucketCount} buckets", userId, buckets.Count);
+        return Ok(new RatingDistribution { Buckets = buckets });
+    }
+
     [HttpGet("me/export")]
     public async Task<IActionResult> ExportData(CancellationToken cancellationToken)
     {

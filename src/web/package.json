@@ -11,14 +11,19 @@
   "dependencies": {
     "@azure/msal-browser": "^5.6.2",
     "@tanstack/vue-virtual": "^3.13.23",
+    "@vue-leaflet/vue-leaflet": "^0.10.1",
     "axios": "^1.15.0",
+    "echarts": "^6.0.0",
     "fuse.js": "^7.3.0",
+    "leaflet": "^1.9.4",
     "pinia": "^3.0.4",
     "vue": "^3.5.30",
+    "vue-echarts": "^8.0.1",
     "vue-router": "^4.6.4"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.2",
+    "@types/leaflet": "^1.9.21",
     "@types/node": "^24.12.0",
     "@vitejs/plugin-vue": "^6.0.5",
     "@vue/tsconfig": "^0.9.0",
