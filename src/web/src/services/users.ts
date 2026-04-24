@@ -75,6 +75,42 @@ export interface CreateApiKeyResponse {
   createdAt: string
 }
 
+export interface DashboardStats {
+  summary: {
+    totalItems: number
+    drinkCount: number
+    dessertCount: number
+    avgDrinkRating: number
+    avgDessertRating: number
+    wishlistSize: number
+    totalVenues: number
+  }
+  thisMonth: {
+    newItemsCaptured: number
+    venuesVisited: number
+    wishlistConversions: number
+    month: string
+  }
+  recentActivity: {
+    captureId: string
+    status: 'processing' | 'complete' | 'failed'
+    thumbnailUrls: string[]
+    itemCount: number
+    createdAt: string
+    venueName: string | null
+  }[]
+}
+
+export interface RatingBucket {
+  rating: number
+  category: 'drink' | 'dessert'
+  count: number
+}
+
+export interface RatingDistribution {
+  buckets: RatingBucket[]
+}
+
 export const usersApi = {
   getMe: () => api.get<User>('/users/me'),
 
@@ -122,6 +158,12 @@ export const usersApi = {
 
   getStats: () =>
     api.get('/users/me/stats'),
+
+  getDashboard: () =>
+    api.get<DashboardStats>('/users/me/dashboard'),
+
+  getRatingDistribution: () =>
+    api.get<RatingDistribution>('/users/me/stats/ratings-distribution'),
 
   // Admin - Foundry
   getFoundryStatus: () => api.get<FoundryStatus>('/admin/foundry'),
