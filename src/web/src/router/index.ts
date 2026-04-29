@@ -130,4 +130,14 @@ router.beforeEach((to) => {
   }
 })
 
+// Auto-reload on stale chunk errors after deployment
+router.onError((error, to) => {
+  if (
+    error.message.includes('Failed to fetch dynamically imported module') ||
+    error.message.includes('Importing a module script failed')
+  ) {
+    window.location.assign(to.fullPath)
+  }
+})
+
 export default router

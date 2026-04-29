@@ -40,6 +40,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff,woff2}'],
+        cleanupOutdatedCaches: true,
         navigateFallback: 'index.html',
         navigateFallbackDenylist: [/^\/api\//, /^\/uploads\//],
         runtimeCaching: [
