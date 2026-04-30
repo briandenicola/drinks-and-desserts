@@ -309,7 +309,7 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
 </script>
 
 <template>
-  <div class="p-4 max-w-lg mx-auto" v-if="venue">
+  <div class="p-4 max-w-lg mx-auto lg:max-w-5xl" v-if="venue">
     <!-- Back button -->
     <button @click="router.back()" class="text-[#96BEE6] hover:text-white text-sm mb-4 flex items-center gap-1">
       <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -319,98 +319,118 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
     </button>
 
     <!-- Photos (view mode) -->
-    <div v-if="!isEditing && photoUrls.length" class="mb-4 -mx-4">
-      <div class="flex gap-2 px-4 overflow-x-auto">
+    <div v-if="!isEditing && photoUrls.length" class="mb-4 -mx-4 lg:mx-0">
+      <div class="flex gap-2 px-4 lg:px-0 overflow-x-auto">
         <img
           v-for="url in photoUrls"
           :key="url"
           :src="url"
-          class="w-32 h-32 object-cover rounded-xl shrink-0"
+          class="w-32 h-32 lg:w-48 lg:h-48 object-cover rounded-xl shrink-0"
         />
       </div>
     </div>
 
     <!-- View mode -->
     <template v-if="!isEditing">
-      <div class="space-y-4">
-        <div>
-          <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6] capitalize">{{ venue.type }}</span>
-          <h2 class="text-2xl font-bold text-white mt-2">{{ venue.name }}</h2>
+      <div class="lg:grid lg:grid-cols-3 lg:gap-8">
+        <!-- Left column: venue info -->
+        <div class="lg:col-span-2 space-y-4">
+          <div>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6] capitalize">{{ venue.type }}</span>
+            <h2 class="text-2xl font-bold text-white mt-2">{{ venue.name }}</h2>
+          </div>
+
+          <div v-if="venue.rating" class="flex items-center gap-2">
+            <StarRating :rating="venue.rating" size="md" />
+          </div>
+
+          <div v-if="venue.address" class="text-[#96BEE6] text-sm">{{ venue.address }}</div>
+
+          <a v-if="venue.website" :href="venue.website" target="_blank" class="text-[#96BEE6] text-sm hover:text-[#96BEE6] block truncate">
+            {{ venue.website }}
+          </a>
+
+          <div v-if="venue.labels?.length" class="flex flex-wrap gap-1.5">
+            <span
+              v-for="label in venue.labels"
+              :key="label"
+              class="text-xs px-2.5 py-1 rounded-full bg-[#1e407c]/30 text-[#96BEE6] border border-[#1e407c]/50"
+            >
+              {{ label }}
+            </span>
+          </div>
+
+          <div class="flex gap-2">
+            <button
+              @click="startEditing"
+              class="flex-1 bg-[#1e407c] hover:bg-[#2a5299] text-white py-2.5 min-h-[44px] rounded-xl text-sm font-medium lg:flex-none lg:px-8"
+            >
+              Edit
+            </button>
+            <button
+              @click="deleteVenue"
+              :disabled="isDeleting"
+              class="px-4 py-2.5 min-h-[44px] bg-[#0a2a52] text-red-400 hover:bg-[#1e407c] rounded-xl text-sm"
+            >
+              {{ isDeleting ? 'Deleting...' : 'Delete' }}
+            </button>
+          </div>
+
+          <!-- Friend Thoughts -->
+          <div v-if="friendThoughts.length > 0" class="mt-6">
+            <h3 class="text-sm font-medium text-[#96BEE6] uppercase tracking-wide mb-3">
+              Friend Thoughts ({{ friendThoughts.length }})
+            </h3>
+            <ThoughtsList :thoughts="friendThoughts" @delete="handleDeleteThought" />
+          </div>
         </div>
 
-        <div v-if="venue.rating" class="flex items-center gap-2">
-          <StarRating :rating="venue.rating" size="md" />
-        </div>
-
-        <div v-if="venue.address" class="text-[#96BEE6] text-sm">{{ venue.address }}</div>
-
-        <a v-if="venue.website" :href="venue.website" target="_blank" class="text-[#96BEE6] text-sm hover:text-[#96BEE6] block truncate">
-          {{ venue.website }}
-        </a>
-
-        <div v-if="venue.labels?.length" class="flex flex-wrap gap-1.5">
-          <span
-            v-for="label in venue.labels"
-            :key="label"
-            class="text-xs px-2.5 py-1 rounded-full bg-[#1e407c]/30 text-[#96BEE6] border border-[#1e407c]/50"
-          >
-            {{ label }}
-          </span>
-        </div>
-
-        <div class="flex gap-2">
-          <button
-            @click="startEditing"
-            class="flex-1 bg-[#1e407c] hover:bg-[#2a5299] text-white py-2.5 min-h-[44px] rounded-xl text-sm font-medium"
-          >
-            Edit
-          </button>
-          <button
-            @click="deleteVenue"
-            :disabled="isDeleting"
-            class="px-4 py-2.5 min-h-[44px] bg-[#0a2a52] text-red-400 hover:bg-[#1e407c] rounded-xl text-sm"
-          >
-            {{ isDeleting ? 'Deleting...' : 'Delete' }}
-          </button>
-        </div>
-      </div>
-
-      <!-- Linked items -->
-      <div v-if="linkedItems.length" class="mt-6">
-        <h3 class="text-sm font-medium text-[#96BEE6] mb-3">Linked Items</h3>
-        <div class="space-y-2">
-          <router-link
-            v-for="item in linkedItems"
-            :key="item.id"
-            :to="`/items/${item.id}`"
-            class="block bg-[#041e3e] border border-[#0a2a52] rounded-xl p-3 hover:border-[#1e407c]/50 transition-colors"
-          >
-            <div class="flex items-center gap-3">
-              <img
-                v-if="item.photoUrls?.length"
-                :src="item.photoUrls[0]"
-                class="w-10 h-10 object-cover rounded-lg shrink-0"
-              />
-              <div class="flex-1 min-w-0">
-                <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6]">{{ item.type }}</span>
-                <h4 class="font-medium text-white truncate text-sm">{{ item.name }}</h4>
-              </div>
+        <!-- Right column: linked items + photos -->
+        <div class="lg:col-span-1 space-y-6 mt-6 lg:mt-0">
+          <!-- Linked items -->
+          <div v-if="linkedItems.length">
+            <h3 class="text-sm font-medium text-[#96BEE6] mb-3">Linked Items</h3>
+            <div class="space-y-2">
+              <router-link
+                v-for="item in linkedItems"
+                :key="item.id"
+                :to="`/items/${item.id}`"
+                class="block bg-[#041e3e] border border-[#0a2a52] rounded-xl p-3 hover:border-[#1e407c]/50 transition-colors"
+              >
+                <div class="flex items-center gap-3">
+                  <img
+                    v-if="item.photoUrls?.length"
+                    :src="item.photoUrls[0]"
+                    class="w-10 h-10 object-cover rounded-lg shrink-0"
+                  />
+                  <div class="flex-1 min-w-0">
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6]">{{ item.type }}</span>
+                    <h4 class="font-medium text-white truncate text-sm">{{ item.name }}</h4>
+                  </div>
+                </div>
+              </router-link>
             </div>
-          </router-link>
+          </div>
+
+          <!-- Photos section (desktop sidebar) -->
+          <div v-if="photoUrls.length > 1" class="hidden lg:block">
+            <h3 class="text-sm font-medium text-[#96BEE6] mb-3">Photos</h3>
+            <div class="grid grid-cols-2 gap-2">
+              <img
+                v-for="url in photoUrls"
+                :key="'grid-' + url"
+                :src="url"
+                class="w-full aspect-square object-cover rounded-xl"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </template>
 
-    <!-- Friend Thoughts (read-only mode only) -->
-    <div v-if="!isEditing && friendThoughts.length > 0" class="mt-6">
-      <h3 class="text-sm font-medium text-[#96BEE6] uppercase tracking-wide mb-3">
-        Friend Thoughts ({{ friendThoughts.length }})
-      </h3>
-      <ThoughtsList :thoughts="friendThoughts" @delete="handleDeleteThought" />
-    </div>
-
     <!-- Edit mode -->
     <template v-else>
+      <div class="lg:max-w-2xl">
       <!-- Photos (edit mode) -->
       <div class="mb-4">
         <label class="block text-sm text-[#96BEE6] mb-2">Photos</label>
@@ -626,6 +646,7 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
             Cancel
           </button>
         </div>
+      </div>
       </div>
     </template>
   </div>
