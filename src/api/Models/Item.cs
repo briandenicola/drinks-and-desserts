@@ -15,7 +15,7 @@ public class Item
     public string CaptureId { get; set; } = string.Empty;
 
     [JsonPropertyName("type")]
-    public string Type { get; set; } = string.Empty; // whiskey, wine, cocktail, cigar, dessert
+    public string Type { get; set; } = string.Empty;
 
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
