@@ -40,13 +40,71 @@ onMounted(() => {
   venuesStore.loadVenues(undefined, true)
 })
 
+interface VenueGroup {
+  title: string
+  venues: typeof venuesStore.venues
+}
+
+const groupedVenues = computed<VenueGroup[]>(() => {
+  const venues = venuesStore.venues
+
+  // Separate venues with "to-try" label
+  const toTryVenues = venues.filter(v => v.labels?.some(l => l.toLowerCase() === 'to-try'))
+  const regularVenues = venues.filter(v => !v.labels?.some(l => l.toLowerCase() === 'to-try'))
+
+  const groups: VenueGroup[] = []
+
+  // Helper to create groups by type
+  const createTypeGroups = (venueList: typeof venues, prefix: string) => {
+    const typeMap = new Map<string, typeof venues>()
+
+    venueList.forEach(venue => {
+      const type = venue.type.toLowerCase()
+      if (!typeMap.has(type)) {
+        typeMap.set(type, [])
+      }
+      typeMap.get(type)!.push(venue)
+    })
+
+    // Sort each type group by rating (descending), then by updatedAt
+    typeMap.forEach((typeVenues) => {
+      typeVenues.sort((a, b) => {
+        const ra = a.rating ?? 0
+        const rb = b.rating ?? 0
+        if (rb !== ra) return rb - ra
+        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      })
+    })
+
+    // Create groups in specific order
+    const typeOrder = ['bar', 'lounge', 'restaurant', 'cafe', 'other']
+    typeOrder.forEach(type => {
+      if (typeMap.has(type) && typeMap.get(type)!.length > 0) {
+        const typeName = type.charAt(0).toUpperCase() + type.slice(1)
+        groups.push({
+          title: prefix ? `${prefix} - ${typeName}` : typeName,
+          venues: typeMap.get(type)!
+        })
+      }
+    })
+  }
+
+  // Add "to-try" groups first
+  if (toTryVenues.length > 0) {
+    createTypeGroups(toTryVenues, 'To Try')
+  }
+
+  // Add regular venue groups
+  if (regularVenues.length > 0) {
+    createTypeGroups(regularVenues, '')
+  }
+
+  return groups
+})
+
 const sortedVenues = computed(() => {
-  return [...venuesStore.venues].sort((a, b) => {
-    const ra = a.rating ?? 0
-    const rb = b.rating ?? 0
-    if (rb !== ra) return rb - ra
-    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-  })
+  // Flatten grouped venues for leaderboard
+  return groupedVenues.value.flatMap(g => g.venues)
 })
 
 const leaderboardVenues = computed(() => {
@@ -61,10 +119,28 @@ const leaderboardVenues = computed(() => {
 
 const scrollContainerRef = ref<HTMLElement | null>(null)
 
+// Flatten grouped venues with headers for virtual scrolling
+interface VirtualItem {
+  type: 'header' | 'venue'
+  groupTitle?: string
+  venue?: typeof venuesStore.venues[0]
+}
+
+const virtualItems = computed<VirtualItem[]>(() => {
+  const items: VirtualItem[] = []
+  groupedVenues.value.forEach(group => {
+    items.push({ type: 'header', groupTitle: group.title })
+    group.venues.forEach(venue => {
+      items.push({ type: 'venue', venue })
+    })
+  })
+  return items
+})
+
 const virtualizer = useVirtualizer(computed(() => ({
-  count: sortedVenues.value.length,
+  count: virtualItems.value.length,
   getScrollElement: () => scrollContainerRef.value,
-  estimateSize: () => 100,
+  estimateSize: (index) => virtualItems.value[index].type === 'header' ? 40 : 100,
   overscan: 5,
   gap: 12,
 })))
@@ -136,16 +212,16 @@ function resetForm() {
     </div>
 
     <!-- Loading -->
-    <div v-if="venuesStore.isLoading && !sortedVenues.length" class="text-[#96BEE6]/70 text-center py-12">
+    <div v-if="venuesStore.isLoading && !groupedVenues.length" class="text-[#96BEE6]/70 text-center py-12">
       Loading...
     </div>
 
     <!-- Empty -->
-    <div v-else-if="!sortedVenues.length" class="text-[#96BEE6]/70 text-center py-12">
+    <div v-else-if="!groupedVenues.length" class="text-[#96BEE6]/70 text-center py-12">
       <p>No venues yet. Add your favorite spots.</p>
     </div>
 
-    <!-- Venue list (virtual scroll) -->
+    <!-- Venue list (virtual scroll with groups) -->
     <div
       v-else
       ref="scrollContainerRef"
@@ -156,19 +232,28 @@ function resetForm() {
       >
         <div
           v-for="row in virtualizer.getVirtualItems()"
-          :key="sortedVenues[row.index].id"
+          :key="row.index"
           :data-index="row.index"
           :ref="(el: any) => { if (el?.$el || el) virtualizer.measureElement(el?.$el ?? el) }"
           :style="{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${row.start}px)` }"
         >
+          <!-- Group Header -->
+          <div v-if="virtualItems[row.index].type === 'header'" class="mb-3">
+            <h3 class="text-sm font-semibold text-[#96BEE6] uppercase tracking-wide">
+              {{ virtualItems[row.index].groupTitle }}
+            </h3>
+          </div>
+
+          <!-- Venue Item -->
           <router-link
-            :to="`/venues/${sortedVenues[row.index].id}`"
+            v-else-if="virtualItems[row.index].venue"
+            :to="`/venues/${virtualItems[row.index].venue!.id}`"
             class="block bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 hover:border-[#1e407c]/50 transition-colors"
           >
             <div class="flex items-start gap-3">
               <img
-                v-if="sortedVenues[row.index].photoUrls.length"
-                :src="sortedVenues[row.index].photoUrls[0]"
+                v-if="virtualItems[row.index].venue!.photoUrls.length"
+                :src="virtualItems[row.index].venue!.photoUrls[0]"
                 class="w-16 h-16 object-cover rounded-lg shrink-0"
                 loading="lazy"
               />
@@ -181,23 +266,23 @@ function resetForm() {
 
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 mb-1">
-                  <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6] capitalize">{{ sortedVenues[row.index].type }}</span>
+                  <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6] capitalize">{{ virtualItems[row.index].venue!.type }}</span>
                 </div>
-                <h3 class="font-medium text-white truncate">{{ sortedVenues[row.index].name }}</h3>
-                <p v-if="sortedVenues[row.index].address" class="text-sm text-[#96BEE6]/70 truncate">{{ sortedVenues[row.index].address }}</p>
-                <div v-if="sortedVenues[row.index].rating" class="mt-1">
-                  <StarRating :rating="sortedVenues[row.index].rating!" size="sm" />
+                <h3 class="font-medium text-white truncate">{{ virtualItems[row.index].venue!.name }}</h3>
+                <p v-if="virtualItems[row.index].venue!.address" class="text-sm text-[#96BEE6]/70 truncate">{{ virtualItems[row.index].venue!.address }}</p>
+                <div v-if="virtualItems[row.index].venue!.rating" class="mt-1">
+                  <StarRating :rating="virtualItems[row.index].venue!.rating!" size="sm" />
                 </div>
-                <div v-if="sortedVenues[row.index].labels?.length" class="flex flex-wrap gap-1 mt-1.5">
+                <div v-if="virtualItems[row.index].venue!.labels?.length" class="flex flex-wrap gap-1 mt-1.5">
                   <span
-                    v-for="label in sortedVenues[row.index].labels!.slice(0, 3)"
+                    v-for="label in virtualItems[row.index].venue!.labels!.slice(0, 3)"
                     :key="label"
                     class="text-[10px] px-1.5 py-0.5 rounded-full bg-[#1e407c]/30 text-[#96BEE6]/80"
                   >
                     {{ label }}
                   </span>
-                  <span v-if="sortedVenues[row.index].labels!.length > 3" class="text-[10px] text-[#4a7aa5]/60">
-                    +{{ sortedVenues[row.index].labels!.length - 3 }}
+                  <span v-if="virtualItems[row.index].venue!.labels!.length > 3" class="text-[10px] text-[#4a7aa5]/60">
+                    +{{ virtualItems[row.index].venue!.labels!.length - 3 }}
                   </span>
                 </div>
               </div>
