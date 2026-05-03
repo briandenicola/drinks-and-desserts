@@ -47,7 +47,7 @@ internal static class LocalExtraction
                 Venue = venue,
                 UserRating = rating,
                 Journal = InitialJournal(note),
-                Tags = [],
+                Tags = ["needs-review"],
                 Status = ItemStatus.AiDraft,
                 ProcessedBy = ProcessingSource.LocalExtraction
             });
@@ -128,7 +128,7 @@ internal static class LocalExtraction
                         Venue = venue,
                         UserRating = rating,
                         Journal = InitialJournal(note),
-                        Tags = [],
+                        Tags = ["needs-review"],
                         Status = ItemStatus.AiDraft,
                         ProcessedBy = ProcessingSource.LocalExtraction
                     });
@@ -220,6 +220,7 @@ internal static class LocalExtraction
             UserNotes = summary,
             PhotoUrls = capture.Photos,
             AiConfidence = 0.0,
+            Tags = ["needs-review"],
             Status = ItemStatus.AiDraft,
             ProcessedBy = ProcessingSource.LocalExtraction
         };

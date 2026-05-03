@@ -391,6 +391,10 @@ public class WorkflowAgentService : IAgentService
                     tags = [.. tags, occasionTag];
             }
 
+            // Add needs-review tag for AI-reviewed items
+            if (!tags.Contains("needs-review"))
+                tags = [.. tags, "needs-review"];
+
             return new Item
             {
                 UserId = capture.UserId,
