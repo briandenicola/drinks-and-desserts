@@ -162,6 +162,55 @@ async function deleteItem(id: string) {
   await itemsStore.deleteItem(id)
 }
 
+interface ItemGroup {
+  title: string
+  items: typeof itemsStore.items
+}
+
+const groupedItems = computed<ItemGroup[]>(() => {
+  const source = activeTab.value === 'wishlist' ? itemsStore.wishlistItems : itemsStore.items
+
+  // Only group when filter is "All" (undefined) in collection view
+  if (activeFilter.value !== undefined || activeTab.value === 'wishlist') {
+    return []
+  }
+
+  const groups: ItemGroup[] = []
+  const typeMap = new Map<string, typeof source>()
+
+  source.forEach(item => {
+    const type = item.type.toLowerCase()
+    if (!typeMap.has(type)) {
+      typeMap.set(type, [])
+    }
+    typeMap.get(type)!.push(item)
+  })
+
+  // Sort each type group by rating (descending), then by updatedAt
+  typeMap.forEach((typeItems) => {
+    typeItems.sort((a, b) => {
+      const ra = a.userRating ?? 0
+      const rb = b.userRating ?? 0
+      if (rb !== ra) return rb - ra
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    })
+  })
+
+  // Create groups in alphabetical order by type
+  const sortedTypes = Array.from(typeMap.keys()).sort()
+  sortedTypes.forEach(type => {
+    if (typeMap.get(type)!.length > 0) {
+      const typeName = type.charAt(0).toUpperCase() + type.slice(1).replace(/-/g, ' ')
+      groups.push({
+        title: typeName,
+        items: typeMap.get(type)!
+      })
+    }
+  })
+
+  return groups
+})
+
 const displayItems = computed(() => {
   const source = activeTab.value === 'wishlist' ? itemsStore.wishlistItems : itemsStore.items
   const sorted = [...source]
@@ -186,10 +235,38 @@ const displayItems = computed(() => {
 
 const scrollContainerRef = ref<HTMLElement | null>(null)
 
+// Flatten grouped items with headers for virtual scrolling
+interface VirtualItem {
+  type: 'header' | 'item'
+  groupTitle?: string
+  item?: typeof itemsStore.items[0]
+}
+
+const virtualItems = computed<VirtualItem[]>(() => {
+  // Use grouped items when filter is "All" and in collection view
+  if (groupedItems.value.length > 0) {
+    const items: VirtualItem[] = []
+    groupedItems.value.forEach(group => {
+      items.push({ type: 'header', groupTitle: group.title })
+      group.items.forEach(item => {
+        items.push({ type: 'item', item })
+      })
+    })
+    return items
+  }
+
+  // Otherwise, use flat list without headers
+  return displayItems.value.map(item => ({ type: 'item' as const, item }))
+})
+
 const virtualizer = useVirtualizer(computed(() => ({
-  count: displayItems.value.length,
+  count: virtualItems.value.length,
   getScrollElement: () => scrollContainerRef.value,
-  estimateSize: () => activeTab.value === 'wishlist' ? 140 : 100,
+  estimateSize: (index) => {
+    const item = virtualItems.value[index]
+    if (item.type === 'header') return 40
+    return activeTab.value === 'wishlist' ? 140 : 100
+  },
   overscan: 5,
   gap: 12,
 })))
@@ -441,12 +518,12 @@ function navigateToItem(id: string) {
     </div>
 
     <!-- Loading state -->
-    <div v-if="isLoadingList && !displayItems.length" class="text-[#96BEE6]/70 text-center py-12">
+    <div v-if="isLoadingList && !virtualItems.length" class="text-[#96BEE6]/70 text-center py-12">
       Loading...
     </div>
 
     <!-- Empty states -->
-    <div v-else-if="!displayItems.length" class="text-[#96BEE6]/70 text-center py-12">
+    <div v-else-if="!virtualItems.length" class="text-[#96BEE6]/70 text-center py-12">
       <p v-if="activeTab === 'wishlist'">No wishlist items yet. Add something you want to try.</p>
       <p v-else>No items yet. Capture something first!</p>
     </div>
@@ -462,37 +539,44 @@ function navigateToItem(id: string) {
       >
         <div
           v-for="row in virtualizer.getVirtualItems()"
-          :key="displayItems[row.index].id"
+          :key="row.index"
           :data-index="row.index"
           :ref="(el: any) => { if (el?.$el || el) virtualizer.measureElement(el?.$el ?? el) }"
           :style="{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${row.start}px)` }"
         >
+          <!-- Group Header -->
+          <div v-if="virtualItems[row.index].type === 'header'" class="mb-3">
+            <h3 class="text-sm font-semibold text-[#96BEE6] uppercase tracking-wide">
+              {{ virtualItems[row.index].groupTitle }}
+            </h3>
+          </div>
+
           <!-- Collection item -->
           <router-link
-            v-if="activeTab === 'collection'"
-            :to="`/items/${displayItems[row.index].id}`"
+            v-else-if="activeTab === 'collection' && virtualItems[row.index].item"
+            :to="`/items/${virtualItems[row.index].item!.id}`"
             class="block bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 hover:border-[#1e407c]/50 transition-colors"
           >
             <div class="flex items-start gap-3">
               <img
-                v-if="displayItems[row.index].photoUrls.length"
-                :src="displayItems[row.index].photoUrls[0]"
+                v-if="virtualItems[row.index].item!.photoUrls.length"
+                :src="virtualItems[row.index].item!.photoUrls[0]"
                 class="w-16 h-16 object-cover rounded-lg shrink-0"
                 loading="lazy"
               />
               <div v-else class="w-16 h-16 bg-[#0a2a52] rounded-lg shrink-0 flex items-center justify-center text-xs text-[#96BEE6]/70 uppercase">
-                {{ displayItems[row.index].type }}
+                {{ virtualItems[row.index].item!.type }}
               </div>
 
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 mb-1">
-                  <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6]">{{ displayItems[row.index].type }}</span>
-                  <span v-if="displayItems[row.index].status === 'ai-draft'" class="text-xs text-[#96BEE6]">AI Draft</span>
+                  <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6]">{{ virtualItems[row.index].item!.type }}</span>
+                  <span v-if="virtualItems[row.index].item!.status === 'ai-draft'" class="text-xs text-[#96BEE6]">AI Draft</span>
                 </div>
-                <h3 class="font-medium text-white truncate">{{ displayItems[row.index].name }}</h3>
-                <p v-if="displayItems[row.index].brand" class="text-sm text-[#96BEE6]/70 truncate">{{ displayItems[row.index].brand }}</p>
-                <div v-if="displayItems[row.index].userRating" class="mt-1">
-                  <StarRating :rating="displayItems[row.index].userRating!" size="sm" />
+                <h3 class="font-medium text-white truncate">{{ virtualItems[row.index].item!.name }}</h3>
+                <p v-if="virtualItems[row.index].item!.brand" class="text-sm text-[#96BEE6]/70 truncate">{{ virtualItems[row.index].item!.brand }}</p>
+                <div v-if="virtualItems[row.index].item!.userRating" class="mt-1">
+                  <StarRating :rating="virtualItems[row.index].item!.userRating!" size="sm" />
                 </div>
               </div>
             </div>
@@ -500,35 +584,35 @@ function navigateToItem(id: string) {
 
           <!-- Wishlist item -->
           <div
-            v-else
+            v-else-if="activeTab === 'wishlist' && virtualItems[row.index].item"
             class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4"
           >
-            <router-link :to="`/items/${displayItems[row.index].id}`" class="block">
+            <router-link :to="`/items/${virtualItems[row.index].item!.id}`" class="block">
               <div class="flex items-start gap-3">
                 <div class="w-10 h-10 bg-[#0a2a52] rounded-lg shrink-0 flex items-center justify-center text-xs text-[#96BEE6]/70 uppercase">
-                  {{ displayItems[row.index].type.slice(0, 1) }}
+                  {{ virtualItems[row.index].item!.type.slice(0, 1) }}
                 </div>
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 mb-1">
-                    <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6]">{{ displayItems[row.index].type }}</span>
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6]">{{ virtualItems[row.index].item!.type }}</span>
                   </div>
-                  <h3 class="font-medium text-white truncate">{{ displayItems[row.index].name }}</h3>
-                  <p v-if="displayItems[row.index].brand" class="text-sm text-[#96BEE6] truncate">{{ displayItems[row.index].brand }}</p>
-                  <p v-if="displayItems[row.index].userNotes" class="text-xs text-[#96BEE6]/70 mt-1 line-clamp-2">{{ displayItems[row.index].userNotes }}</p>
-                  <p v-if="displayItems[row.index].processedBy === 'pending'" class="text-xs text-[#96BEE6] mt-1">Processing...</p>
+                  <h3 class="font-medium text-white truncate">{{ virtualItems[row.index].item!.name }}</h3>
+                  <p v-if="virtualItems[row.index].item!.brand" class="text-sm text-[#96BEE6] truncate">{{ virtualItems[row.index].item!.brand }}</p>
+                  <p v-if="virtualItems[row.index].item!.userNotes" class="text-xs text-[#96BEE6]/70 mt-1 line-clamp-2">{{ virtualItems[row.index].item!.userNotes }}</p>
+                  <p v-if="virtualItems[row.index].item!.processedBy === 'pending'" class="text-xs text-[#96BEE6] mt-1">Processing...</p>
                 </div>
               </div>
             </router-link>
 
             <div class="flex gap-2 mt-3">
               <button
-                @click="convertItem(displayItems[row.index].id)"
+                @click="convertItem(virtualItems[row.index].item!.id)"
                 class="flex-1 bg-[#1e407c] hover:bg-[#2a5299] text-white py-2 min-h-[44px] rounded-xl text-sm font-medium transition-colors"
               >
                 Add to Collection
               </button>
               <button
-                @click="deleteItem(displayItems[row.index].id)"
+                @click="deleteItem(virtualItems[row.index].item!.id)"
                 class="px-4 py-2 min-h-[44px] bg-[#0a2a52] text-red-400 hover:bg-[#1e407c] rounded-xl text-sm transition-colors"
               >
                 Remove
