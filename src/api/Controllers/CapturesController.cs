@@ -16,14 +16,16 @@ public class CapturesController : ControllerBase
     private readonly ICosmosDbService _cosmosDb;
     private readonly IBlobStorageService _blobStorage;
     private readonly Channel<Capture> _captureQueue;
+    private readonly Channel<WishlistUrlWorkItem> _wishlistUrlQueue;
     private readonly ILogger<CapturesController> _logger;
     private const string ContainerName = "captures";
 
-    public CapturesController(ICosmosDbService cosmosDb, IBlobStorageService blobStorage, Channel<Capture> captureQueue, ILogger<CapturesController> logger)
+    public CapturesController(ICosmosDbService cosmosDb, IBlobStorageService blobStorage, Channel<Capture> captureQueue, Channel<WishlistUrlWorkItem> wishlistUrlQueue, ILogger<CapturesController> logger)
     {
         _cosmosDb = cosmosDb;
         _blobStorage = blobStorage;
         _captureQueue = captureQueue;
+        _wishlistUrlQueue = wishlistUrlQueue;
         _logger = logger;
     }
 
@@ -126,6 +128,49 @@ public class CapturesController : ControllerBase
         if (capture.Status == CaptureStatus.Processing)
             return Conflict(new { message = "Capture is already being processed" });
 
+        // For wishlist URL captures, re-queue through the wishlist URL channel
+        if (capture.Source == CaptureSource.WishlistUrl && !string.IsNullOrEmpty(capture.SourceUrl))
+        {
+            // Delete previously created items
+            foreach (var itemId in capture.ItemIds)
+            {
+                try { await _cosmosDb.DeleteAsync("items", itemId, userId); }
+                catch (Exception ex) { _logger.LogWarning(ex, "Could not delete item {ItemId} during reprocess", itemId); }
+            }
+
+            // Create a new placeholder wishlist item
+            var placeholderItem = new Item
+            {
+                UserId = userId,
+                Name = ExtractDomainLabel(capture.SourceUrl),
+                Type = "custom",
+                Tags = ["from-url"],
+                Status = ItemStatus.Wishlist,
+                ProcessedBy = ProcessingSource.Pending,
+            };
+            placeholderItem = await _cosmosDb.CreateAsync("items", placeholderItem, placeholderItem.PartitionKey);
+
+            // Reset capture
+            capture.ItemIds = [placeholderItem.Id];
+            capture.WorkflowSteps = [];
+            capture.ProcessingError = null;
+            capture.ProcessedBy = ProcessingSource.Pending;
+            capture.Status = CaptureStatus.Pending;
+            capture.UpdatedAt = DateTime.UtcNow;
+            await _cosmosDb.UpsertAsync(ContainerName, capture, capture.PartitionKey);
+
+            // Re-queue to wishlist URL channel
+            await _wishlistUrlQueue.Writer.WriteAsync(new WishlistUrlWorkItem
+            {
+                ItemId = placeholderItem.Id,
+                UserId = userId,
+                Url = capture.SourceUrl,
+            });
+
+            _logger.LogInformation("Wishlist capture {CaptureId} re-queued for URL extraction by user {UserId}", id, userId);
+            return Ok(MapToResponse(capture));
+        }
+
         // Delete previously created items
         foreach (var itemId in capture.ItemIds)
         {
@@ -182,4 +227,25 @@ public class CapturesController : ControllerBase
         ProcessingError = c.ProcessingError,
         CreatedAt = c.CreatedAt
     };
+
+    private static string ExtractDomainLabel(string url)
+    {
+        try
+        {
+            if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            {
+                var host = uri.Host;
+                if (host.StartsWith("www.", StringComparison.OrdinalIgnoreCase))
+                    host = host[4..];
+                var dotIndex = host.IndexOf('.');
+                if (dotIndex > 0)
+                    host = host[..dotIndex];
+                if (!string.IsNullOrWhiteSpace(host))
+                    return host;
+            }
+        }
+        catch { }
+
+        return "Wishlist Item";
+    }
 }

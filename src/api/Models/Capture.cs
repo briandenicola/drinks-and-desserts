@@ -31,6 +31,12 @@ public class Capture
     [JsonPropertyName("workflowSteps")]
     public List<WorkflowStep> WorkflowSteps { get; set; } = [];
 
+    [JsonPropertyName("source")]
+    public string? Source { get; set; }
+
+    [JsonPropertyName("sourceUrl")]
+    public string? SourceUrl { get; set; }
+
     [JsonPropertyName("processingError")]
     public string? ProcessingError { get; set; }
 
@@ -97,4 +103,10 @@ public static class ProcessingSource
     public const string LocalExtraction = "local-extraction";
     public const string AiFallback = "ai-fallback";
     public const string Manual = "manual";
+}
+
+public static class CaptureSource
+{
+    public const string Photo = "photo";
+    public const string WishlistUrl = "wishlist-url";
 }

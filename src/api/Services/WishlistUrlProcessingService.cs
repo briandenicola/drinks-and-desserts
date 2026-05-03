@@ -49,6 +49,8 @@ public class WishlistUrlProcessingService : BackgroundService
                     UserNote = $"Wishlist URL extraction: {workItem.Url}",
                     Status = CaptureStatus.Processing,
                     ProcessedBy = ProcessingSource.Pending,
+                    Source = CaptureSource.WishlistUrl,
+                    SourceUrl = workItem.Url,
                     ItemIds = [workItem.ItemId],
                 };
                 capture = await _cosmosDb.CreateAsync(CapturesContainerName, capture, capture.PartitionKey);
