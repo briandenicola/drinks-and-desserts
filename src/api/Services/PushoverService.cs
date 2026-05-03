@@ -4,29 +4,27 @@ namespace WhiskeyAndSmokes.Api.Services;
 
 public interface IPushoverService
 {
-    Task SendAsync(string userKey, string title, string message, string? url = null, bool playSound = true);
+    Task SendAsync(string appToken, string userKey, string title, string message, string? url = null, bool playSound = true);
 }
 
 public class PushoverService : IPushoverService
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<PushoverService> _logger;
-    private readonly string? _appToken;
 
     private const string PushoverApiUrl = "https://api.pushover.net/1/messages.json";
 
-    public PushoverService(IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger<PushoverService> logger)
+    public PushoverService(IHttpClientFactory httpClientFactory, ILogger<PushoverService> logger)
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
-        _appToken = configuration["Pushover:AppToken"];
     }
 
-    public async Task SendAsync(string userKey, string title, string message, string? url = null, bool playSound = true)
+    public async Task SendAsync(string appToken, string userKey, string title, string message, string? url = null, bool playSound = true)
     {
-        if (string.IsNullOrEmpty(_appToken))
+        if (string.IsNullOrEmpty(appToken))
         {
-            _logger.LogWarning("Pushover app token not configured, skipping push notification");
+            _logger.LogWarning("Pushover app token not configured for user, skipping push notification");
             return;
         }
 
@@ -42,7 +40,7 @@ public class PushoverService : IPushoverService
 
             var formData = new Dictionary<string, string>
             {
-                ["token"] = _appToken,
+                ["token"] = appToken,
                 ["user"] = userKey,
                 ["title"] = WebUtility.HtmlEncode(title),
                 ["message"] = message,
@@ -76,6 +74,6 @@ public class PushoverService : IPushoverService
 
 public class NullPushoverService : IPushoverService
 {
-    public Task SendAsync(string userKey, string title, string message, string? url = null, bool playSound = true)
+    public Task SendAsync(string appToken, string userKey, string title, string message, string? url = null, bool playSound = true)
         => Task.CompletedTask;
 }

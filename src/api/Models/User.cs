@@ -63,6 +63,7 @@ public class User
                 DefaultView = Preferences.DefaultView,
                 CollectionSort = Preferences.CollectionSort,
                 CollectionFilter = Preferences.CollectionFilter,
+                PushoverAppToken = !string.IsNullOrEmpty(Preferences.PushoverAppToken) ? "****" : null,
                 PushoverUserKey = !string.IsNullOrEmpty(Preferences.PushoverUserKey) ? "****" : null,
                 PushoverEnabled = Preferences.PushoverEnabled,
                 PushoverSound = Preferences.PushoverSound,
@@ -107,6 +108,9 @@ public class UserPreferences
 
     [JsonPropertyName("collectionFilter")]
     public string? CollectionFilter { get; set; }
+
+    [JsonPropertyName("pushoverAppToken")]
+    public string? PushoverAppToken { get; set; }
 
     [JsonPropertyName("pushoverUserKey")]
     public string? PushoverUserKey { get; set; }

@@ -43,7 +43,7 @@ public class NotificationService : INotificationService
         try
         {
             var user = await _cosmosDb.GetAsync<User>(UsersContainer, notification.UserId, notification.UserId);
-            if (user?.Preferences is { PushoverEnabled: true, PushoverUserKey: not null and not "" } prefs)
+            if (user?.Preferences is { PushoverEnabled: true, PushoverAppToken: not null and not "", PushoverUserKey: not null and not "" } prefs)
             {
                 var title = WebUtility.HtmlEncode(notification.Title);
                 var detail = !string.IsNullOrEmpty(notification.Detail)
@@ -53,7 +53,7 @@ public class NotificationService : INotificationService
 
                 var url = BuildNotificationUrl(notification);
 
-                await _pushover.SendAsync(prefs.PushoverUserKey, notification.Title, message, url, prefs.PushoverSound);
+                await _pushover.SendAsync(prefs.PushoverAppToken, prefs.PushoverUserKey, notification.Title, message, url, prefs.PushoverSound);
             }
         }
         catch (Exception ex)

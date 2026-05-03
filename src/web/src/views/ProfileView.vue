@@ -66,6 +66,7 @@ const exportMessage = ref('')
 
 // Pushover
 const pushoverEnabled = ref(false)
+const pushoverAppToken = ref('')
 const pushoverUserKey = ref('')
 const pushoverSound = ref(true)
 const pushoverMessage = ref('')
@@ -143,6 +144,7 @@ onMounted(() => {
     collectionSort.value = auth.user.preferences?.collectionSort || 'rating'
     collectionFilter.value = auth.user.preferences?.collectionFilter || undefined
     pushoverEnabled.value = auth.user.preferences?.pushoverEnabled ?? false
+    pushoverAppToken.value = auth.user.preferences?.pushoverAppToken || ''
     pushoverUserKey.value = auth.user.preferences?.pushoverUserKey || ''
     pushoverSound.value = auth.user.preferences?.pushoverSound ?? true
   }
@@ -183,6 +185,7 @@ async function savePushover() {
       preferences: {
         ...auth.user!.preferences,
         pushoverEnabled: pushoverEnabled.value,
+        pushoverAppToken: pushoverAppToken.value || undefined,
         pushoverUserKey: pushoverUserKey.value || undefined,
         pushoverSound: pushoverSound.value,
       },
@@ -456,6 +459,17 @@ async function changePassword() {
 
         <template v-if="pushoverEnabled">
           <div>
+            <label class="block text-sm text-[#96BEE6] mb-1">Application Token</label>
+            <input
+              v-model="pushoverAppToken"
+              type="password"
+              placeholder="Your Pushover application API token"
+              class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-3 text-white placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c] font-mono text-sm"
+            />
+            <p class="text-xs text-[#4a7aa5] mt-1">Create an application at <a href="https://pushover.net/apps/build" target="_blank" rel="noopener" class="underline hover:text-white">pushover.net/apps/build</a></p>
+          </div>
+
+          <div>
             <label class="block text-sm text-[#96BEE6] mb-1">User Key</label>
             <input
               v-model="pushoverUserKey"
@@ -487,7 +501,7 @@ async function changePassword() {
 
         <button
           @click="savePushover"
-          :disabled="isSavingPushover || (pushoverEnabled && !pushoverUserKey.trim())"
+          :disabled="isSavingPushover || (pushoverEnabled && (!pushoverAppToken.trim() || !pushoverUserKey.trim()))"
           class="w-full bg-[#1e407c] hover:bg-[#2a5299] disabled:bg-[#0a2a52] disabled:text-[#4a7aa5]/60 text-white py-3 rounded-xl font-medium"
         >
           {{ isSavingPushover ? 'Saving...' : 'Save Pushover Settings' }}
