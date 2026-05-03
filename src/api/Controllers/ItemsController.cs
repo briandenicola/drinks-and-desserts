@@ -151,7 +151,7 @@ public class ItemsController : ControllerBase
             else
                 item.Venue = request.Venue;
         }
-        if (request.UserRating.HasValue) item.UserRating = request.UserRating;
+        if (request.UserRating.HasValue) item.UserRating = request.UserRating.Value > 0 ? request.UserRating.Value : null;
         if (request.UserNotes != null) item.UserNotes = request.UserNotes;
         if (!string.IsNullOrWhiteSpace(request.JournalEntry))
         {

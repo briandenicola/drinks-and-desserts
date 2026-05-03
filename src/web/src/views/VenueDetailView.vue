@@ -250,7 +250,7 @@ async function saveEdits() {
       address: editAddress.value.trim() || undefined,
       website: editWebsite.value.trim() || undefined,
       type: editType.value,
-      rating: editRating.value || undefined,
+      rating: editRating.value,
       labels: editLabels.value,
     })
     venue.value = data

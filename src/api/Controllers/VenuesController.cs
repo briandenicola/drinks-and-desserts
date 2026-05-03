@@ -149,7 +149,7 @@ public class VenuesController : ControllerBase
                 return BadRequest(new { message = $"Invalid venue type. Must be one of: {string.Join(", ", VenueType.All)}" });
             venue.Type = request.Type;
         }
-        if (request.Rating.HasValue) venue.Rating = request.Rating;
+        if (request.Rating.HasValue) venue.Rating = request.Rating.Value > 0 ? request.Rating.Value : null;
         if (request.Location != null) venue.Location = request.Location;
         if (request.Labels != null) venue.Labels = request.Labels.Select(l => l.Trim().ToLowerInvariant()).Where(l => l.Length > 0).Distinct().ToList();
         venue.UpdatedAt = DateTime.UtcNow;

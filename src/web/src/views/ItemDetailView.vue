@@ -287,7 +287,7 @@ async function save() {
         name: editVenueName.value,
         address: editVenueAddress.value || undefined,
       } : undefined,
-      userRating: editRating.value || undefined,
+      userRating: editRating.value,
       tags: editTags.value,
       status: item.value.status,
     })
