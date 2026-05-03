@@ -11,7 +11,7 @@ const isLoading = ref(false)
 
 async function loadCount() {
   try {
-    const res = await notificationsApi.list(1)
+    const res = await notificationsApi.unreadCount()
     unreadCount.value = res.data.unreadCount
     return true
   } catch (e) {

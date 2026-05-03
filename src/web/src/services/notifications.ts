@@ -21,6 +21,7 @@ export interface NotificationsResponse {
 
 export const notificationsApi = {
   list: (limit = 50) => api.get<NotificationsResponse>('/notifications', { params: { limit } }),
+  unreadCount: () => api.get<{ unreadCount: number }>('/notifications/unread-count'),
   markRead: (id: string) => api.put(`/notifications/${id}/read`),
   markAllRead: () => api.put('/notifications/read-all'),
 }

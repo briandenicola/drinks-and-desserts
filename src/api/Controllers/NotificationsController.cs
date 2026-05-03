@@ -32,9 +32,25 @@ public class NotificationsController : ControllerBase
             ContainerName, userId, maxItems: clampedLimit);
 
         var sorted = notifications.OrderByDescending(n => n.CreatedAt).ToList();
-        var unreadCount = sorted.Count(n => !n.IsRead);
+
+        // Count unread from ALL notifications, not just the page returned
+        var (allNotifications, _) = await _cosmosDb.QueryAsync<Notification>(
+            ContainerName, userId, maxItems: 200,
+            predicate: n => !n.IsRead);
+        var unreadCount = allNotifications.Count;
 
         return Ok(new { notifications = sorted, unreadCount });
+    }
+
+    [HttpGet("unread-count")]
+    public async Task<ActionResult<object>> GetUnreadCount()
+    {
+        var userId = GetUserId();
+        var (unread, _) = await _cosmosDb.QueryAsync<Notification>(
+            ContainerName, userId, maxItems: 200,
+            predicate: n => !n.IsRead);
+
+        return Ok(new { unreadCount = unread.Count });
     }
 
     [HttpPut("{id}/read")]
