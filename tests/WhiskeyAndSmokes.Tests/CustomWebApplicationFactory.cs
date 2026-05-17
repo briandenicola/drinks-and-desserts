@@ -24,6 +24,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     public IPromptService PromptService { get; } = Substitute.For<IPromptService>();
     public IAgentService AgentService { get; } = Substitute.For<IAgentService>();
     public INotificationService NotificationService { get; } = Substitute.For<INotificationService>();
+    public IRecommendationService RecommendationService { get; } = Substitute.For<IRecommendationService>();
 
     public const string TestUserId = "test-user-id";
     public const string TestUserEmail = "test@example.com";
@@ -65,6 +66,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             ReplaceService<IAgentService>(services, AgentService);
             ReplaceService<INotificationService>(services, NotificationService);
             ReplaceService<IPushoverService>(services, Substitute.For<IPushoverService>());
+            ReplaceService<IRecommendationService>(services, RecommendationService);
 
             // Ensure bounded channel is available
             var channelDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(Channel<Capture>));
