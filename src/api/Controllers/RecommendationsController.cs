@@ -43,7 +43,7 @@ public class RecommendationsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting recommendations for user {UserId}", userId);
-            return StatusCode(500, new { error = "Failed to generate recommendations", detail = ex.Message });
+            return StatusCode(500, new { error = "Failed to generate recommendations" });
         }
     }
 
@@ -64,7 +64,7 @@ public class RecommendationsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting profile for user {UserId}", userId);
-            return StatusCode(500, new { error = "Failed to build user profile", detail = ex.Message });
+            return StatusCode(500, new { error = "Failed to build user profile" });
         }
     }
 
@@ -90,7 +90,7 @@ public class RecommendationsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error extracting menu items for user {UserId}", userId);
-            return StatusCode(500, new { error = "Failed to extract menu items", detail = ex.Message });
+            return StatusCode(500, new { error = "Failed to extract menu items" });
         }
     }
 }

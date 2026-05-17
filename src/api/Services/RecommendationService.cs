@@ -342,7 +342,7 @@ If no items are visible or the photo is not of a menu, return an empty array: []
             _logger.LogError(ex, "Failed to generate recommendations");
             return new RecommendationResponse
             {
-                Reasoning = $"Failed to generate recommendations: {ex.Message}"
+                Reasoning = "Failed to generate recommendations. Please try again."
             };
         }
     }
