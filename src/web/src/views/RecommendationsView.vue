@@ -12,6 +12,7 @@ const preferences = ref('')
 const isLoadingRecommendations = ref(false)
 const isLoadingProfile = ref(false)
 const isUploadingPhoto = ref(false)
+const isError = ref(false)
 const recommendations = ref<RecommendedItem[]>([])
 const reasoning = ref<string>('')
 const basedOnItems = ref<string[]>([])
@@ -86,6 +87,7 @@ async function uploadMenuPhoto(): Promise<string> {
 
 async function getRecommendations() {
   isLoadingRecommendations.value = true
+  isError.value = false
   try {
     let photoUrl = menuPhotoUrl.value
 
@@ -104,9 +106,11 @@ async function getRecommendations() {
     reasoning.value = data.reasoning || ''
     basedOnItems.value = data.basedOnItems
     extractedMenuItems.value = data.extractedMenuItems || []
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to get recommendations:', error)
-    reasoning.value = error.response?.data?.error || 'Failed to generate recommendations'
+    const apiError = error as { response?: { data?: { error?: string } } }
+    reasoning.value = apiError.response?.data?.error || 'Failed to generate recommendations'
+    isError.value = true
   } finally {
     isLoadingRecommendations.value = false
   }
@@ -130,6 +134,7 @@ function reset() {
   extractedMenuItems.value = []
   preferences.value = ''
   selectedTypes.value = []
+  isError.value = false
 }
 
 loadUserProfile()
@@ -241,7 +246,7 @@ loadUserProfile()
     <!-- Get Recommendations Button -->
     <button
       @click="getRecommendations"
-      :disabled="isLoadingRecommendations || isUploadingPhoto || (profileData && profileData.totalRatedItems === 0)"
+      :disabled="isLoadingRecommendations || isUploadingPhoto || (profileData !== null && profileData.totalRatedItems === 0)"
       class="w-full bg-[#1e407c] hover:bg-[#2d5596] text-white font-medium py-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors mb-6"
     >
       <span v-if="isUploadingPhoto">Uploading photo...</span>
@@ -302,9 +307,15 @@ loadUserProfile()
       </button>
     </div>
 
-    <!-- No recommendations yet -->
-    <div v-else-if="reasoning && !isLoadingRecommendations" class="bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl p-4">
-      <p class="text-white/70 text-sm">{{ reasoning }}</p>
+    <!-- No recommendations yet / Error state -->
+    <div
+      v-else-if="reasoning && !isLoadingRecommendations"
+      class="rounded-xl p-4"
+      :class="isError
+        ? 'bg-red-900/30 border border-red-700/50 text-red-300'
+        : 'bg-[#0a2a52] border border-[#1e407c]/50'"
+    >
+      <p :class="isError ? 'text-red-300 text-sm' : 'text-white/70 text-sm'">{{ reasoning }}</p>
     </div>
   </div>
 </template>
