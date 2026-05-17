@@ -4,6 +4,7 @@ import { useCamera } from '../composables/useCamera'
 import { useBreakpoint } from '../composables/useBreakpoint'
 import { capturesApi } from '../services/captures'
 import { recommendationsApi, type RecommendedItem, type UserRatingProfile } from '../services/recommendations'
+import { itemsApi } from '../services/items'
 
 const { isDesktop } = useBreakpoint()
 const { photos, previews, addFromInput, removePhoto, clearPhotos } = useCamera()
@@ -135,6 +136,29 @@ function reset() {
   preferences.value = ''
   selectedTypes.value = []
   isError.value = false
+  savedItems.value.clear()
+}
+
+const savedItems = ref<Set<number>>(new Set())
+const savingItems = ref<Set<number>>(new Set())
+
+async function saveToWishlist(rec: RecommendedItem, index: number) {
+  if (savedItems.value.has(index) || savingItems.value.has(index)) return
+
+  savingItems.value.add(index)
+  try {
+    await itemsApi.createWishlistItem({
+      name: rec.name,
+      type: rec.type,
+      brand: rec.brand || undefined,
+      notes: rec.reason,
+    })
+    savedItems.value.add(index)
+  } catch (error) {
+    console.error('Failed to save to wishlist:', error)
+  } finally {
+    savingItems.value.delete(index)
+  }
 }
 
 loadUserProfile()
@@ -306,6 +330,18 @@ loadUserProfile()
             </span>
             <span v-if="rec.matchedFromMenu" class="text-xs bg-green-900/50 text-green-300 px-2 py-1 rounded">
               On menu
+            </span>
+            <button
+              v-if="!savedItems.has(index)"
+              :disabled="savingItems.has(index)"
+              @click="saveToWishlist(rec, index)"
+              class="text-xs bg-amber-700/50 hover:bg-amber-700/80 text-amber-200 px-2 py-1 rounded transition-colors disabled:opacity-50"
+            >
+              <span v-if="savingItems.has(index)">Saving...</span>
+              <span v-else>+ Wishlist</span>
+            </button>
+            <span v-else class="text-xs bg-green-800/50 text-green-300 px-2 py-1 rounded">
+              Saved
             </span>
           </div>
         </div>
