@@ -25,13 +25,13 @@ module "project_1" {
 
     models = [
       {
-        name    = "gpt-4o"
-        version = "2024-11-20"
+        name    = "gpt-5.1"
+        version = "2025-11-13"
         format  = "OpenAI"
       },
       {
-        name    = "gpt-5-mini"
-        version = "2025-08-07"
+        name    = "gpt-5.4-mini"
+        version = "2025-04-01"
         format  = "OpenAI"
       }
     ]

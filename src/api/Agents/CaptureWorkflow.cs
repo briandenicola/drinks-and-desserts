@@ -30,7 +30,7 @@ public static class CaptureWorkflow
 
         var azureClient = new AzureOpenAIClient(new Uri(endpoint), credential);
 
-        var visionModel = config["AiFoundry:Models:Vision"] ?? "gpt-4o";
+        var visionModel = config["AiFoundry:Models:Vision"] ?? "gpt-5.1";
         var reasoningModel = config["AiFoundry:Models:Reasoning"] ?? "gpt-5.1-mini";
 
         IChatClient visionChatClient = azureClient.GetChatClient(visionModel).AsIChatClient();

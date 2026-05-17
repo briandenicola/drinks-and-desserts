@@ -34,8 +34,8 @@ public class AiFoundryOptions
 
 public class AiFoundryModelOptions
 {
-    public string Vision { get; set; } = "gpt-4o";
-    public string Reasoning { get; set; } = "gpt-5-mini";
+    public string Vision { get; set; } = "gpt-5.1";
+    public string Reasoning { get; set; } = "gpt-5.4-mini";
 }
 
 public class CosmosDbOptions

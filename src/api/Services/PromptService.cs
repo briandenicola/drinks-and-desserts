@@ -82,7 +82,7 @@ public class PromptService : IPromptService
              "Legacy monolithic prompt. Replaced by the 3 specialized agent prompts below.",
              DefaultPrompts.AgentInstructions),
             (PromptIds.VisionAnalyst, "Vision Analyst",
-             "Examines uploaded photos and describes visible items — bottles, labels, glasses, cigar bands, plates, desserts. Used by the Vision Analyst agent (gpt-4o).",
+             "Examines uploaded photos and describes visible items — bottles, labels, glasses, cigar bands, plates, desserts. Used by the Vision Analyst agent.",
              DefaultPrompts.VisionAnalyst),
             (PromptIds.DomainExpert, "Domain Expert",
              "Identifies specific products from visual descriptions and adds expert knowledge — tasting notes, origins, flavor profiles. Used by the Domain Expert agent (gpt-5.1-mini).",

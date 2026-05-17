@@ -36,7 +36,7 @@ public class AgentValidationService : IHostedService
     {
         var endpoint = _config["AiFoundry:Endpoint"] ?? "";
         var projectEndpoint = _config["AiFoundry:ProjectEndpoint"] ?? "";
-        var visionModel = _config["AiFoundry:Models:Vision"] ?? "gpt-4o";
+        var visionModel = _config["AiFoundry:Models:Vision"] ?? "gpt-5.1";
         var reasoningModel = _config["AiFoundry:Models:Reasoning"] ?? "gpt-5-mini";
 
         _logger.LogInformation(

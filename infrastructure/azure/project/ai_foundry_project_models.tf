@@ -1,5 +1,5 @@
 
-resource "azapi_resource" "model_deployment_gpt4o" {
+resource "azapi_resource" "model_deployment_gpt51" {
   type      = "Microsoft.CognitiveServices/accounts/deployments@2025-06-01"
   name      = var.foundry_project.models[0].name
   parent_id = var.foundry_project.ai_foundry.id
@@ -20,7 +20,7 @@ resource "azapi_resource" "model_deployment_gpt4o" {
   depends_on = [azapi_resource.ai_foundry_project]
 }
 
-resource "azapi_resource" "model_deployment_gpt51-mini" {
+resource "azapi_resource" "model_deployment_gpt54-mini" {
   type      = "Microsoft.CognitiveServices/accounts/deployments@2025-06-01"
   name      = var.foundry_project.models[1].name
   parent_id = var.foundry_project.ai_foundry.id
@@ -39,5 +39,5 @@ resource "azapi_resource" "model_deployment_gpt51-mini" {
     }
   }
 
-  depends_on = [azapi_resource.model_deployment_gpt4o, azapi_resource.ai_foundry_project]
+  depends_on = [azapi_resource.model_deployment_gpt51, azapi_resource.ai_foundry_project]
 }

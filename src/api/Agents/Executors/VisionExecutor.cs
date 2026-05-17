@@ -11,7 +11,7 @@ using WhiskeyAndSmokes.Api.Services;
 namespace WhiskeyAndSmokes.Api.Agents.Executors;
 
 /// <summary>
-/// Examines uploaded photos using gpt-4o vision capabilities.
+/// Examines uploaded photos using GPT vision capabilities.
 /// Produces a detailed textual description of visible items.
 /// </summary>
 internal sealed class VisionExecutor : Executor<CaptureInput, VisionDescription>
