@@ -214,8 +214,8 @@ If no items are visible or the photo is not of a menu, return an empty array: []
             var content = response.Text ?? "[]";
             _logger.LogDebug("Menu extraction response: {Response}", content);
 
-            // Parse JSON response
-            var items = JsonSerializer.Deserialize<List<string>>(content) ?? [];
+            // Parse JSON response (strip markdown code fences if present)
+            var items = JsonSerializer.Deserialize<List<string>>(StripMarkdownCodeFences(content)) ?? [];
 
             activity?.SetTag("items.count", items.Count);
             _logger.LogInformation("Extracted {Count} menu items", items.Count);
@@ -227,6 +227,19 @@ If no items are visible or the photo is not of a menu, return an empty array: []
             _logger.LogError(ex, "Failed to extract menu items from photo");
             return [];
         }
+    }
+
+    private static string StripMarkdownCodeFences(string text)
+    {
+        var json = text.Trim();
+        if (json.StartsWith("```"))
+        {
+            var firstNewline = json.IndexOf('\n');
+            if (firstNewline > 0) json = json[(firstNewline + 1)..];
+            var lastFence = json.LastIndexOf("```");
+            if (lastFence > 0) json = json[..lastFence];
+        }
+        return json.Trim();
     }
 
     private async Task<RecommendationResponse> GenerateRecommendationsAsync(
@@ -327,8 +340,8 @@ If no items are visible or the photo is not of a menu, return an empty array: []
             var content = response.Text ?? "{}";
             _logger.LogDebug("Recommendation response: {Response}", content);
 
-            // Parse JSON response
-            var result = JsonSerializer.Deserialize<RecommendationResponse>(content,
+            // Parse JSON response (strip markdown code fences if present)
+            var result = JsonSerializer.Deserialize<RecommendationResponse>(StripMarkdownCodeFences(content),
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
                 ?? new RecommendationResponse();
 
