@@ -92,14 +92,15 @@ public class RecommendationService : IRecommendationService
 
         var allItems = new List<Item>();
         string? token = null;
+        const int maxItems = 1000;
 
-        // Fetch all user items
+        // Fetch user items (bounded to prevent memory exhaustion)
         do
         {
             var (items, nextToken) = await _cosmosDb.QueryAsync<Item>("items", userId, token);
             allItems.AddRange(items);
             token = nextToken;
-        } while (token != null);
+        } while (token != null && allItems.Count < maxItems);
 
         // Filter to only rated items
         var ratedItems = allItems
