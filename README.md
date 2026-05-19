@@ -5,6 +5,7 @@ Track your drinks, coffee, desserts, and venues. Snap a photo, let AI do the res
 ## Features
 
 - **Photo Capture** with AI-powered item identification (1-3 items per capture)
+- **AI Recommendations** — personalized suggestions based on your rating history, optional menu photo analysis, and preference filters
 - **14 item types**: Whiskey, Wine, Cocktail, Vodka, Gin, Espresso, Latte, Cappuccino, Cold Brew, Pour Over, Coffee, Cigar, Dessert, and Custom
 - **Venues** — capture bars, restaurants, cafes, and lounges with name, address, website, type, rating, and linked items. Create from photos or extract from URLs (including Google Maps links)
 - **Friends** — invite friends via shareable links, browse each other's collections and venues, leave thoughts (comments + ratings) on items
@@ -90,6 +91,23 @@ Agent prompts are stored as markdown files in `src/AgentInitiator/Prompts/` and 
 
 When AI Foundry is not configured, the system falls back to keyword-based local extraction.
 
+## Recommendation Engine
+
+The app includes an AI-powered recommendation engine that suggests items you're likely to enjoy based on your rating history. Unlike the capture workflow which uses multi-agent orchestration, recommendations use **direct AI inference** for real-time responses:
+
+**Key Features**:
+- Analyzes your rating history to build a preference profile
+- Optional menu photo analysis to suggest items from available options
+- Text preference input (e.g., "something smoky", "fruity dessert")
+- Type filtering (whiskey, wine, dessert, etc.)
+- Confidence scores and personalized reasoning for each recommendation
+
+**Architecture**: Single-shot inference using gpt-5-mini (reasoning) and gpt-4o (menu OCR) directly through Azure AI Foundry SDK, without agent framework overhead. This design choice enables sub-3-second response times vs 10-30s for multi-agent workflows.
+
+**Why Not Agents?** Recommendations are a single-purpose pattern matching task with no need for validation, refinement, or multi-step orchestration. Direct inference provides the best balance of simplicity, performance, and cost efficiency.
+
+For detailed architectural explanation, see [Recommendation Engine Documentation](docs/recommendation-engine.md).
+
 ## Documentation
 
 | Guide | Description |
@@ -97,6 +115,7 @@ When AI Foundry is not configured, the system falls back to keyword-based local 
 | [Local Development](docs/local-development.md) | Prerequisites, setup, running, building, testing, troubleshooting |
 | [Local Docker Deployment](docs/local-docker-deployment.md) | Self-hosted deployment with Docker Compose and Portainer |
 | [Azure Deployment](docs/azure-deployment.md) | Terraform stacks, GitHub Actions, OIDC setup, secrets & variables |
+| [Recommendation Engine](docs/recommendation-engine.md) | Deep dive into recommendation architecture, AI usage, and why not Foundry agents |
 | [Screenshot Guide](docs/screenshot-guide.md) | Auto-capture app screenshots for documentation with Playwright |
 
 ## Friends API
