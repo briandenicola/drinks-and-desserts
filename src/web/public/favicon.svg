@@ -1,90 +1,177 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#F7E7CE"/>
-      <stop offset="100%" stop-color="#E8D4B2"/>
+    <radialGradient id="bg" cx="50%" cy="32%" r="80%">
+      <stop offset="0%" stop-color="#20306a"/>
+      <stop offset="55%" stop-color="#10193e"/>
+      <stop offset="100%" stop-color="#040818"/>
+    </radialGradient>
+
+    <linearGradient id="gold" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fbe7a8"/>
+      <stop offset="38%" stop-color="#dcb358"/>
+      <stop offset="62%" stop-color="#b48a30"/>
+      <stop offset="100%" stop-color="#7a5a18"/>
     </linearGradient>
-    <linearGradient id="martiniLiquid" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#f2dc92"/>
-      <stop offset="100%" stop-color="#c89828"/>
+
+    <linearGradient id="whiskey" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f1b566"/>
+      <stop offset="40%" stop-color="#c47a1c"/>
+      <stop offset="100%" stop-color="#6f3a0e"/>
     </linearGradient>
-    <clipPath id="tiramisuClip">
-      <rect x="12" y="15" width="120" height="92" rx="6"/>
-    </clipPath>
+
+    <linearGradient id="glassShine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.18)"/>
+      <stop offset="22%" stop-color="rgba(255,255,255,0.03)"/>
+      <stop offset="60%" stop-color="rgba(255,255,255,0.0)"/>
+      <stop offset="82%" stop-color="rgba(255,255,255,0.04)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0.13)"/>
+    </linearGradient>
+
+    <linearGradient id="cakeBody" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#5a3320"/>
+      <stop offset="100%" stop-color="#291509"/>
+    </linearGradient>
+    <linearGradient id="cakeTop" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3c1d10"/>
+      <stop offset="100%" stop-color="#1c0a04"/>
+    </linearGradient>
+    <linearGradient id="cream" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f7e7b8"/>
+      <stop offset="100%" stop-color="#cdaa6e"/>
+    </linearGradient>
+    <linearGradient id="cherry" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#d4283a"/>
+      <stop offset="100%" stop-color="#79101d"/>
+    </linearGradient>
   </defs>
 
-  <!-- Background -->
-  <rect width="512" height="512" rx="80" fill="url(#bg)"/>
+  <!-- BACKGROUND -->
+  <rect width="1024" height="1024" fill="url(#bg)"/>
 
-  <!-- Subtle decorative rings -->
-  <circle cx="210" cy="245" r="180" fill="none" stroke="#b8943c" stroke-width="0.8" opacity="0.12"/>
-  <circle cx="210" cy="245" r="140" fill="none" stroke="#b8943c" stroke-width="0.5" opacity="0.09"/>
-
-  <!-- ===== MARTINI GLASS ===== -->
-
-  <!-- Glass V-shape -->
-  <path d="M 90,112 L 320,112 L 205,285"
-        fill="none" stroke="#8c7a5a" stroke-width="5"
-        stroke-linejoin="round" stroke-linecap="round"/>
-
-  <!-- Liquid fill -->
-  <polygon points="114,136 296,136 205,278"
-           fill="url(#martiniLiquid)" opacity="0.55"/>
-
-  <!-- Subtle glass shine -->
-  <path d="M 105,125 L 115,125 L 207,278 L 203,278 Z"
-        fill="#ffffff" opacity="0.18"/>
-
-  <!-- Stem -->
-  <line x1="205" y1="285" x2="205" y2="374"
-        stroke="#8c7a5a" stroke-width="5" stroke-linecap="round"/>
-
-  <!-- Base -->
-  <line x1="152" y1="377" x2="258" y2="377"
-        stroke="#8c7a5a" stroke-width="5" stroke-linecap="round"/>
-
-  <!-- Olive on cocktail pick -->
-  <line x1="172" y1="130" x2="238" y2="130"
-        stroke="#a08030" stroke-width="3" stroke-linecap="round"/>
-  <circle cx="205" cy="130" r="10" fill="#8a9e62"
-          stroke="#6e8248" stroke-width="1.8"/>
-  <circle cx="205" cy="130" r="3.5" fill="#c43828"/>
-
-  <!-- Sparkle on rim -->
-  <circle cx="118" cy="114" r="4" fill="#ffffff" opacity="0.6"/>
-  <circle cx="295" cy="114" r="2.5" fill="#ffffff" opacity="0.35"/>
-
-  <!-- ===== TIRAMISU SLICE ===== -->
-  <g transform="translate(298,285)">
-    <!-- Plate shadow -->
-    <ellipse cx="72" cy="115" rx="78" ry="11"
-             fill="#8a7a5a" opacity="0.15"/>
-
-    <!-- Outer border -->
-    <rect x="12" y="15" width="120" height="92" rx="6"
-          fill="#f5efe4" stroke="#9a8660" stroke-width="2.5"/>
-
-    <!-- Layers clipped to rounded rect -->
-    <g clip-path="url(#tiramisuClip)">
-      <!-- Bottom espresso-soaked ladyfinger -->
-      <rect x="0" y="82" width="144" height="30" fill="#9a6236"/>
-      <!-- Mascarpone cream -->
-      <rect x="0" y="63" width="144" height="19" fill="#f2eada"/>
-      <!-- Middle ladyfinger -->
-      <rect x="0" y="47" width="144" height="16" fill="#885430"/>
-      <!-- Top mascarpone cream -->
-      <rect x="0" y="31" width="144" height="16" fill="#eee4cc"/>
-      <!-- Cocoa powder dusting -->
-      <rect x="0" y="8" width="144" height="25" fill="#3c2010"/>
-    </g>
-
-    <!-- Re-draw border on top of layers -->
-    <rect x="12" y="15" width="120" height="92" rx="6"
-          fill="none" stroke="#9a8660" stroke-width="2.5"/>
+  <!-- sparkle dots -->
+  <g fill="#d4af37">
+    <circle cx="170" cy="200" r="1.6" opacity="0.55"/>
+    <circle cx="850" cy="170" r="2" opacity="0.5"/>
+    <circle cx="100" cy="380" r="1" opacity="0.4"/>
+    <circle cx="920" cy="320" r="1.5" opacity="0.5"/>
+    <circle cx="290" cy="110" r="1.2" opacity="0.45"/>
+    <circle cx="720" cy="80" r="1" opacity="0.5"/>
+    <circle cx="940" cy="500" r="1.3" opacity="0.4"/>
+    <circle cx="80" cy="540" r="1" opacity="0.4"/>
+    <circle cx="500" cy="92" r="1.1" opacity="0.5"/>
+    <circle cx="380" cy="220" r="0.8" opacity="0.35"/>
+    <circle cx="640" cy="200" r="0.9" opacity="0.4"/>
   </g>
 
-  <!-- Subtle gold accent line -->
-  <line x1="90" y1="450" x2="422" y2="450"
-        stroke="#a08838" stroke-width="1" opacity="0.2"
-        stroke-linecap="round"/>
+  <!-- inset double border -->
+  <rect x="64" y="64" width="896" height="896" fill="none" stroke="url(#gold)" stroke-width="2.5" opacity="0.6"/>
+  <rect x="78" y="78" width="868" height="868" fill="none" stroke="#c89a3a" stroke-width="0.8" opacity="0.45"/>
+
+  <!-- corner diamonds -->
+  <g fill="url(#gold)" opacity="0.9">
+    <path d="M 64 132 L 73 123 L 82 132 L 73 141 Z"/>
+    <path d="M 942 132 L 951 123 L 960 132 L 951 141 Z"/>
+    <path d="M 64 892 L 73 883 L 82 892 L 73 901 Z"/>
+    <path d="M 942 892 L 951 883 L 960 892 L 951 901 Z"/>
+  </g>
+
+  <!-- counter line -->
+  <line x1="150" y1="608" x2="874" y2="608" stroke="#c89a3a" stroke-width="1.8" opacity="0.85"/>
+
+  <!-- ===== WHISKEY TUMBLER ===== -->
+  <g>
+    <ellipse cx="340" cy="616" rx="118" ry="6" fill="#000" opacity="0.45"/>
+
+    <path d="M 240 282 L 440 282 L 432 600 Q 432 604 428 604 L 252 604 Q 248 604 248 600 Z"
+          fill="rgba(80,110,180,0.07)"/>
+
+    <path d="M 252 422 L 428 422 L 430 599 Q 430 603 426 603 L 254 603 Q 250 603 250 599 Z"
+          fill="url(#whiskey)"/>
+
+    <ellipse cx="340" cy="422" rx="88" ry="7.5" fill="#6f3a0e"/>
+    <ellipse cx="340" cy="420" rx="88" ry="7.5" fill="#e8a352"/>
+    <ellipse cx="340" cy="418" rx="62" ry="3.5" fill="#fce0a8" opacity="0.75"/>
+
+    <g>
+      <path d="M 292 410 L 340 415 L 340 454 L 292 450 Z"
+            fill="rgba(220,235,255,0.38)"
+            stroke="rgba(255,255,255,0.6)" stroke-width="1.3"/>
+      <path d="M 295 414 L 337 419" stroke="rgba(255,255,255,0.7)" stroke-width="1" stroke-linecap="round"/>
+      <path d="M 292 410 L 295 414" stroke="rgba(255,255,255,0.5)" stroke-width="0.8"/>
+    </g>
+    <g>
+      <path d="M 360 414 L 392 411 L 392 444 L 360 447 Z"
+            fill="rgba(220,235,255,0.3)"
+            stroke="rgba(255,255,255,0.45)" stroke-width="1"/>
+    </g>
+
+    <path d="M 240 282 L 440 282 L 432 600 Q 432 604 428 604 L 252 604 Q 248 604 248 600 Z"
+          fill="url(#glassShine)"/>
+
+    <path d="M 256 295 Q 252 440 262 595"
+          stroke="rgba(255,255,255,0.42)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M 422 295 Q 426 440 418 595"
+          stroke="rgba(255,255,255,0.16)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+    <path d="M 240 282 L 440 282 L 432 600 Q 432 604 428 604 L 252 604 Q 248 604 248 600 Z"
+          fill="none" stroke="url(#gold)" stroke-width="3" stroke-linejoin="round"/>
+
+    <ellipse cx="340" cy="282" rx="100" ry="12" fill="#10193e"/>
+    <ellipse cx="340" cy="282" rx="100" ry="12" fill="none" stroke="url(#gold)" stroke-width="3"/>
+    <ellipse cx="340" cy="280" rx="86" ry="5" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="1"/>
+
+    <line x1="260" y1="592" x2="420" y2="592" stroke="rgba(0,0,0,0.4)" stroke-width="2"/>
+  </g>
+
+  <!-- ===== CAKE SLICE ===== -->
+  <g>
+    <ellipse cx="665" cy="616" rx="118" ry="6" fill="#000" opacity="0.45"/>
+
+    <path d="M 555 380 L 775 380 L 750 604 L 580 604 Z" fill="url(#cakeBody)"/>
+
+    <path d="M 560 462 L 770 462 L 768 482 L 562 482 Z" fill="url(#cream)"/>
+    <line x1="560" y1="462" x2="770" y2="462" stroke="#2a1408" stroke-width="0.8" opacity="0.5"/>
+    <line x1="562" y1="482" x2="768" y2="482" stroke="#2a1408" stroke-width="0.8" opacity="0.5"/>
+
+    <path d="M 567 548 L 763 548 L 761 564 L 569 564 Z" fill="url(#cream)" opacity="0.9"/>
+    <line x1="567" y1="548" x2="763" y2="548" stroke="#2a1408" stroke-width="0.7" opacity="0.45"/>
+    <line x1="569" y1="564" x2="761" y2="564" stroke="#2a1408" stroke-width="0.7" opacity="0.45"/>
+
+    <path d="M 555 380 L 775 380 L 775 418
+             Q 753 442 728 422 Q 705 446 680 425
+             Q 655 446 630 425 Q 605 446 580 425
+             Q 565 440 555 430 Z"
+          fill="url(#cakeTop)"/>
+
+    <path d="M 560 384 L 770 384 L 770 392 L 560 392 Z" fill="rgba(255,255,255,0.09)"/>
+
+    <path d="M 640 422 Q 638 458 645 470"
+          stroke="#1a0a04" stroke-width="3" fill="none" opacity="0.7" stroke-linecap="round"/>
+
+    <circle cx="665" cy="365" r="17" fill="url(#cherry)"/>
+    <ellipse cx="660" cy="358" rx="6.5" ry="4" fill="#f06070" opacity="0.7"/>
+    <ellipse cx="660" cy="357" rx="3" ry="2" fill="#ffb0bc" opacity="0.7"/>
+    <path d="M 665 348 Q 673 339 684 336"
+          stroke="#3a5020" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M 680 335 Q 690 332 692 340 Q 685 342 680 335 Z" fill="#4a6028"/>
+
+    <path d="M 555 380 L 775 380 L 750 604 L 580 604 Z"
+          fill="none" stroke="url(#gold)" stroke-width="3" stroke-linejoin="round"/>
+
+    <ellipse cx="665" cy="604" rx="118" ry="7" fill="none" stroke="url(#gold)" stroke-width="2" opacity="0.85"/>
+  </g>
+
+  <!-- ===== DIVIDER (visible solid lines + diamond) ===== -->
+  <g opacity="0.85">
+    <line x1="210" y1="690" x2="478" y2="690" stroke="#c89a3a" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="546" y1="690" x2="814" y2="690" stroke="#c89a3a" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M 512 676 L 526 690 L 512 704 L 498 690 Z" fill="url(#gold)"/>
+    <path d="M 512 684 L 519 690 L 512 696 L 505 690 Z" fill="#10193e"/>
+    <!-- small accents flanking diamond -->
+    <circle cx="488" cy="690" r="2" fill="#c89a3a"/>
+    <circle cx="536" cy="690" r="2" fill="#c89a3a"/>
+  </g>
+
+  <!-- ===== D&D MONOGRAM (vector paths) ===== -->
+  <path d="M392.41,793.62 C392.41,772.59 386.74,756.65 375.40,745.80 C364.05,734.93 347.86,729.50 326.82,729.50 L306.62,729.50 L306.62,859.44 C315.59,860.04 326.26,860.34 338.62,860.34 C357.03,860.34 370.60,854.92 379.32,844.06 C388.05,833.20 392.41,816.39 392.41,793.62 Z M334.01,719.41 C361.79,719.41 382.38,725.61 395.77,738.00 C409.18,750.39 415.88,769.01 415.88,793.86 C415.88,819.02 409.42,838.07 396.51,851.03 C383.59,863.98 364.29,870.45 338.62,870.45 L284.93,870.00 L265.62,870.00 L265.62,864.05 L284.93,861.02 L284.93,728.27 L265.62,725.34 L265.62,719.41 Z M425.09,870.00 M543.89,746.23 C543.89,752.23 542.45,757.36 539.57,761.62 C536.69,765.90 532.72,769.62 527.66,772.81 C522.61,775.99 513.30,780.01 499.75,784.88 L538.39,830.02 C549.39,815.20 556.32,801.31 559.18,788.36 L543.79,785.33 L544.80,779.38 L596.11,779.38 L595.11,785.33 L578.94,788.36 C569.88,808.80 559.02,825.83 546.36,839.45 L565.24,861.23 L583.43,863.94 L582.30,870.00 L543.68,870.00 L530.97,854.61 C522.22,861.13 513.88,865.70 505.94,868.33 C498.00,870.94 489.24,872.25 479.66,872.25 C463.11,872.25 450.34,868.77 441.35,861.81 C432.37,854.84 427.88,844.84 427.88,831.81 C427.88,824.93 429.36,818.66 432.32,813.02 C435.27,807.36 439.86,802.34 446.07,797.97 C452.29,793.59 461.27,789.29 473.04,785.09 C468.39,778.44 465.20,772.75 463.47,768.03 C461.75,763.31 460.89,758.48 460.89,753.55 C460.89,742.54 464.75,733.70 472.46,727.05 C480.18,720.38 490.81,717.05 504.36,717.05 C512.60,717.05 519.66,718.27 525.54,720.70 C531.41,723.13 535.93,726.57 539.11,731.03 C542.30,735.48 543.89,740.55 543.89,746.23 Z M478.54,792.84 C468.50,797.12 461.26,802.42 456.80,808.75 C452.34,815.07 450.11,822.65 450.11,831.48 C450.11,841.14 452.90,848.74 458.47,854.28 C464.05,859.82 471.87,862.59 481.91,862.59 C489.39,862.59 496.66,861.12 503.74,858.16 C510.82,855.20 517.32,850.95 523.24,845.41 Z M481.11,749.72 C481.11,754.44 482.25,759.03 484.54,763.48 C486.82,767.93 489.88,772.63 493.69,777.58 C503.43,773.90 510.13,770.83 513.80,768.36 C517.46,765.89 520.27,762.99 522.22,759.66 C524.17,756.32 525.14,752.30 525.14,747.59 C525.14,740.70 523.27,735.38 519.52,731.64 C515.78,727.90 510.73,726.03 504.36,726.03 C496.50,726.03 490.65,728.17 486.83,732.44 C483.02,736.70 481.11,742.46 481.11,749.72 Z M597.02,870.00 M734.91,793.62 C734.91,772.59 729.24,756.65 717.90,745.80 C706.55,734.93 690.36,729.50 669.32,729.50 L649.12,729.50 L649.12,859.44 C658.09,860.04 668.76,860.34 681.12,860.34 C699.53,860.34 713.10,854.92 721.82,844.06 C730.55,833.20 734.91,816.39 734.91,793.62 Z M676.51,719.41 C704.29,719.41 724.88,725.61 738.27,738.00 C751.68,750.39 758.38,769.01 758.38,793.86 C758.38,819.02 751.92,838.07 739.01,851.03 C726.09,863.98 706.79,870.45 681.12,870.45 L627.43,870.00 L608.12,870.00 L608.12,864.05 L627.43,861.02 L627.43,728.27 L608.12,725.34 L608.12,719.41 Z M767.59,870.00" fill="url(#gold)" fill-rule="nonzero"/>
 </svg>
