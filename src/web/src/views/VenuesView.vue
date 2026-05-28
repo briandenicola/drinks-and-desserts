@@ -33,12 +33,24 @@ const venueTypeOptions = [
 ]
 
 registerRefresh?.(async () => {
-  await venuesStore.loadVenues(undefined, true)
+  await loadAllVenues()
 })
 
-onMounted(() => {
-  venuesStore.loadVenues(undefined, true)
+onMounted(async () => {
+  await loadAllVenues()
 })
+
+async function loadAllVenues() {
+  const seenTokens = new Set<string>()
+  await venuesStore.loadVenues(undefined, true)
+  while (venuesStore.continuationToken) {
+    if (seenTokens.has(venuesStore.continuationToken)) {
+      break
+    }
+    seenTokens.add(venuesStore.continuationToken)
+    await venuesStore.loadVenues(undefined, false)
+  }
+}
 
 interface VenueGroup {
   title: string
