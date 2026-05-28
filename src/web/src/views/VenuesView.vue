@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, inject, onMounted, computed } from 'vue'
+import { ref, inject, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useVenuesStore } from '../stores/venues'
 import { RefreshKey } from '../composables/refreshKey'
@@ -13,6 +13,8 @@ const venuesStore = useVenuesStore()
 const registerRefresh = inject(RefreshKey)
 const { isDesktop } = useBreakpoint()
 const leaderboardSort = ref<'rating' | 'items'>('rating')
+const showFilterMenu = ref(false)
+const activeFilter = ref<string | undefined>(undefined)
 
 const showAddForm = ref(false)
 const addMode = ref<'manual' | 'url'>('manual')
@@ -31,98 +33,26 @@ const venueTypeOptions = [
   { label: 'Cafe', value: 'cafe' },
   { label: 'Other', value: 'other' },
 ]
+const venueTypeFilters = [{ label: 'All', value: undefined }, ...venueTypeOptions]
+const activeFilterLabel = computed(() =>
+  venueTypeFilters.find(f => f.value === activeFilter.value)?.label ?? 'All'
+)
 
 registerRefresh?.(async () => {
-  await loadAllVenues()
+  await venuesStore.loadVenues(activeFilter.value, true)
 })
 
 onMounted(async () => {
-  await loadAllVenues()
+  await venuesStore.loadVenues(activeFilter.value, true)
+  document.addEventListener('click', closeFilterMenu)
 })
 
-async function loadAllVenues() {
-  const seenTokens = new Set<string>()
-  await venuesStore.loadVenues(undefined, true)
-  while (venuesStore.continuationToken) {
-    if (seenTokens.has(venuesStore.continuationToken)) {
-      break
-    }
-    seenTokens.add(venuesStore.continuationToken)
-    await venuesStore.loadVenues(undefined, false)
-  }
-}
-
-interface VenueGroup {
-  title: string
-  venues: typeof venuesStore.venues
-}
-
-const groupedVenues = computed<VenueGroup[]>(() => {
-  const venues = venuesStore.venues
-
-  // Separate venues with "to-try" label
-  const toTryVenues = venues.filter(v => v.labels?.some(l => l.toLowerCase() === 'to-try'))
-  const regularVenues = venues.filter(v => !v.labels?.some(l => l.toLowerCase() === 'to-try'))
-
-  const groups: VenueGroup[] = []
-
-  // Helper to create groups by type
-  const createTypeGroups = (venueList: typeof venues, prefix: string) => {
-    const typeMap = new Map<string, typeof venues>()
-
-    venueList.forEach(venue => {
-      const type = venue.type.toLowerCase()
-      if (!typeMap.has(type)) {
-        typeMap.set(type, [])
-      }
-      typeMap.get(type)!.push(venue)
-    })
-
-    // Sort each type group by rating (descending), then by updatedAt
-    typeMap.forEach((typeVenues) => {
-      typeVenues.sort((a, b) => {
-        const ra = a.rating ?? 0
-        const rb = b.rating ?? 0
-        if (rb !== ra) return rb - ra
-        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-      })
-    })
-
-    // Create groups in specific order
-    const typeOrder = ['bar', 'lounge', 'restaurant', 'cafe', 'other']
-    typeOrder.forEach(type => {
-      if (typeMap.has(type) && typeMap.get(type)!.length > 0) {
-        const typeName = type.charAt(0).toUpperCase() + type.slice(1)
-        groups.push({
-          title: prefix ? `${prefix} - ${typeName}` : typeName,
-          venues: typeMap.get(type)!
-        })
-      }
-    })
-  }
-
-  // Add all "to-try" venues as a single group, sorted by rating then date
-  if (toTryVenues.length > 0) {
-    const sorted = [...toTryVenues].sort((a, b) => {
-      const ra = a.rating ?? 0
-      const rb = b.rating ?? 0
-      if (rb !== ra) return rb - ra
-      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-    })
-    groups.push({ title: 'To Try', venues: sorted })
-  }
-
-  // Add regular venue groups
-  if (regularVenues.length > 0) {
-    createTypeGroups(regularVenues, '')
-  }
-
-  return groups
+onUnmounted(() => {
+  document.removeEventListener('click', closeFilterMenu)
 })
 
 const sortedVenues = computed(() => {
-  // Flatten grouped venues for leaderboard
-  return groupedVenues.value.flatMap(g => g.venues)
+  return venuesStore.venues
 })
 
 const leaderboardVenues = computed(() => {
@@ -137,31 +67,58 @@ const leaderboardVenues = computed(() => {
 
 const scrollContainerRef = ref<HTMLElement | null>(null)
 
-// Flatten grouped venues with headers for virtual scrolling
 interface VirtualItem {
-  type: 'header' | 'venue'
-  groupTitle?: string
-  venue?: typeof venuesStore.venues[0]
+  venue: typeof venuesStore.venues[0]
 }
 
 const virtualItems = computed<VirtualItem[]>(() => {
-  const items: VirtualItem[] = []
-  groupedVenues.value.forEach(group => {
-    items.push({ type: 'header', groupTitle: group.title })
-    group.venues.forEach(venue => {
-      items.push({ type: 'venue', venue })
-    })
-  })
-  return items
+  return venuesStore.venues.map(venue => ({ venue }))
 })
 
 const virtualizer = useVirtualizer(computed(() => ({
   count: virtualItems.value.length,
   getScrollElement: () => scrollContainerRef.value,
-  estimateSize: (index) => virtualItems.value[index].type === 'header' ? 40 : 100,
+  estimateSize: () => 100,
   overscan: 5,
   gap: 12,
 })))
+
+const isLoadingMore = ref(false)
+const lastVirtualIndex = computed(() => {
+  const rows = virtualizer.value.getVirtualItems()
+  return rows.length ? rows[rows.length - 1].index : -1
+})
+
+async function maybeLoadMore() {
+  if (isLoadingMore.value || lastVirtualIndex.value < 0) return
+  if (virtualItems.value.length - 1 - lastVirtualIndex.value > 3) return
+  if (!venuesStore.continuationToken || venuesStore.isLoading) return
+
+  isLoadingMore.value = true
+  try {
+    await venuesStore.loadVenues(activeFilter.value, false)
+  } finally {
+    isLoadingMore.value = false
+  }
+}
+
+watch(lastVirtualIndex, () => {
+  void maybeLoadMore()
+})
+
+function closeFilterMenu(e: MouseEvent) {
+  const target = e.target as HTMLElement
+  if (!target.closest('.filter-dropdown')) {
+    showFilterMenu.value = false
+  }
+}
+
+async function setFilter(value?: string) {
+  activeFilter.value = value
+  showFilterMenu.value = false
+  await venuesStore.loadVenues(value, true)
+  virtualizer.value.scrollToOffset(0)
+}
 
 async function addVenue() {
   if (!newName.value.trim()) return
@@ -229,17 +186,51 @@ function resetForm() {
       </button>
     </div>
 
+    <div class="flex items-center gap-2 mb-4">
+      <div class="relative filter-dropdown">
+        <button
+          @click="showFilterMenu = !showFilterMenu"
+          class="flex items-center gap-1 px-3 py-2.5 min-h-[44px] rounded-full text-xs border transition-colors"
+          :class="activeFilter
+            ? 'bg-[#1e407c] border-[#1e407c] text-white'
+            : 'border-[#1e407c]/50 text-[#96BEE6] hover:border-[#1e407c]'"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+          </svg>
+          <span>{{ activeFilterLabel }}</span>
+        </button>
+
+        <div
+          v-if="showFilterMenu"
+          class="absolute left-0 top-full mt-1 bg-[#041e3e] border border-[#1e407c]/50 rounded-xl overflow-hidden shadow-lg z-10 min-w-[140px]"
+        >
+          <button
+            v-for="opt in venueTypeFilters"
+            :key="opt.label"
+            @click="setFilter(opt.value)"
+            class="w-full text-left px-4 py-2.5 text-sm transition-colors"
+            :class="activeFilter === opt.value
+              ? 'text-[#96BEE6] bg-[#0a2a52]'
+              : 'text-[#96BEE6] hover:bg-[#0a2a52]'"
+          >
+            {{ opt.label }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Loading -->
-    <div v-if="venuesStore.isLoading && !groupedVenues.length" class="text-[#96BEE6]/70 text-center py-12">
+    <div v-if="venuesStore.isLoading && !virtualItems.length" class="text-[#96BEE6]/70 text-center py-12">
       Loading...
     </div>
 
     <!-- Empty -->
-    <div v-else-if="!groupedVenues.length" class="text-[#96BEE6]/70 text-center py-12">
+    <div v-else-if="!virtualItems.length" class="text-[#96BEE6]/70 text-center py-12">
       <p>No venues yet. Add your favorite spots.</p>
     </div>
 
-    <!-- Venue list (virtual scroll with groups) -->
+    <!-- Venue list (virtual scroll) -->
     <div
       v-else
       ref="scrollContainerRef"
@@ -255,16 +246,9 @@ function resetForm() {
           :ref="(el: any) => { if (el?.$el || el) virtualizer.measureElement(el?.$el ?? el) }"
           :style="{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${row.start}px)` }"
         >
-          <!-- Group Header -->
-          <div v-if="virtualItems[row.index].type === 'header'" class="mb-3">
-            <h3 class="text-sm font-semibold text-[#96BEE6] uppercase tracking-wide">
-              {{ virtualItems[row.index].groupTitle }}
-            </h3>
-          </div>
-
           <!-- Venue Item -->
           <router-link
-            v-else-if="virtualItems[row.index].venue"
+            v-if="virtualItems[row.index].venue"
             :to="`/venues/${virtualItems[row.index].venue!.id}`"
             class="block bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 hover:border-[#1e407c]/50 transition-colors"
           >

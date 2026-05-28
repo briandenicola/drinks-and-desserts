@@ -81,8 +81,8 @@ export const useItemsStore = defineStore('items', () => {
   }
 
   return {
-    items, isLoading, loadItems,
-    wishlistItems, isLoadingWishlist, loadWishlist,
+    items, isLoading, continuationToken, loadItems,
+    wishlistItems, isLoadingWishlist, wishlistContinuationToken, loadWishlist,
     updateItem, deleteItem,
     createWishlistItem, convertWishlistItem,
     createWishlistFromUrl,
