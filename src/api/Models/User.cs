@@ -63,6 +63,8 @@ public class User
                 DefaultView = Preferences.DefaultView,
                 CollectionSort = Preferences.CollectionSort,
                 CollectionFilter = Preferences.CollectionFilter,
+                VenueSort = Preferences.VenueSort,
+                VenueFilter = Preferences.VenueFilter,
                 PushoverAppToken = !string.IsNullOrEmpty(Preferences.PushoverAppToken) ? "****" : null,
                 PushoverUserKey = !string.IsNullOrEmpty(Preferences.PushoverUserKey) ? "****" : null,
                 PushoverEnabled = Preferences.PushoverEnabled,
@@ -108,6 +110,12 @@ public class UserPreferences
 
     [JsonPropertyName("collectionFilter")]
     public string? CollectionFilter { get; set; }
+
+    [JsonPropertyName("venueSort")]
+    public string VenueSort { get; set; } = "rating";
+
+    [JsonPropertyName("venueFilter")]
+    public string? VenueFilter { get; set; }
 
     [JsonPropertyName("pushoverAppToken")]
     public string? PushoverAppToken { get; set; }

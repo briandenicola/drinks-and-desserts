@@ -11,6 +11,8 @@ const feedbackTimers: ReturnType<typeof setTimeout>[] = []
 const displayName = ref('')
 const collectionSort = ref('rating')
 const collectionFilter = ref<string | undefined>(undefined)
+const venueSort = ref('rating')
+const venueFilter = ref<string | undefined>(undefined)
 const isSaving = ref(false)
 const saveMessage = ref('')
 
@@ -36,6 +38,21 @@ const filterOptions = [
   { label: 'Cigar', value: 'cigar' as string | undefined },
   { label: 'Dessert', value: 'dessert' as string | undefined },
   { label: 'Custom', value: 'custom' as string | undefined },
+]
+
+const venueSortOptions = [
+  { label: 'Rating', value: 'rating' },
+  { label: 'Date Added', value: 'createdAt' },
+  { label: 'Date Updated', value: 'updatedAt' },
+]
+
+const venueFilterOptions = [
+  { label: 'All', value: undefined as string | undefined },
+  { label: 'Bar', value: 'bar' as string | undefined },
+  { label: 'Lounge', value: 'lounge' as string | undefined },
+  { label: 'Restaurant', value: 'restaurant' as string | undefined },
+  { label: 'Cafe', value: 'cafe' as string | undefined },
+  { label: 'Other', value: 'other' as string | undefined },
 ]
 
 // Password change
@@ -143,6 +160,8 @@ onMounted(() => {
     displayName.value = auth.user.displayName
     collectionSort.value = auth.user.preferences?.collectionSort || 'rating'
     collectionFilter.value = auth.user.preferences?.collectionFilter || undefined
+    venueSort.value = auth.user.preferences?.venueSort || 'rating'
+    venueFilter.value = auth.user.preferences?.venueFilter || undefined
     pushoverEnabled.value = auth.user.preferences?.pushoverEnabled ?? false
     pushoverAppToken.value = auth.user.preferences?.pushoverAppToken || ''
     pushoverUserKey.value = auth.user.preferences?.pushoverUserKey || ''
@@ -165,6 +184,8 @@ async function saveProfile() {
         ...auth.user!.preferences,
         collectionSort: collectionSort.value,
         collectionFilter: collectionFilter.value,
+        venueSort: venueSort.value,
+        venueFilter: venueFilter.value,
       },
     })
     await auth.loadUser()
@@ -301,6 +322,40 @@ async function changePassword() {
               @click="collectionFilter = opt.value"
               class="px-4 py-2.5 min-h-[44px] rounded-full text-sm border transition-colors"
               :class="collectionFilter === opt.value
+                ? 'bg-[#1e407c] border-[#1e407c] text-white'
+                : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6] hover:border-[#1e407c]'"
+            >
+              {{ opt.label }}
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm text-[#96BEE6] mb-2">Default Venue Sort</label>
+          <div class="flex gap-2">
+            <button
+              v-for="opt in venueSortOptions"
+              :key="opt.value"
+              @click="venueSort = opt.value"
+              class="px-4 py-2.5 min-h-[44px] rounded-full text-sm border transition-colors"
+              :class="venueSort === opt.value
+                ? 'bg-[#1e407c] border-[#1e407c] text-white'
+                : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6] hover:border-[#1e407c]'"
+            >
+              {{ opt.label }}
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm text-[#96BEE6] mb-2">Default Venue Filter</label>
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="opt in venueFilterOptions"
+              :key="opt.label"
+              @click="venueFilter = opt.value"
+              class="px-4 py-2.5 min-h-[44px] rounded-full text-sm border transition-colors"
+              :class="venueFilter === opt.value
                 ? 'bg-[#1e407c] border-[#1e407c] text-white'
                 : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6] hover:border-[#1e407c]'"
             >
