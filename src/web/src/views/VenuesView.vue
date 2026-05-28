@@ -90,7 +90,7 @@ const lastVirtualIndex = computed(() => {
 })
 
 async function maybeLoadMore() {
-  if (isLoadingMore.value || activeFilter.value !== undefined || lastVirtualIndex.value < 0) return
+  if (isLoadingMore.value || lastVirtualIndex.value < 0) return
   if (virtualItems.value.length - 1 - lastVirtualIndex.value > 3) return
   if (!venuesStore.continuationToken || venuesStore.isLoading) return
 
@@ -113,10 +113,10 @@ function closeFilterMenu(e: MouseEvent) {
   }
 }
 
-function setFilter(value?: string) {
+async function setFilter(value?: string) {
   activeFilter.value = value
   showFilterMenu.value = false
-  venuesStore.loadVenues(value, true)
+  await venuesStore.loadVenues(value, true)
   virtualizer.value.scrollToOffset(0)
 }
 

@@ -209,7 +209,7 @@ const lastVirtualIndex = computed(() => {
 })
 
 async function maybeLoadMore() {
-  if (isLoadingMore.value || activeFilter.value !== undefined || lastVirtualIndex.value < 0) return
+  if (isLoadingMore.value || lastVirtualIndex.value < 0) return
   if (virtualItems.value.length - 1 - lastVirtualIndex.value > 3) return
 
   const isWishlist = activeTab.value === 'wishlist'
@@ -241,7 +241,7 @@ watch(lastVirtualIndex, () => {
   void maybeLoadMore()
 })
 
-const isLoadingList= computed(() =>
+const isLoadingList = computed(() =>
   activeTab.value === 'wishlist' ? itemsStore.isLoadingWishlist : itemsStore.isLoading
 )
 
