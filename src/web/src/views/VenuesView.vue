@@ -36,13 +36,18 @@ registerRefresh?.(async () => {
   await loadAllVenues()
 })
 
-onMounted(() => {
-  loadAllVenues()
+onMounted(async () => {
+  await loadAllVenues()
 })
 
 async function loadAllVenues() {
+  const seenTokens = new Set<string>()
   await venuesStore.loadVenues(undefined, true)
   while (venuesStore.continuationToken) {
+    if (seenTokens.has(venuesStore.continuationToken)) {
+      break
+    }
+    seenTokens.add(venuesStore.continuationToken)
     await venuesStore.loadVenues(undefined, false)
   }
 }
