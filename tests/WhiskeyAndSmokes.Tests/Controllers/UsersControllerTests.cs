@@ -71,8 +71,8 @@ public class UsersControllerTests : IClassFixture<CustomWebApplicationFactory>
             DisplayName = "Updated Name",
             Preferences = new UserPreferences
             {
-                CollectionSort = "rating",
-                VenueSort = "updatedAt",
+                CollectionSort = "type",
+                VenueSort = "type",
                 VenueFilter = "restaurant"
             }
         };
@@ -82,7 +82,8 @@ public class UsersControllerTests : IClassFixture<CustomWebApplicationFactory>
         var body = await response.Content.ReadFromJsonAsync<User>();
         body.Should().NotBeNull();
         body!.DisplayName.Should().Be("Updated Name");
-        body.Preferences.VenueSort.Should().Be("updatedAt");
+        body.Preferences.CollectionSort.Should().Be("type");
+        body.Preferences.VenueSort.Should().Be("type");
         body.Preferences.VenueFilter.Should().Be("restaurant");
     }
 

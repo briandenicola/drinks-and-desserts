@@ -40,6 +40,7 @@ const venueTypeOptions = [
 ]
 const sortOptions = [
   { label: 'Rating', value: 'rating' },
+  { label: 'Type', value: 'type' },
   { label: 'Added', value: 'createdAt' },
   { label: 'Updated', value: 'updatedAt' },
 ]
@@ -72,6 +73,11 @@ const sortedVenues = computed(() => {
       const rb = b.rating ?? 0
       if (rb !== ra) return rb - ra
       return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    }
+    if (activeSort.value === 'type') {
+      const typeCompare = a.type.localeCompare(b.type, undefined, { sensitivity: 'base' })
+      if (typeCompare !== 0) return typeCompare
+      return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
     }
     if (activeSort.value === 'updatedAt') {
       return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
