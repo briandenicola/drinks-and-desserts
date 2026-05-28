@@ -49,6 +49,7 @@ const urlError = ref('')
 
 const sortOptions = [
   { label: 'Rating', value: 'rating' },
+  { label: 'Type', value: 'type' },
   { label: 'Added', value: 'createdAt' },
   { label: 'Updated', value: 'updatedAt' },
 ]
@@ -173,6 +174,11 @@ const displayItems = computed(() => {
       const rb = b.userRating ?? 0
       if (rb !== ra) return rb - ra
       return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    }
+    if (sort === 'type') {
+      const typeCompare = a.type.localeCompare(b.type, undefined, { sensitivity: 'base' })
+      if (typeCompare !== 0) return typeCompare
+      return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
     }
     if (sort === 'updatedAt') {
       return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()

@@ -18,6 +18,7 @@ const saveMessage = ref('')
 
 const sortOptions = [
   { label: 'Rating', value: 'rating' },
+  { label: 'Type', value: 'type' },
   { label: 'Date Added', value: 'createdAt' },
   { label: 'Date Updated', value: 'updatedAt' },
 ]
@@ -42,6 +43,7 @@ const filterOptions = [
 
 const venueSortOptions = [
   { label: 'Rating', value: 'rating' },
+  { label: 'Type', value: 'type' },
   { label: 'Date Added', value: 'createdAt' },
   { label: 'Date Updated', value: 'updatedAt' },
 ]
