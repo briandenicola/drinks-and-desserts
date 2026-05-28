@@ -2,6 +2,7 @@
 import { ref, inject, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useVenuesStore } from '../stores/venues'
+import { useAuthStore } from '../stores/auth'
 import { RefreshKey } from '../composables/refreshKey'
 import { useBreakpoint } from '../composables/useBreakpoint'
 import { useVirtualizer } from '@tanstack/vue-virtual'
@@ -10,11 +11,15 @@ import VenueLeaderboard from '../components/venues/VenueLeaderboard.vue'
 
 const router = useRouter()
 const venuesStore = useVenuesStore()
+const auth = useAuthStore()
 const registerRefresh = inject(RefreshKey)
 const { isDesktop } = useBreakpoint()
 const leaderboardSort = ref<'rating' | 'items'>('rating')
+const activeSort = ref(auth.user?.preferences?.venueSort || 'rating')
+const defaultFilter = auth.user?.preferences?.venueFilter || undefined
+const showSortMenu = ref(false)
 const showFilterMenu = ref(false)
-const activeFilter = ref<string | undefined>(undefined)
+const activeFilter = ref<string | undefined>(defaultFilter)
 
 const showAddForm = ref(false)
 const addMode = ref<'manual' | 'url'>('manual')
@@ -33,9 +38,17 @@ const venueTypeOptions = [
   { label: 'Cafe', value: 'cafe' },
   { label: 'Other', value: 'other' },
 ]
+const sortOptions = [
+  { label: 'Rating', value: 'rating' },
+  { label: 'Added', value: 'createdAt' },
+  { label: 'Updated', value: 'updatedAt' },
+]
 const venueTypeFilters = [{ label: 'All', value: undefined }, ...venueTypeOptions]
 const activeFilterLabel = computed(() =>
   venueTypeFilters.find(f => f.value === activeFilter.value)?.label ?? 'All'
+)
+const activeSortLabel = computed(() =>
+  sortOptions.find(s => s.value === activeSort.value)?.label ?? 'Rating'
 )
 
 registerRefresh?.(async () => {
@@ -52,7 +65,20 @@ onUnmounted(() => {
 })
 
 const sortedVenues = computed(() => {
-  return venuesStore.venues
+  const sorted = [...venuesStore.venues]
+  sorted.sort((a, b) => {
+    if (activeSort.value === 'rating') {
+      const ra = a.rating ?? 0
+      const rb = b.rating ?? 0
+      if (rb !== ra) return rb - ra
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    }
+    if (activeSort.value === 'updatedAt') {
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    }
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  })
+  return sorted
 })
 
 const leaderboardVenues = computed(() => {
@@ -108,6 +134,9 @@ watch(lastVirtualIndex, () => {
 
 function closeFilterMenu(e: MouseEvent) {
   const target = e.target as HTMLElement
+  if (!target.closest('.sort-dropdown')) {
+    showSortMenu.value = false
+  }
   if (!target.closest('.filter-dropdown')) {
     showFilterMenu.value = false
   }
@@ -187,6 +216,38 @@ function resetForm() {
     </div>
 
     <div class="flex items-center gap-2 mb-4">
+      <div class="relative sort-dropdown">
+        <button
+          @click="showSortMenu = !showSortMenu"
+          class="flex items-center gap-1 px-3 py-2.5 min-h-[44px] rounded-full text-xs border transition-colors"
+          :class="activeSort
+            ? 'bg-[#1e407c] border-[#1e407c] text-white'
+            : 'border-[#1e407c]/50 text-[#96BEE6] hover:border-[#1e407c]'"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 4h13M3 8h9M3 12h18M3 16h13M3 20h9" />
+          </svg>
+          <span>{{ activeSortLabel }}</span>
+        </button>
+
+        <div
+          v-if="showSortMenu"
+          class="absolute left-0 top-full mt-1 bg-[#041e3e] border border-[#1e407c]/50 rounded-xl overflow-hidden shadow-lg z-10 min-w-[140px]"
+        >
+          <button
+            v-for="opt in sortOptions"
+            :key="opt.value"
+            @click="activeSort = opt.value; showSortMenu = false"
+            class="w-full text-left px-4 py-2.5 text-sm transition-colors"
+            :class="activeSort === opt.value
+              ? 'text-[#96BEE6] bg-[#0a2a52]'
+              : 'text-[#96BEE6] hover:bg-[#0a2a52]'"
+          >
+            {{ opt.label }}
+          </button>
+        </div>
+      </div>
+
       <div class="relative filter-dropdown">
         <button
           @click="showFilterMenu = !showFilterMenu"

@@ -66,9 +66,24 @@ public class UsersControllerTests : IClassFixture<CustomWebApplicationFactory>
         _factory.CosmosDb.UpsertAsync("users", Arg.Any<User>(), Arg.Any<string>())
             .Returns(callInfo => callInfo.ArgAt<User>(1));
 
-        var request = new UpdateUserRequest { DisplayName = "Updated Name" };
+        var request = new UpdateUserRequest
+        {
+            DisplayName = "Updated Name",
+            Preferences = new UserPreferences
+            {
+                CollectionSort = "rating",
+                VenueSort = "updatedAt",
+                VenueFilter = "restaurant"
+            }
+        };
         var response = await _client.PutAsJsonAsync("/api/users/me", request);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<User>();
+        body.Should().NotBeNull();
+        body!.DisplayName.Should().Be("Updated Name");
+        body.Preferences.VenueSort.Should().Be("updatedAt");
+        body.Preferences.VenueFilter.Should().Be("restaurant");
     }
 
     [Fact]

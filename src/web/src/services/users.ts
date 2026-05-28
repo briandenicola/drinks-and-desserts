@@ -11,6 +11,8 @@ export interface User {
     defaultView: string
     collectionSort: string
     collectionFilter?: string
+    venueSort: string
+    venueFilter?: string
     pushoverAppToken?: string
     pushoverUserKey?: string
     pushoverEnabled?: boolean
