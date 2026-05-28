@@ -162,55 +162,6 @@ async function deleteItem(id: string) {
   await itemsStore.deleteItem(id)
 }
 
-interface ItemGroup {
-  title: string
-  items: typeof itemsStore.items
-}
-
-const groupedItems = computed<ItemGroup[]>(() => {
-  const source = activeTab.value === 'wishlist' ? itemsStore.wishlistItems : itemsStore.items
-
-  // Only group when filter is "All" (undefined) in collection view
-  if (activeFilter.value !== undefined || activeTab.value === 'wishlist') {
-    return []
-  }
-
-  const groups: ItemGroup[] = []
-  const typeMap = new Map<string, typeof source>()
-
-  source.forEach(item => {
-    const type = item.type.toLowerCase()
-    if (!typeMap.has(type)) {
-      typeMap.set(type, [])
-    }
-    typeMap.get(type)!.push(item)
-  })
-
-  // Sort each type group by rating (descending), then by updatedAt
-  typeMap.forEach((typeItems) => {
-    typeItems.sort((a, b) => {
-      const ra = a.userRating ?? 0
-      const rb = b.userRating ?? 0
-      if (rb !== ra) return rb - ra
-      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-    })
-  })
-
-  // Create groups in alphabetical order by type
-  const sortedTypes = Array.from(typeMap.keys()).sort()
-  sortedTypes.forEach(type => {
-    if (typeMap.get(type)!.length > 0) {
-      const typeName = type.charAt(0).toUpperCase() + type.slice(1).replace(/-/g, ' ')
-      groups.push({
-        title: typeName,
-        items: typeMap.get(type)!
-      })
-    }
-  })
-
-  return groups
-})
-
 const displayItems = computed(() => {
   const source = activeTab.value === 'wishlist' ? itemsStore.wishlistItems : itemsStore.items
   const sorted = [...source]
@@ -235,44 +186,59 @@ const displayItems = computed(() => {
 
 const scrollContainerRef = ref<HTMLElement | null>(null)
 
-// Flatten grouped items with headers for virtual scrolling
 interface VirtualItem {
-  type: 'header' | 'item'
-  groupTitle?: string
-  item?: typeof itemsStore.items[0]
+  item: typeof itemsStore.items[0]
 }
 
 const virtualItems = computed<VirtualItem[]>(() => {
-  // Use grouped items when filter is "All" and in collection view
-  if (groupedItems.value.length > 0) {
-    const items: VirtualItem[] = []
-    groupedItems.value.forEach(group => {
-      items.push({ type: 'header', groupTitle: group.title })
-      group.items.forEach(item => {
-        items.push({ type: 'item', item })
-      })
-    })
-    return items
-  }
-
-  // Otherwise, use flat list without headers
-  return displayItems.value.map(item => ({ type: 'item' as const, item }))
+  return displayItems.value.map(item => ({ item }))
 })
 
 const virtualizer = useVirtualizer(computed(() => ({
   count: virtualItems.value.length,
   getScrollElement: () => scrollContainerRef.value,
-  estimateSize: (index) => {
-    const item = virtualItems.value[index]
-    if (item.type === 'header') return 40
-    return activeTab.value === 'wishlist' ? 140 : 100
-  },
+  estimateSize: () => activeTab.value === 'wishlist' ? 140 : 100,
   overscan: 5,
   gap: 12,
 })))
 
+const isLoadingMore = ref(false)
+const lastVirtualIndex = computed(() => {
+  const rows = virtualizer.value.getVirtualItems()
+  return rows.length ? rows[rows.length - 1].index : -1
+})
+
+async function maybeLoadMore() {
+  if (isLoadingMore.value || activeFilter.value !== undefined || lastVirtualIndex.value < 0) return
+  if (virtualItems.value.length - 1 - lastVirtualIndex.value > 3) return
+
+  const isWishlist = activeTab.value === 'wishlist'
+  const hasMore = isWishlist
+    ? !!itemsStore.wishlistContinuationToken
+    : !!itemsStore.continuationToken
+  const isLoading = isWishlist
+    ? itemsStore.isLoadingWishlist
+    : itemsStore.isLoading
+
+  if (!hasMore || isLoading) return
+
+  isLoadingMore.value = true
+  try {
+    if (isWishlist) {
+      await itemsStore.loadWishlist(activeFilter.value, false)
+    } else {
+      await itemsStore.loadItems(activeFilter.value, false)
+    }
+  } finally {
+    isLoadingMore.value = false
+  }
+}
+
 watch([activeTab, activeFilter], () => {
   virtualizer.value.scrollToOffset(0)
+})
+watch(lastVirtualIndex, () => {
+  void maybeLoadMore()
 })
 
 const isLoadingList= computed(() =>
@@ -544,16 +510,9 @@ function navigateToItem(id: string) {
           :ref="(el: any) => { if (el?.$el || el) virtualizer.measureElement(el?.$el ?? el) }"
           :style="{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${row.start}px)` }"
         >
-          <!-- Group Header -->
-          <div v-if="virtualItems[row.index].type === 'header'" class="mb-3">
-            <h3 class="text-sm font-semibold text-[#96BEE6] uppercase tracking-wide">
-              {{ virtualItems[row.index].groupTitle }}
-            </h3>
-          </div>
-
           <!-- Collection item -->
           <router-link
-            v-else-if="activeTab === 'collection' && virtualItems[row.index].item"
+            v-if="activeTab === 'collection'"
             :to="`/items/${virtualItems[row.index].item!.id}`"
             class="block bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 hover:border-[#1e407c]/50 transition-colors"
           >
@@ -584,7 +543,7 @@ function navigateToItem(id: string) {
 
           <!-- Wishlist item -->
           <div
-            v-else-if="activeTab === 'wishlist' && virtualItems[row.index].item"
+            v-else-if="activeTab === 'wishlist'"
             class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4"
           >
             <router-link :to="`/items/${virtualItems[row.index].item!.id}`" class="block">
