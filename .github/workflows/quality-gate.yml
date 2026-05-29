@@ -1,0 +1,94 @@
+name: Quality Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  dotnet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore
+        working-directory: src/api
+
+      - name: Build
+        run: dotnet build --no-restore -c Release
+        working-directory: src/api
+
+      - name: Test
+        run: dotnet test --no-build -c Release --verbosity normal
+        working-directory: src/api
+
+      - name: Integration Tests
+        run: dotnet test -c Release --verbosity normal
+        working-directory: tests/WhiskeyAndSmokes.Tests
+
+      - name: NuGet vulnerability scan
+        run: dotnet list package --vulnerable --include-transitive
+        working-directory: src/api
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: src/web/package-lock.json
+
+      - name: Install
+        run: npm ci
+        working-directory: src/web
+
+      - name: Type Check
+        run: npx vue-tsc --noEmit
+        working-directory: src/web
+
+      - name: Build
+        run: npm run build
+        working-directory: src/web
+
+      - name: npm vulnerability scan
+        run: npm audit --audit-level=high
+        working-directory: src/web
+
+  secrets:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  container-config-scan:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aquasecurity/trivy-action@0.33.1
+        with:
+          scan-type: config
+          severity: HIGH,CRITICAL
+          exit-code: "1"

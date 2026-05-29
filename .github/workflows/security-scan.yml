@@ -1,0 +1,126 @@
+name: Container Image Security Scan
+
+on:
+  workflow_run:
+    workflows: ["Build and Push to Docker Hub"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      image-sha:
+        description: "Full commit SHA to scan (defaults to triggering SHA)"
+        required: false
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  resolve:
+    name: Resolve image tag
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.tag.outputs.image-tag }}
+      image-api: ${{ steps.tag.outputs.image-api }}
+      image-web: ${{ steps.tag.outputs.image-web }}
+    steps:
+      - id: tag
+        name: Compute image tag
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            HEAD="${{ inputs.image-sha }}"
+            if [[ -z "$HEAD" ]]; then
+              HEAD="${{ github.sha }}"
+            fi
+          else
+            HEAD="${{ github.event.workflow_run.head_sha }}"
+          fi
+
+          SHORT="${HEAD:0:7}"
+          TAG="sha-$SHORT"
+
+          API_IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/whiskey-and-smokes-api:$TAG"
+          WEB_IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/whiskey-and-smokes-web:$TAG"
+
+          echo "image-tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "image-api=$API_IMAGE" >> "$GITHUB_OUTPUT"
+          echo "image-web=$WEB_IMAGE" >> "$GITHUB_OUTPUT"
+
+  scan-api:
+    name: Trivy scan API image
+    needs: resolve
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Scan API image
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: ${{ needs.resolve.outputs.image-api }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: sarif
+          output: trivy-api.sarif
+
+      - name: Upload SARIF
+        if: always()
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-api.sarif
+          category: trivy-image-api
+
+      - name: Upload SARIF artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-api-sarif
+          path: trivy-api.sarif
+          retention-days: 14
+
+  scan-web:
+    name: Trivy scan Web image
+    needs: resolve
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Scan Web image
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: ${{ needs.resolve.outputs.image-web }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: sarif
+          output: trivy-web.sarif
+
+      - name: Upload SARIF
+        if: always()
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-web.sarif
+          category: trivy-image-web
+
+      - name: Upload SARIF artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-web-sarif
+          path: trivy-web.sarif
+          retention-days: 14
