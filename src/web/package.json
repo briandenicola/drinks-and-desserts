@@ -24,7 +24,7 @@
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.2",
     "@types/leaflet": "^1.9.21",
-    "@types/node": "^24.12.0",
+    "@types/node": "^25.9.1",
     "@vitejs/plugin-vue": "^6.0.5",
     "@vue/tsconfig": "^0.9.0",
     "tailwindcss": "^4.2.2",
