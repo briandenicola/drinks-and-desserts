@@ -10,17 +10,28 @@ const auth = useAuthStore()
 const feedbackTimers: ReturnType<typeof setTimeout>[] = []
 const displayName = ref('')
 const collectionSort = ref('rating')
+const collectionSortDirection = ref<'asc' | 'desc'>('desc')
 const collectionFilter = ref<string | undefined>(undefined)
 const venueSort = ref('rating')
+const venueSortDirection = ref<'asc' | 'desc'>('desc')
 const venueFilter = ref<string | undefined>(undefined)
 const isSaving = ref(false)
 const saveMessage = ref('')
+
+function getDefaultSortDirection(sort: string): 'asc' | 'desc' {
+  return sort === 'type' ? 'asc' : 'desc'
+}
 
 const sortOptions = [
   { label: 'Rating', value: 'rating' },
   { label: 'Type', value: 'type' },
   { label: 'Date Added', value: 'createdAt' },
   { label: 'Date Updated', value: 'updatedAt' },
+]
+
+const sortDirectionOptions = [
+  { label: 'Ascending', value: 'asc' as const },
+  { label: 'Descending', value: 'desc' as const },
 ]
 
 const filterOptions = [
@@ -161,8 +172,10 @@ onMounted(() => {
   if (auth.user) {
     displayName.value = auth.user.displayName
     collectionSort.value = auth.user.preferences?.collectionSort || 'rating'
+    collectionSortDirection.value = auth.user.preferences?.collectionSortDirection || getDefaultSortDirection(collectionSort.value)
     collectionFilter.value = auth.user.preferences?.collectionFilter || undefined
     venueSort.value = auth.user.preferences?.venueSort || 'rating'
+    venueSortDirection.value = auth.user.preferences?.venueSortDirection || getDefaultSortDirection(venueSort.value)
     venueFilter.value = auth.user.preferences?.venueFilter || undefined
     pushoverEnabled.value = auth.user.preferences?.pushoverEnabled ?? false
     pushoverAppToken.value = auth.user.preferences?.pushoverAppToken || ''
@@ -185,8 +198,10 @@ async function saveProfile() {
       preferences: {
         ...auth.user!.preferences,
         collectionSort: collectionSort.value,
+        collectionSortDirection: collectionSortDirection.value,
         collectionFilter: collectionFilter.value,
         venueSort: venueSort.value,
+        venueSortDirection: venueSortDirection.value,
         venueFilter: venueFilter.value,
       },
     })
@@ -316,6 +331,23 @@ async function changePassword() {
         </div>
 
         <div>
+          <label class="block text-sm text-[#96BEE6] mb-2">Default Collection Sort Direction</label>
+          <div class="flex gap-2">
+            <button
+              v-for="opt in sortDirectionOptions"
+              :key="opt.value"
+              @click="collectionSortDirection = opt.value"
+              class="px-4 py-2.5 min-h-[44px] rounded-full text-sm border transition-colors"
+              :class="collectionSortDirection === opt.value
+                ? 'bg-[#1e407c] border-[#1e407c] text-white'
+                : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6] hover:border-[#1e407c]'"
+            >
+              {{ opt.label }}
+            </button>
+          </div>
+        </div>
+
+        <div>
           <label class="block text-sm text-[#96BEE6] mb-2">Default Collection Filter</label>
           <div class="flex flex-wrap gap-2">
             <button
@@ -341,6 +373,23 @@ async function changePassword() {
               @click="venueSort = opt.value"
               class="px-4 py-2.5 min-h-[44px] rounded-full text-sm border transition-colors"
               :class="venueSort === opt.value
+                ? 'bg-[#1e407c] border-[#1e407c] text-white'
+                : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6] hover:border-[#1e407c]'"
+            >
+              {{ opt.label }}
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm text-[#96BEE6] mb-2">Default Venue Sort Direction</label>
+          <div class="flex gap-2">
+            <button
+              v-for="opt in sortDirectionOptions"
+              :key="opt.value"
+              @click="venueSortDirection = opt.value"
+              class="px-4 py-2.5 min-h-[44px] rounded-full text-sm border transition-colors"
+              :class="venueSortDirection === opt.value
                 ? 'bg-[#1e407c] border-[#1e407c] text-white'
                 : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6] hover:border-[#1e407c]'"
             >

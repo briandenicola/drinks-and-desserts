@@ -15,9 +15,16 @@ const auth = useAuthStore()
 const registerRefresh = inject(RefreshKey)
 const { isDesktop } = useBreakpoint()
 const leaderboardSort = ref<'rating' | 'items'>('rating')
+function getDefaultSortDirection(sort: string): 'asc' | 'desc' {
+  return sort === 'type' ? 'asc' : 'desc'
+}
 const activeSort = ref(auth.user?.preferences?.venueSort || 'rating')
+const activeSortDirection = ref<'asc' | 'desc'>(
+  auth.user?.preferences?.venueSortDirection || getDefaultSortDirection(activeSort.value)
+)
 const defaultFilter = auth.user?.preferences?.venueFilter || undefined
 const showSortMenu = ref(false)
+const showSortDirectionMenu = ref(false)
 const showFilterMenu = ref(false)
 const activeFilter = ref<string | undefined>(defaultFilter)
 
@@ -44,12 +51,19 @@ const sortOptions = [
   { label: 'Added', value: 'createdAt' },
   { label: 'Updated', value: 'updatedAt' },
 ]
+const sortDirectionOptions = [
+  { label: 'Ascending', value: 'asc' as const },
+  { label: 'Descending', value: 'desc' as const },
+]
 const venueTypeFilters = [{ label: 'All', value: undefined }, ...venueTypeOptions]
 const activeFilterLabel = computed(() =>
   venueTypeFilters.find(f => f.value === activeFilter.value)?.label ?? 'All'
 )
 const activeSortLabel = computed(() =>
   sortOptions.find(s => s.value === activeSort.value)?.label ?? 'Rating'
+)
+const activeSortDirectionLabel = computed(() =>
+  sortDirectionOptions.find(s => s.value === activeSortDirection.value)?.label ?? 'Descending'
 )
 
 registerRefresh?.(async () => {
@@ -67,22 +81,23 @@ onUnmounted(() => {
 
 const sortedVenues = computed(() => {
   const sorted = [...venuesStore.venues]
+  const direction = activeSortDirection.value === 'asc' ? 1 : -1
   sorted.sort((a, b) => {
     if (activeSort.value === 'rating') {
       const ra = a.rating ?? 0
       const rb = b.rating ?? 0
-      if (rb !== ra) return rb - ra
-      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      if (ra !== rb) return (ra - rb) * direction
+      return (new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()) * direction
     }
     if (activeSort.value === 'type') {
       const typeCompare = a.type.localeCompare(b.type, undefined, { sensitivity: 'base' })
-      if (typeCompare !== 0) return typeCompare
-      return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+      if (typeCompare !== 0) return typeCompare * direction
+      return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }) * direction
     }
     if (activeSort.value === 'updatedAt') {
-      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      return (new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()) * direction
     }
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    return (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) * direction
   })
   return sorted
 })
@@ -104,7 +119,7 @@ interface VirtualItem {
 }
 
 const virtualItems = computed<VirtualItem[]>(() => {
-  return venuesStore.venues.map(venue => ({ venue }))
+  return sortedVenues.value.map(venue => ({ venue }))
 })
 
 const virtualizer = useVirtualizer(computed(() => ({
@@ -142,6 +157,7 @@ function closeFilterMenu(e: MouseEvent) {
   const target = e.target as HTMLElement
   if (!target.closest('.sort-dropdown')) {
     showSortMenu.value = false
+    showSortDirectionMenu.value = false
   }
   if (!target.closest('.filter-dropdown')) {
     showFilterMenu.value = false
@@ -246,6 +262,32 @@ function resetForm() {
             @click="activeSort = opt.value; showSortMenu = false"
             class="w-full text-left px-4 py-2.5 text-sm transition-colors"
             :class="activeSort === opt.value
+              ? 'text-[#96BEE6] bg-[#0a2a52]'
+              : 'text-[#96BEE6] hover:bg-[#0a2a52]'"
+          >
+            {{ opt.label }}
+          </button>
+        </div>
+      </div>
+
+      <div class="relative sort-dropdown">
+        <button
+          @click="showSortDirectionMenu = !showSortDirectionMenu"
+          class="flex items-center gap-1 px-3 py-2.5 min-h-[44px] rounded-full text-xs border transition-colors border-[#1e407c]/50 text-[#96BEE6] hover:border-[#1e407c]"
+        >
+          <span>{{ activeSortDirectionLabel }}</span>
+        </button>
+
+        <div
+          v-if="showSortDirectionMenu"
+          class="absolute left-0 top-full mt-1 bg-[#041e3e] border border-[#1e407c]/50 rounded-xl overflow-hidden shadow-lg z-10 min-w-[140px]"
+        >
+          <button
+            v-for="opt in sortDirectionOptions"
+            :key="opt.value"
+            @click="activeSortDirection = opt.value; showSortDirectionMenu = false"
+            class="w-full text-left px-4 py-2.5 text-sm transition-colors"
+            :class="activeSortDirection === opt.value
               ? 'text-[#96BEE6] bg-[#0a2a52]'
               : 'text-[#96BEE6] hover:bg-[#0a2a52]'"
           >

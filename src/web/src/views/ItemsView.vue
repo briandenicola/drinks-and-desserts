@@ -31,12 +31,19 @@ const activeTab = computed({
   get: () => itemsStore.activeTab,
   set: (v) => { itemsStore.activeTab = v }
 })
+function getDefaultSortDirection(sort: string): 'asc' | 'desc' {
+  return sort === 'type' ? 'asc' : 'desc'
+}
 const activeSort = ref(auth.user?.preferences?.collectionSort || 'rating')
+const activeSortDirection = ref<'asc' | 'desc'>(
+  auth.user?.preferences?.collectionSortDirection || getDefaultSortDirection(activeSort.value)
+)
 const registerRefresh = inject(RefreshKey)
 
 // Wishlist add form
 const showAddForm = ref(false)
 const showSortMenu = ref(false)
+const showSortDirectionMenu = ref(false)
 const showFilterMenu = ref(false)
 const newName = ref('')
 const newType = ref('whiskey')
@@ -52,6 +59,10 @@ const sortOptions = [
   { label: 'Type', value: 'type' },
   { label: 'Added', value: 'createdAt' },
   { label: 'Updated', value: 'updatedAt' },
+]
+const sortDirectionOptions = [
+  { label: 'Ascending', value: 'asc' as const },
+  { label: 'Descending', value: 'desc' as const },
 ]
 
 registerRefresh?.(async () => {
@@ -167,24 +178,25 @@ const displayItems = computed(() => {
   const source = activeTab.value === 'wishlist' ? itemsStore.wishlistItems : itemsStore.items
   const sorted = [...source]
   const sort = activeSort.value
+  const direction = activeSortDirection.value === 'asc' ? 1 : -1
 
   sorted.sort((a, b) => {
     if (sort === 'rating') {
       const ra = a.userRating ?? 0
       const rb = b.userRating ?? 0
-      if (rb !== ra) return rb - ra
-      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      if (ra !== rb) return (ra - rb) * direction
+      return (new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()) * direction
     }
     if (sort === 'type') {
       const typeCompare = a.type.localeCompare(b.type, undefined, { sensitivity: 'base' })
-      if (typeCompare !== 0) return typeCompare
-      return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+      if (typeCompare !== 0) return typeCompare * direction
+      return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }) * direction
     }
     if (sort === 'updatedAt') {
-      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      return (new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()) * direction
     }
     // createdAt (default)
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    return (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) * direction
   })
 
   return sorted
@@ -255,6 +267,7 @@ function closeSortMenu(e: MouseEvent) {
   const target = e.target as HTMLElement
   if (!target.closest('.sort-dropdown')) {
     showSortMenu.value = false
+    showSortDirectionMenu.value = false
   }
   if (!target.closest('.filter-dropdown')) {
     showFilterMenu.value = false
@@ -399,6 +412,32 @@ function navigateToItem(id: string) {
             @click="activeSort = opt.value; showSortMenu = false"
             class="w-full text-left px-4 py-2.5 text-sm transition-colors"
             :class="activeSort === opt.value
+              ? 'text-[#96BEE6] bg-[#0a2a52]'
+              : 'text-[#96BEE6] hover:bg-[#0a2a52]'"
+          >
+            {{ opt.label }}
+          </button>
+        </div>
+      </div>
+
+      <div class="relative shrink-0 sort-dropdown">
+        <button
+          @click="showSortDirectionMenu = !showSortDirectionMenu"
+          class="flex items-center gap-1 px-3 py-2.5 min-h-[44px] rounded-full text-xs border border-[#1e407c]/50 text-[#96BEE6] hover:border-[#1e407c] transition-colors"
+        >
+          <span>{{ sortDirectionOptions.find(o => o.value === activeSortDirection)?.label }}</span>
+        </button>
+
+        <div
+          v-if="showSortDirectionMenu"
+          class="absolute right-0 top-full mt-1 bg-[#041e3e] border border-[#1e407c]/50 rounded-xl overflow-hidden shadow-lg z-10 min-w-[140px]"
+        >
+          <button
+            v-for="opt in sortDirectionOptions"
+            :key="opt.value"
+            @click="activeSortDirection = opt.value; showSortDirectionMenu = false"
+            class="w-full text-left px-4 py-2.5 text-sm transition-colors"
+            :class="activeSortDirection === opt.value
               ? 'text-[#96BEE6] bg-[#0a2a52]'
               : 'text-[#96BEE6] hover:bg-[#0a2a52]'"
           >

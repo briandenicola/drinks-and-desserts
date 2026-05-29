@@ -72,7 +72,9 @@ public class UsersControllerTests : IClassFixture<CustomWebApplicationFactory>
             Preferences = new UserPreferences
             {
                 CollectionSort = "type",
+                CollectionSortDirection = "asc",
                 VenueSort = "type",
+                VenueSortDirection = "asc",
                 VenueFilter = "restaurant"
             }
         };
@@ -83,7 +85,9 @@ public class UsersControllerTests : IClassFixture<CustomWebApplicationFactory>
         body.Should().NotBeNull();
         body!.DisplayName.Should().Be("Updated Name");
         body.Preferences.CollectionSort.Should().Be("type");
+        body.Preferences.CollectionSortDirection.Should().Be("asc");
         body.Preferences.VenueSort.Should().Be("type");
+        body.Preferences.VenueSortDirection.Should().Be("asc");
         body.Preferences.VenueFilter.Should().Be("restaurant");
     }
 
