@@ -64,6 +64,9 @@ const sortDirectionOptions = [
   { label: 'Ascending', value: 'asc' as const },
   { label: 'Descending', value: 'desc' as const },
 ]
+const activeSortDirectionLabel = computed(() =>
+  sortDirectionOptions.find(option => option.value === activeSortDirection.value)?.label ?? 'Descending'
+)
 
 registerRefresh?.(async () => {
   if (activeTab.value === 'wishlist') {
@@ -425,7 +428,7 @@ function navigateToItem(id: string) {
           @click="showSortDirectionMenu = !showSortDirectionMenu"
           class="flex items-center gap-1 px-3 py-2.5 min-h-[44px] rounded-full text-xs border border-[#1e407c]/50 text-[#96BEE6] hover:border-[#1e407c] transition-colors"
         >
-          <span>{{ sortDirectionOptions.find(o => o.value === activeSortDirection)?.label }}</span>
+          <span>{{ activeSortDirectionLabel }}</span>
         </button>
 
         <div
