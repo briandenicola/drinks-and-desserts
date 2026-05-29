@@ -35,7 +35,10 @@ public class VenuesController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<PagedResponse<Venue>>> ListVenues(
         [FromQuery] string? type,
-        [FromQuery] string? continuationToken)
+        [FromQuery] string? continuationToken,
+        [FromQuery] string? sortBy,
+        [FromQuery] string? sortDirection,
+        [FromQuery] string? groupBy)
     {
         var userId = GetUserId();
 
@@ -43,14 +46,106 @@ public class VenuesController : ControllerBase
         if (!string.IsNullOrEmpty(type))
             predicate = v => v.Type == type;
 
-        var (venues, nextToken) = await _cosmosDb.QueryAsync(ContainerName, userId, continuationToken, predicate: predicate);
+        var normalizedGroupBy = groupBy?.Trim().ToLowerInvariant();
+        if (!string.IsNullOrEmpty(normalizedGroupBy) && normalizedGroupBy is not ("type" or "status"))
+        {
+            return BadRequest(new { message = $"Invalid groupBy field: {groupBy}. Allowed: type, status" });
+        }
 
-        _logger.LogInformation("Listed {Count} venues for user {UserId}", venues.Count, userId);
+        // Grouping on paged responses is represented as primary ordering by the group field.
+        var effectiveSortBy = !string.IsNullOrEmpty(normalizedGroupBy) ? normalizedGroupBy : sortBy;
+
+        // Server-side ordering: build ORDER BY expression
+        System.Linq.Expressions.Expression<Func<Venue, object>>? orderByExpr = null;
+        bool descending = string.Equals(sortDirection, "desc", StringComparison.OrdinalIgnoreCase);
+
+        if (!string.IsNullOrEmpty(effectiveSortBy))
+        {
+            orderByExpr = effectiveSortBy.ToLowerInvariant() switch
+            {
+                "name" => v => v.Name,
+                "createdat" => v => v.CreatedAt,
+                "updatedat" => v => v.UpdatedAt,
+                "rating" => v => v.Rating ?? 0,
+                "type" => v => v.Type,
+                _ => null
+            };
+
+            if (orderByExpr == null)
+            {
+                return BadRequest(new { message = $"Invalid sortBy field: {effectiveSortBy}. Allowed: name, createdAt, updatedAt, rating, type" });
+            }
+        }
+
+        var (venues, nextToken) = await _cosmosDb.QueryAsync(
+            ContainerName, userId, continuationToken,
+            predicate: predicate,
+            orderBy: orderByExpr,
+            orderDescending: descending);
+
+        _logger.LogInformation("Listed {Count} venues for user {UserId} (sortBy={SortBy}, direction={SortDirection}, groupBy={GroupBy})",
+            venues.Count, userId, effectiveSortBy, sortDirection, normalizedGroupBy);
         return Ok(new PagedResponse<Venue>
         {
             Items = venues,
             ContinuationToken = nextToken,
             HasMore = nextToken != null
+        });
+    }
+
+    /// <summary>
+    /// GET /api/venues/grouped?groupBy={field} - Returns all venues grouped by specified field.
+    /// Note: Grouping is incompatible with continuation-token pagination (aggregation requires full dataset).
+    /// This endpoint fetches all user venues in memory and groups client-side. Use for analytics/overview, not large datasets.
+    /// </summary>
+    [HttpGet("grouped")]
+    public async Task<ActionResult<GroupedResponse<Venue>>> GetGroupedVenues(
+        [FromQuery] string groupBy)
+    {
+        var userId = GetUserId();
+
+        if (string.IsNullOrEmpty(groupBy))
+            return BadRequest(new { message = "groupBy parameter is required" });
+
+        // Fetch all venues (no pagination for grouping)
+        var allVenues = new List<Venue>();
+        string? token = null;
+        do
+        {
+            var (venues, nextToken) = await _cosmosDb.QueryAsync<Venue>(ContainerName, userId, token);
+            allVenues.AddRange(venues);
+            token = nextToken;
+        } while (token != null);
+
+        // Client-side grouping
+        var groups = new Dictionary<string, List<Venue>>();
+        foreach (var venue in allVenues)
+        {
+            var key = groupBy.ToLowerInvariant() switch
+            {
+                "type" => venue.Type ?? "(none)",
+                "status" => venue.Status ?? "(none)",
+                _ => "(unknown)"
+            };
+
+            if (!groups.ContainsKey(key))
+                groups[key] = new List<Venue>();
+            groups[key].Add(venue);
+        }
+
+        if (groupBy.ToLowerInvariant() is not ("type" or "status"))
+        {
+            return BadRequest(new { message = $"Invalid groupBy field: {groupBy}. Allowed: type, status" });
+        }
+
+        _logger.LogInformation("Grouped {Count} venues by {GroupBy} for user {UserId} ({GroupCount} groups)",
+            allVenues.Count, groupBy, userId, groups.Count);
+
+        return Ok(new GroupedResponse<Venue>
+        {
+            Groups = groups,
+            GroupBy = groupBy,
+            TotalCount = allVenues.Count
         });
     }
 

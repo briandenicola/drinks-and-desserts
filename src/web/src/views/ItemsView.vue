@@ -38,6 +38,7 @@ const activeSort = ref(auth.user?.preferences?.collectionSort || 'rating')
 const activeSortDirection = ref<'asc' | 'desc'>(
   auth.user?.preferences?.collectionSortDirection || getDefaultSortDirection(activeSort.value)
 )
+const activeGroupBy = ref<string | undefined>(undefined)
 const registerRefresh = inject(RefreshKey)
 
 // Wishlist add form
@@ -45,6 +46,7 @@ const showAddForm = ref(false)
 const showSortMenu = ref(false)
 const showSortDirectionMenu = ref(false)
 const showFilterMenu = ref(false)
+const showGroupMenu = ref(false)
 const newName = ref('')
 const newType = ref('whiskey')
 const newBrand = ref('')
@@ -68,11 +70,16 @@ const activeSortDirectionLabel = computed(() =>
   sortDirectionOptions.find(option => option.value === activeSortDirection.value)?.label ?? 'Descending'
 )
 
+const groupByOptions = [
+  { label: 'None', value: undefined },
+  { label: 'Type', value: 'type' },
+]
+
 registerRefresh?.(async () => {
   if (activeTab.value === 'wishlist') {
-    await itemsStore.loadWishlist(activeFilter.value, true)
+    await itemsStore.loadWishlist(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
   } else {
-    await itemsStore.loadItems(activeFilter.value, true)
+    await itemsStore.loadItems(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
   }
 })
 
@@ -115,12 +122,52 @@ const activeFilterLabel = computed(() =>
   typeFilters.find(f => f.value === activeFilter.value)?.label ?? 'All'
 )
 
+const activeSortLabel = computed(() =>
+  sortOptions.find(s => s.value === activeSort.value)?.label ?? 'Rating'
+)
+
+const activeGroupLabel = computed(() =>
+  groupByOptions.find(g => g.value === activeGroupBy.value)?.label ?? 'None'
+)
+
+async function setSort(value: string) {
+  activeSort.value = value
+  showSortMenu.value = false
+  if (activeTab.value === 'wishlist') {
+    await itemsStore.loadWishlist(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
+  } else {
+    await itemsStore.loadItems(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
+  }
+  virtualizer.value.scrollToOffset(0)
+}
+
+async function toggleSortDirection() {
+  activeSortDirection.value = activeSortDirection.value === 'desc' ? 'asc' : 'desc'
+  if (activeTab.value === 'wishlist') {
+    await itemsStore.loadWishlist(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
+  } else {
+    await itemsStore.loadItems(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
+  }
+  virtualizer.value.scrollToOffset(0)
+}
+
+async function setGroupBy(value?: string) {
+  activeGroupBy.value = value
+  showGroupMenu.value = false
+  if (activeTab.value === 'wishlist') {
+    await itemsStore.loadWishlist(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
+  } else {
+    await itemsStore.loadItems(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
+  }
+  virtualizer.value.scrollToOffset(0)
+}
+
 function setFilter(value?: string) {
   activeFilter.value = value
   if (activeTab.value === 'wishlist') {
-    itemsStore.loadWishlist(value, true)
+    itemsStore.loadWishlist(value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
   } else {
-    itemsStore.loadItems(value, true)
+    itemsStore.loadItems(value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
   }
 }
 
@@ -128,9 +175,9 @@ function switchTab(tab: 'collection' | 'wishlist') {
   activeTab.value = tab
   activeFilter.value = defaultFilter
   if (tab === 'wishlist') {
-    itemsStore.loadWishlist(defaultFilter, true)
+    itemsStore.loadWishlist(defaultFilter, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
   } else {
-    itemsStore.loadItems(defaultFilter, true)
+    itemsStore.loadItems(defaultFilter, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
   }
 }
 
@@ -178,31 +225,8 @@ async function deleteItem(id: string) {
 }
 
 const displayItems = computed(() => {
-  const source = activeTab.value === 'wishlist' ? itemsStore.wishlistItems : itemsStore.items
-  const sorted = [...source]
-  const sort = activeSort.value
-  const direction = activeSortDirection.value === 'asc' ? 1 : -1
-
-  sorted.sort((a, b) => {
-    if (sort === 'rating') {
-      const ra = a.userRating ?? 0
-      const rb = b.userRating ?? 0
-      if (ra !== rb) return (ra - rb) * direction
-      return (new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()) * direction
-    }
-    if (sort === 'type') {
-      const typeCompare = a.type.localeCompare(b.type, undefined, { sensitivity: 'base' })
-      if (typeCompare !== 0) return typeCompare * direction
-      return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }) * direction
-    }
-    if (sort === 'updatedAt') {
-      return (new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()) * direction
-    }
-    // createdAt (default)
-    return (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) * direction
-  })
-
-  return sorted
+  // Server handles primary sorting; client-side is fallback only for display consistency
+  return activeTab.value === 'wishlist' ? itemsStore.wishlistItems : itemsStore.items
 })
 
 const scrollContainerRef = ref<HTMLElement | null>(null)
@@ -246,9 +270,9 @@ async function maybeLoadMore() {
   isLoadingMore.value = true
   try {
     if (isWishlist) {
-      await itemsStore.loadWishlist(activeFilter.value, false)
+      await itemsStore.loadWishlist(activeFilter.value, false, activeSort.value, activeSortDirection.value, activeGroupBy.value)
     } else {
-      await itemsStore.loadItems(activeFilter.value, false)
+      await itemsStore.loadItems(activeFilter.value, false, activeSort.value, activeSortDirection.value, activeGroupBy.value)
     }
   } finally {
     isLoadingMore.value = false
@@ -275,13 +299,16 @@ function closeSortMenu(e: MouseEvent) {
   if (!target.closest('.filter-dropdown')) {
     showFilterMenu.value = false
   }
+  if (!target.closest('.group-dropdown')) {
+    showGroupMenu.value = false
+  }
 }
 
 onMounted(() => {
   if (activeTab.value === 'wishlist') {
-    itemsStore.loadWishlist(activeFilter.value, true)
+    itemsStore.loadWishlist(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
   } else {
-    itemsStore.loadItems(activeFilter.value, true)
+    itemsStore.loadItems(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
   }
   document.addEventListener('click', closeSortMenu)
 })
@@ -402,7 +429,19 @@ function navigateToItem(id: string) {
           <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
           </svg>
-          <span>{{ sortOptions.find(o => o.value === activeSort)?.label }}</span>
+          <span>{{ activeSortLabel }}</span>
+          <button
+            @click.stop="toggleSortDirection"
+            class="ml-1 hover:text-white transition-colors"
+            :title="activeSortDirection === 'desc' ? 'Descending' : 'Ascending'"
+          >
+            <svg v-if="activeSortDirection === 'desc'" xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+            <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
+            </svg>
+          </button>
         </button>
 
         <div
@@ -412,7 +451,7 @@ function navigateToItem(id: string) {
           <button
             v-for="opt in sortOptions"
             :key="opt.value"
-            @click="activeSort = opt.value; showSortMenu = false"
+            @click="setSort(opt.value)"
             class="w-full text-left px-4 py-2.5 text-sm transition-colors"
             :class="activeSort === opt.value
               ? 'text-[#96BEE6] bg-[#0a2a52]'
@@ -441,6 +480,36 @@ function navigateToItem(id: string) {
             @click="activeSortDirection = opt.value; showSortDirectionMenu = false"
             class="w-full text-left px-4 py-2.5 text-sm transition-colors"
             :class="activeSortDirection === opt.value
+              ? 'text-[#96BEE6] bg-[#0a2a52]'
+              : 'text-[#96BEE6] hover:bg-[#0a2a52]'"
+          >
+            {{ opt.label }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Group dropdown -->
+      <div class="relative shrink-0 group-dropdown">
+        <button
+          @click="showGroupMenu = !showGroupMenu"
+          class="flex items-center gap-1 px-3 py-2.5 min-h-[44px] rounded-full text-xs border border-[#1e407c]/50 text-[#96BEE6] hover:border-[#1e407c] transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+          <span>{{ activeGroupLabel }}</span>
+        </button>
+
+        <div
+          v-if="showGroupMenu"
+          class="absolute right-0 top-full mt-1 bg-[#041e3e] border border-[#1e407c]/50 rounded-xl overflow-hidden shadow-lg z-10 min-w-[140px]"
+        >
+          <button
+            v-for="opt in groupByOptions"
+            :key="opt.label"
+            @click="setGroupBy(opt.value)"
+            class="w-full text-left px-4 py-2.5 text-sm transition-colors"
+            :class="activeGroupBy === opt.value
               ? 'text-[#96BEE6] bg-[#0a2a52]'
               : 'text-[#96BEE6] hover:bg-[#0a2a52]'"
           >

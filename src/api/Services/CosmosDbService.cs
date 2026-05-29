@@ -17,7 +17,9 @@ public interface ICosmosDbService
         string partitionKey,
         string? continuationToken = null,
         int maxItems = 25,
-        Expression<Func<T, bool>>? predicate = null);
+        Expression<Func<T, bool>>? predicate = null,
+        Expression<Func<T, object>>? orderBy = null,
+        bool orderDescending = false);
     Task<List<T>> QueryCrossPartitionAsync<T>(string containerName, string query, int maxItems = 100);
     Task<List<T>> QueryCrossPartitionAsync<T>(string containerName, string query, IDictionary<string, object> parameters, int maxItems = 100);
 }
@@ -122,14 +124,16 @@ public class CosmosDbService : ICosmosDbService
         string partitionKey,
         string? continuationToken = null,
         int maxItems = 25,
-        Expression<Func<T, bool>>? predicate = null)
+        Expression<Func<T, bool>>? predicate = null,
+        Expression<Func<T, object>>? orderBy = null,
+        bool orderDescending = false)
     {
         using var activity = Diagnostics.Storage.StartActivity("CosmosDb.Query");
         activity?.SetTag("db.container", containerName);
         activity?.SetTag("db.operation", "Query");
 
-        _logger.LogDebug("CosmosDb QUERY: container={Container}, partitionKey={PartitionKey}, maxItems={MaxItems}, hasPredicate={HasPredicate}, hasContinuation={HasContinuation}",
-            containerName, partitionKey, maxItems, predicate != null, continuationToken != null);
+        _logger.LogDebug("CosmosDb QUERY: container={Container}, partitionKey={PartitionKey}, maxItems={MaxItems}, hasPredicate={HasPredicate}, hasOrderBy={HasOrderBy}, orderDesc={OrderDesc}, hasContinuation={HasContinuation}",
+            containerName, partitionKey, maxItems, predicate != null, orderBy != null, orderDescending, continuationToken != null);
 
         var container = _database.GetContainer(containerName);
         var queryable = container.GetItemLinqQueryable<T>(
@@ -142,6 +146,15 @@ public class CosmosDbService : ICosmosDbService
 
         if (predicate != null)
             queryable = (IOrderedQueryable<T>)queryable.Where(predicate);
+
+        // Server-side ordering: ORDER BY clause is applied in Cosmos query
+        // Continuation tokens remain valid because ordering is deterministic
+        if (orderBy != null)
+        {
+            queryable = orderDescending
+                ? (IOrderedQueryable<T>)queryable.OrderByDescending(orderBy)
+                : (IOrderedQueryable<T>)queryable.OrderBy(orderBy);
+        }
 
         var iterator = queryable.ToFeedIterator();
         var results = new List<T>();

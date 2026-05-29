@@ -61,9 +61,9 @@ export interface CreateWishlistRequest {
 }
 
 export const itemsApi = {
-  list: (type?: string, continuationToken?: string, status?: string) =>
+  list: (type?: string, continuationToken?: string, status?: string, sortBy?: string, sortDirection?: 'asc' | 'desc', groupBy?: string) =>
     api.get<{ items: Item[]; continuationToken?: string; hasMore: boolean }>(
-      '/items', { params: { type, continuationToken, status } }
+      '/items', { params: { type, continuationToken, status, sortBy, sortDirection, groupBy } }
     ),
 
   get: (id: string) =>
