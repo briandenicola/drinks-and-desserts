@@ -70,6 +70,32 @@ public class ItemsControllerTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task ListItems_WithRatingSortAlias_ReturnsOk()
+    {
+        var items = new List<Item>
+        {
+            new() { Id = "item-1", UserId = TestUserId, Name = "Lagavulin 16", Type = ItemType.Whiskey, Status = ItemStatus.Reviewed, UserRating = 4.5 }
+        };
+
+        _factory.CosmosDb.QueryAsync<Item>(
+            "items",
+            TestUserId,
+            Arg.Any<string?>(),
+            Arg.Any<int>(),
+            Arg.Any<Expression<Func<Item, bool>>?>(),
+            Arg.Any<Expression<Func<Item, object>>?>(),
+            Arg.Any<bool>())
+            .Returns((items, (string?)null));
+
+        var response = await _client.GetAsync("/api/items?sortBy=rating&sortDirection=desc");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<PagedResponse<Item>>();
+        body.Should().NotBeNull();
+        body!.Items.Should().HaveCount(1);
+    }
+
+    [Fact]
     public async Task GetItem_ReturnsOk()
     {
         var item = new Item

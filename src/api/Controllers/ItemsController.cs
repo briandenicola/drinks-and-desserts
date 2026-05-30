@@ -85,6 +85,7 @@ public class ItemsController : ControllerBase
                 "createdat" => i => i.CreatedAt,
                 "updatedat" => i => i.UpdatedAt,
                 "userrating" => i => i.UserRating ?? 0,
+                "rating" => i => i.UserRating ?? 0,
                 "brand" => i => i.Brand ?? string.Empty,
                 "type" => i => i.Type,
                 _ => null
@@ -92,7 +93,7 @@ public class ItemsController : ControllerBase
 
             if (orderByExpr == null)
             {
-                return BadRequest(new { message = $"Invalid sortBy field: {effectiveSortBy}. Allowed: name, createdAt, updatedAt, userRating, brand, type" });
+                return BadRequest(new { message = $"Invalid sortBy field: {effectiveSortBy}. Allowed: name, createdAt, updatedAt, rating, userRating, brand, type" });
             }
         }
 
