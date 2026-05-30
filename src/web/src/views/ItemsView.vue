@@ -371,6 +371,10 @@ function navigateToItem(id: string) {
   <!-- Mobile layout (< 1024px) -->
   <template v-else>
   <div class="p-4 max-w-lg mx-auto">
+    <div class="mb-4">
+      <h2 class="text-xl font-bold text-white">Collections</h2>
+    </div>
+
     <!-- Search + Action Menu -->
     <div class="flex items-center gap-2 mb-4">
       <div class="relative flex-1">
@@ -387,9 +391,13 @@ function navigateToItem(id: string) {
       <div class="relative action-menu-dropdown shrink-0">
         <button
           @click="showActionMenu = !showActionMenu"
-          class="h-[44px] px-4 bg-[#041e3e] border border-[#1e407c]/50 rounded-xl text-[#96BEE6] hover:border-[#1e407c] transition-colors text-sm font-medium"
+          class="h-[44px] w-[44px] bg-[#041e3e] border border-[#1e407c]/50 rounded-xl text-[#96BEE6] hover:border-[#1e407c] transition-colors flex items-center justify-center"
+          aria-label="Open actions menu"
+          title="Actions"
         >
-          Actions
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M3.75 6h3.75m3 12h9.75m-16.5 0h3.75m0-12a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0Zm6 12a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0Zm0-12h4.5m-4.5 12h4.5" />
+          </svg>
         </button>
 
         <div
