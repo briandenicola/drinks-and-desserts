@@ -8,6 +8,7 @@ import { useBreakpoint } from '../composables/useBreakpoint'
 import { useVirtualizer } from '@tanstack/vue-virtual'
 import StarRating from '../components/common/StarRating.vue'
 import VenueLeaderboard from '../components/venues/VenueLeaderboard.vue'
+import type { Venue } from '../services/venues'
 
 const router = useRouter()
 const venuesStore = useVenuesStore()
@@ -24,10 +25,8 @@ const activeSortDirection = ref<'asc' | 'desc'>(
 )
 const activeGroupBy = ref<string | undefined>(undefined)
 const defaultFilter = auth.user?.preferences?.venueFilter || undefined
-const showSortMenu = ref(false)
-const showSortDirectionMenu = ref(false)
-const showFilterMenu = ref(false)
-const showGroupMenu = ref(false)
+const showActionMenu = ref(false)
+const searchQuery = ref('')
 const activeFilter = ref<string | undefined>(defaultFilter)
 
 const showAddForm = ref(false)
@@ -62,30 +61,17 @@ const groupByOptions = [
   { label: 'Type', value: 'type' },
 ]
 const venueTypeFilters = [{ label: 'All', value: undefined }, ...venueTypeOptions]
-const activeFilterLabel = computed(() =>
-  venueTypeFilters.find(f => f.value === activeFilter.value)?.label ?? 'All'
-)
-const activeSortLabel = computed(() =>
-  sortOptions.find(s => s.value === activeSort.value)?.label ?? 'Rating'
-)
-const activeSortDirectionLabel = computed(() =>
-  sortDirectionOptions.find(s => s.value === activeSortDirection.value)?.label ?? 'Descending'
-)
-const activeGroupLabel = computed(() =>
-  groupByOptions.find(g => g.value === activeGroupBy.value)?.label ?? 'None'
-)
-
 registerRefresh?.(async () => {
   await venuesStore.loadVenues(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
 })
 
 onMounted(async () => {
   await venuesStore.loadVenues(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
-  document.addEventListener('click', closeFilterMenu)
+  document.addEventListener('click', closeActionMenu)
 })
 
 onUnmounted(() => {
-  document.removeEventListener('click', closeFilterMenu)
+  document.removeEventListener('click', closeActionMenu)
 })
 
 const sortedVenues = computed(() => {
@@ -93,8 +79,28 @@ const sortedVenues = computed(() => {
   return venuesStore.venues
 })
 
+const normalizedSearch = computed(() => searchQuery.value.trim().toLowerCase())
+
+function matchesVenueSearch(venue: Venue, search: string): boolean {
+  if (!search) return true
+  const fields = [venue.name, venue.address, venue.website, venue.type]
+  if (fields.some(field => field?.toLowerCase().includes(search))) {
+    return true
+  }
+  if (venue.labels?.some(label => label.toLowerCase().includes(search))) {
+    return true
+  }
+  return false
+}
+
+const searchFilteredVenues = computed(() => {
+  const search = normalizedSearch.value
+  if (!search) return sortedVenues.value
+  return sortedVenues.value.filter(venue => matchesVenueSearch(venue, search))
+})
+
 const leaderboardVenues = computed(() => {
-  return sortedVenues.value.map(v => ({
+  return searchFilteredVenues.value.map(v => ({
     id: v.id,
     name: v.name,
     type: v.type,
@@ -110,7 +116,7 @@ interface VirtualItem {
 }
 
 const virtualItems = computed<VirtualItem[]>(() => {
-  return sortedVenues.value.map(venue => ({ venue }))
+  return searchFilteredVenues.value.map(venue => ({ venue }))
 })
 
 const virtualizer = useVirtualizer(computed(() => ({
@@ -144,43 +150,41 @@ watch(lastVirtualIndex, () => {
   void maybeLoadMore()
 })
 
-function closeFilterMenu(e: MouseEvent) {
+watch(searchQuery, () => {
+  virtualizer.value.scrollToOffset(0)
+})
+
+function closeActionMenu(e: MouseEvent) {
   const target = e.target as HTMLElement
-  if (!target.closest('.sort-dropdown')) {
-    showSortMenu.value = false
-    showSortDirectionMenu.value = false
-  }
-  if (!target.closest('.filter-dropdown')) {
-    showFilterMenu.value = false
-  }
-  if (!target.closest('.group-dropdown')) {
-    showGroupMenu.value = false
+  if (!target.closest('.action-menu-dropdown')) {
+    showActionMenu.value = false
   }
 }
 
 async function setSort(value: string) {
   activeSort.value = value
-  showSortMenu.value = false
+  showActionMenu.value = false
   await venuesStore.loadVenues(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
   virtualizer.value.scrollToOffset(0)
 }
 
-async function toggleSortDirection() {
-  activeSortDirection.value = activeSortDirection.value === 'desc' ? 'asc' : 'desc'
+async function setSortDirection(value: 'asc' | 'desc') {
+  activeSortDirection.value = value
+  showActionMenu.value = false
   await venuesStore.loadVenues(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
   virtualizer.value.scrollToOffset(0)
 }
 
 async function setGroupBy(value?: string) {
   activeGroupBy.value = value
-  showGroupMenu.value = false
+  showActionMenu.value = false
   await venuesStore.loadVenues(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
   virtualizer.value.scrollToOffset(0)
 }
 
 async function setFilter(value?: string) {
   activeFilter.value = value
-  showFilterMenu.value = false
+  showActionMenu.value = false
   await venuesStore.loadVenues(value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
   virtualizer.value.scrollToOffset(0)
 }
@@ -251,138 +255,97 @@ function resetForm() {
       </button>
     </div>
 
-    <div class="flex items-center gap-2 mb-4 flex-wrap">
-      <div class="relative sort-dropdown">
-        <button
-          @click="showSortMenu = !showSortMenu"
-          class="flex items-center gap-1 px-3 py-2.5 min-h-[44px] rounded-full text-xs border transition-colors"
-          :class="activeSort
-            ? 'bg-[#1e407c] border-[#1e407c] text-white'
-            : 'border-[#1e407c]/50 text-[#96BEE6] hover:border-[#1e407c]'"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 4h13M3 8h9M3 12h18M3 16h13M3 20h9" />
-          </svg>
-          <span>{{ activeSortLabel }}</span>
-          <button
-            @click.stop="toggleSortDirection"
-            class="ml-1 hover:text-[#96BEE6] transition-colors"
-            :title="activeSortDirection === 'desc' ? 'Descending' : 'Ascending'"
-          >
-            <svg v-if="activeSortDirection === 'desc'" xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
-            <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
-            </svg>
-          </button>
-        </button>
-
-        <div
-          v-if="showSortMenu"
-          class="absolute left-0 top-full mt-1 bg-[#041e3e] border border-[#1e407c]/50 rounded-xl overflow-hidden shadow-lg z-10 min-w-[140px]"
-        >
-          <button
-            v-for="opt in sortOptions"
-            :key="opt.value"
-            @click="setSort(opt.value)"
-            class="w-full text-left px-4 py-2.5 text-sm transition-colors"
-            :class="activeSort === opt.value
-              ? 'text-[#96BEE6] bg-[#0a2a52]'
-              : 'text-[#96BEE6] hover:bg-[#0a2a52]'"
-          >
-            {{ opt.label }}
-          </button>
-        </div>
+    <div class="flex items-center gap-2 mb-4">
+      <div class="relative flex-1">
+        <input
+          v-model="searchQuery"
+          placeholder="Search venues..."
+          class="w-full bg-[#041e3e] border border-[#1e407c]/50 rounded-xl pl-10 pr-3 py-2.5 text-sm text-white placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
+        />
+        <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#4a7aa5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
       </div>
 
-      <div class="relative sort-dropdown">
+      <div class="relative action-menu-dropdown shrink-0">
         <button
-          @click="showSortDirectionMenu = !showSortDirectionMenu"
-          class="flex items-center gap-1 px-3 py-2.5 min-h-[44px] rounded-full text-xs border transition-colors border-[#1e407c]/50 text-[#96BEE6] hover:border-[#1e407c]"
+          @click="showActionMenu = !showActionMenu"
+          class="h-[44px] px-4 bg-[#041e3e] border border-[#1e407c]/50 rounded-xl text-[#96BEE6] hover:border-[#1e407c] transition-colors text-sm font-medium"
         >
-          <span>{{ activeSortDirectionLabel }}</span>
+          Actions
         </button>
 
         <div
-          v-if="showSortDirectionMenu"
-          class="absolute left-0 top-full mt-1 bg-[#041e3e] border border-[#1e407c]/50 rounded-xl overflow-hidden shadow-lg z-10 min-w-[140px]"
+          v-if="showActionMenu"
+          class="absolute right-0 top-full mt-1 w-72 max-h-[70vh] overflow-y-auto bg-[#041e3e] border border-[#1e407c]/50 rounded-xl shadow-lg z-20 p-3 space-y-4"
         >
-          <button
-            v-for="opt in sortDirectionOptions"
-            :key="opt.value"
-            @click="activeSortDirection = opt.value; showSortDirectionMenu = false"
-            class="w-full text-left px-4 py-2.5 text-sm transition-colors"
-            :class="activeSortDirection === opt.value
-              ? 'text-[#96BEE6] bg-[#0a2a52]'
-              : 'text-[#96BEE6] hover:bg-[#0a2a52]'"
-          >
-            {{ opt.label }}
-          </button>
-        </div>
-      </div>
+          <div>
+            <p class="text-[11px] uppercase tracking-wide text-[#4a7aa5] mb-2">Filter</p>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                v-for="opt in venueTypeFilters"
+                :key="opt.label"
+                @click="setFilter(opt.value)"
+                class="px-3 py-2 rounded-lg text-xs border text-left transition-colors"
+                :class="activeFilter === opt.value
+                  ? 'bg-[#1e407c] border-[#1e407c] text-white'
+                  : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6]'"
+              >
+                {{ opt.label }}
+              </button>
+            </div>
+          </div>
 
-      <div class="relative group-dropdown">
-        <button
-          @click="showGroupMenu = !showGroupMenu"
-          class="flex items-center gap-1 px-3 py-2.5 min-h-[44px] rounded-full text-xs border transition-colors"
-          :class="activeGroupBy
-            ? 'bg-[#1e407c] border-[#1e407c] text-white'
-            : 'border-[#1e407c]/50 text-[#96BEE6] hover:border-[#1e407c]'"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-          </svg>
-          <span>Group: {{ activeGroupLabel }}</span>
-        </button>
+          <div>
+            <p class="text-[11px] uppercase tracking-wide text-[#4a7aa5] mb-2">Sort</p>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                v-for="opt in sortOptions"
+                :key="opt.value"
+                @click="setSort(opt.value)"
+                class="px-3 py-2 rounded-lg text-xs border text-left transition-colors"
+                :class="activeSort === opt.value
+                  ? 'bg-[#1e407c] border-[#1e407c] text-white'
+                  : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6]'"
+              >
+                {{ opt.label }}
+              </button>
+            </div>
+          </div>
 
-        <div
-          v-if="showGroupMenu"
-          class="absolute left-0 top-full mt-1 bg-[#041e3e] border border-[#1e407c]/50 rounded-xl overflow-hidden shadow-lg z-10 min-w-[140px]"
-        >
-          <button
-            v-for="opt in groupByOptions"
-            :key="opt.label"
-            @click="setGroupBy(opt.value)"
-            class="w-full text-left px-4 py-2.5 text-sm transition-colors"
-            :class="activeGroupBy === opt.value
-              ? 'text-[#96BEE6] bg-[#0a2a52]'
-              : 'text-[#96BEE6] hover:bg-[#0a2a52]'"
-          >
-            {{ opt.label }}
-          </button>
-        </div>
-      </div>
+          <div>
+            <p class="text-[11px] uppercase tracking-wide text-[#4a7aa5] mb-2">Sort Direction</p>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                v-for="opt in sortDirectionOptions"
+                :key="opt.value"
+                @click="setSortDirection(opt.value)"
+                class="px-3 py-2 rounded-lg text-xs border text-left transition-colors"
+                :class="activeSortDirection === opt.value
+                  ? 'bg-[#1e407c] border-[#1e407c] text-white'
+                  : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6]'"
+              >
+                {{ opt.label }}
+              </button>
+            </div>
+          </div>
 
-      <div class="relative filter-dropdown">
-        <button
-          @click="showFilterMenu = !showFilterMenu"
-          class="flex items-center gap-1 px-3 py-2.5 min-h-[44px] rounded-full text-xs border transition-colors"
-          :class="activeFilter
-            ? 'bg-[#1e407c] border-[#1e407c] text-white'
-            : 'border-[#1e407c]/50 text-[#96BEE6] hover:border-[#1e407c]'"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-          </svg>
-          <span>{{ activeFilterLabel }}</span>
-        </button>
-
-        <div
-          v-if="showFilterMenu"
-          class="absolute left-0 top-full mt-1 bg-[#041e3e] border border-[#1e407c]/50 rounded-xl overflow-hidden shadow-lg z-10 min-w-[140px]"
-        >
-          <button
-            v-for="opt in venueTypeFilters"
-            :key="opt.label"
-            @click="setFilter(opt.value)"
-            class="w-full text-left px-4 py-2.5 text-sm transition-colors"
-            :class="activeFilter === opt.value
-              ? 'text-[#96BEE6] bg-[#0a2a52]'
-              : 'text-[#96BEE6] hover:bg-[#0a2a52]'"
-          >
-            {{ opt.label }}
-          </button>
+          <div>
+            <p class="text-[11px] uppercase tracking-wide text-[#4a7aa5] mb-2">Group By</p>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                v-for="opt in groupByOptions"
+                :key="opt.label"
+                @click="setGroupBy(opt.value)"
+                class="px-3 py-2 rounded-lg text-xs border text-left transition-colors"
+                :class="activeGroupBy === opt.value
+                  ? 'bg-[#1e407c] border-[#1e407c] text-white'
+                  : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6]'"
+              >
+                {{ opt.label }}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -394,7 +357,8 @@ function resetForm() {
 
     <!-- Empty -->
     <div v-else-if="!virtualItems.length" class="text-[#96BEE6]/70 text-center py-12">
-      <p>No venues yet. Add your favorite spots.</p>
+      <p v-if="normalizedSearch">No results for "{{ searchQuery.trim() }}".</p>
+      <p v-else>No venues yet. Add your favorite spots.</p>
     </div>
 
     <!-- Venue list (virtual scroll) -->
@@ -463,7 +427,7 @@ function resetForm() {
 
     <!-- Desktop: Leaderboard sidebar -->
     <VenueLeaderboard
-      v-if="isDesktop && sortedVenues.length"
+      v-if="isDesktop && searchFilteredVenues.length"
       :venues="leaderboardVenues"
       :sort-by="leaderboardSort"
       @sort="leaderboardSort = $event"

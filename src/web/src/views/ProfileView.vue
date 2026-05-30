@@ -313,105 +313,83 @@ async function changePassword() {
           </span>
         </div>
 
-        <div>
-          <label class="block text-sm text-[#96BEE6] mb-2">Default Collection Sort</label>
-          <div class="flex gap-2">
-            <button
-              v-for="opt in sortOptions"
-              :key="opt.value"
-              @click="collectionSort = opt.value"
-              class="px-4 py-2.5 min-h-[44px] rounded-full text-sm border transition-colors"
-              :class="collectionSort === opt.value
-                ? 'bg-[#1e407c] border-[#1e407c] text-white'
-                : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6] hover:border-[#1e407c]'"
+        <div class="rounded-xl border border-[#0a2a52] overflow-hidden divide-y divide-[#0a2a52]">
+          <div class="bg-[#0a2a52]/30 p-3 space-y-2">
+            <div>
+              <p class="text-sm text-white">Collection Sort</p>
+              <p class="text-xs text-[#4a7aa5]">Default order for your collection list.</p>
+            </div>
+            <select
+              v-model="collectionSort"
+              class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#1e407c]"
             >
-              {{ opt.label }}
-            </button>
+              <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+            </select>
           </div>
-        </div>
 
-        <div>
-          <label class="block text-sm text-[#96BEE6] mb-2">Default Collection Sort Direction</label>
-          <div class="flex gap-2">
-            <button
-              v-for="opt in sortDirectionOptions"
-              :key="opt.value"
-              @click="collectionSortDirection = opt.value"
-              class="px-4 py-2.5 min-h-[44px] rounded-full text-sm border transition-colors"
-              :class="collectionSortDirection === opt.value
-                ? 'bg-[#1e407c] border-[#1e407c] text-white'
-                : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6] hover:border-[#1e407c]'"
+          <div class="bg-[#0a2a52]/30 p-3 space-y-2">
+            <div>
+              <p class="text-sm text-white">Collection Sort Direction</p>
+              <p class="text-xs text-[#4a7aa5]">Ascending or descending for collection sorting.</p>
+            </div>
+            <select
+              v-model="collectionSortDirection"
+              class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#1e407c]"
             >
-              {{ opt.label }}
-            </button>
+              <option v-for="opt in sortDirectionOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+            </select>
           </div>
-        </div>
 
-        <div>
-          <label class="block text-sm text-[#96BEE6] mb-2">Default Collection Filter</label>
-          <div class="flex flex-wrap gap-2">
-            <button
-              v-for="opt in filterOptions"
-              :key="opt.label"
-              @click="collectionFilter = opt.value"
-              class="px-4 py-2.5 min-h-[44px] rounded-full text-sm border transition-colors"
-              :class="collectionFilter === opt.value
-                ? 'bg-[#1e407c] border-[#1e407c] text-white'
-                : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6] hover:border-[#1e407c]'"
+          <div class="bg-[#0a2a52]/30 p-3 space-y-2">
+            <div>
+              <p class="text-sm text-white">Collection Filter</p>
+              <p class="text-xs text-[#4a7aa5]">Initial item type when opening collection.</p>
+            </div>
+            <select
+              v-model="collectionFilter"
+              class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#1e407c]"
             >
-              {{ opt.label }}
-            </button>
+              <option v-for="opt in filterOptions" :key="opt.label" :value="opt.value">{{ opt.label }}</option>
+            </select>
           </div>
-        </div>
 
-        <div>
-          <label class="block text-sm text-[#96BEE6] mb-2">Default Venue Sort</label>
-          <div class="flex gap-2">
-            <button
-              v-for="opt in venueSortOptions"
-              :key="opt.value"
-              @click="venueSort = opt.value"
-              class="px-4 py-2.5 min-h-[44px] rounded-full text-sm border transition-colors"
-              :class="venueSort === opt.value
-                ? 'bg-[#1e407c] border-[#1e407c] text-white'
-                : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6] hover:border-[#1e407c]'"
+          <div class="bg-[#0a2a52]/30 p-3 space-y-2">
+            <div>
+              <p class="text-sm text-white">Venue Sort</p>
+              <p class="text-xs text-[#4a7aa5]">Default order for your venues list.</p>
+            </div>
+            <select
+              v-model="venueSort"
+              class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#1e407c]"
             >
-              {{ opt.label }}
-            </button>
+              <option v-for="opt in venueSortOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+            </select>
           </div>
-        </div>
 
-        <div>
-          <label class="block text-sm text-[#96BEE6] mb-2">Default Venue Sort Direction</label>
-          <div class="flex gap-2">
-            <button
-              v-for="opt in sortDirectionOptions"
-              :key="opt.value"
-              @click="venueSortDirection = opt.value"
-              class="px-4 py-2.5 min-h-[44px] rounded-full text-sm border transition-colors"
-              :class="venueSortDirection === opt.value
-                ? 'bg-[#1e407c] border-[#1e407c] text-white'
-                : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6] hover:border-[#1e407c]'"
+          <div class="bg-[#0a2a52]/30 p-3 space-y-2">
+            <div>
+              <p class="text-sm text-white">Venue Sort Direction</p>
+              <p class="text-xs text-[#4a7aa5]">Ascending or descending for venue sorting.</p>
+            </div>
+            <select
+              v-model="venueSortDirection"
+              class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#1e407c]"
             >
-              {{ opt.label }}
-            </button>
+              <option v-for="opt in sortDirectionOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+            </select>
           </div>
-        </div>
 
-        <div>
-          <label class="block text-sm text-[#96BEE6] mb-2">Default Venue Filter</label>
-          <div class="flex flex-wrap gap-2">
-            <button
-              v-for="opt in venueFilterOptions"
-              :key="opt.label"
-              @click="venueFilter = opt.value"
-              class="px-4 py-2.5 min-h-[44px] rounded-full text-sm border transition-colors"
-              :class="venueFilter === opt.value
-                ? 'bg-[#1e407c] border-[#1e407c] text-white'
-                : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6] hover:border-[#1e407c]'"
+          <div class="bg-[#0a2a52]/30 p-3 space-y-2">
+            <div>
+              <p class="text-sm text-white">Venue Filter</p>
+              <p class="text-xs text-[#4a7aa5]">Initial venue type when opening venues.</p>
+            </div>
+            <select
+              v-model="venueFilter"
+              class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#1e407c]"
             >
-              {{ opt.label }}
-            </button>
+              <option v-for="opt in venueFilterOptions" :key="opt.label" :value="opt.value">{{ opt.label }}</option>
+            </select>
           </div>
         </div>
 
