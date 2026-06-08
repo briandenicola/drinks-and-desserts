@@ -6,16 +6,40 @@ export const useVenuesStore = defineStore('venues', () => {
   const venues = ref<Venue[]>([])
   const isLoading = ref(false)
   const continuationToken = ref<string | undefined>()
+  const currentSortBy = ref<string | undefined>()
+  const currentSortDirection = ref<'asc' | 'desc'>('desc')
+  const currentGroupBy = ref<string | undefined>()
 
-  async function loadVenues(type?: string, reset = false) {
-    if (reset) {
+  async function loadVenues(
+    type?: string,
+    reset = false,
+    sortBy?: string,
+    sortDirection?: 'asc' | 'desc',
+    groupBy?: string
+  ) {
+    // Reset pagination if sort/group criteria changed
+    const sortChanged = sortBy !== currentSortBy.value ||
+                       sortDirection !== currentSortDirection.value ||
+                       groupBy !== currentGroupBy.value
+    
+    if (reset || sortChanged) {
       venues.value = []
       continuationToken.value = undefined
+      currentSortBy.value = sortBy
+      currentSortDirection.value = sortDirection ?? 'desc'
+      currentGroupBy.value = groupBy
     }
+    
     isLoading.value = true
     try {
-      const { data } = await venuesApi.list(type, continuationToken.value)
-      if (reset) {
+      const { data } = await venuesApi.list(
+        type,
+        continuationToken.value,
+        currentSortBy.value,
+        currentSortDirection.value,
+        currentGroupBy.value
+      )
+      if (reset || sortChanged) {
         venues.value = data.items
       } else {
         venues.value.push(...data.items)
@@ -54,6 +78,9 @@ export const useVenuesStore = defineStore('venues', () => {
     venues,
     isLoading,
     continuationToken,
+    currentSortBy,
+    currentSortDirection,
+    currentGroupBy,
     loadVenues,
     createVenue,
     updateVenue,

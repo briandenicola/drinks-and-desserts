@@ -49,9 +49,9 @@ export interface UpdateVenueRequest {
 }
 
 export const venuesApi = {
-  list: (type?: string, continuationToken?: string) =>
+  list: (type?: string, continuationToken?: string, sortBy?: string, sortDirection?: 'asc' | 'desc', groupBy?: string) =>
     api.get<{ items: Venue[]; continuationToken?: string; hasMore: boolean }>(
-      '/venues', { params: { type, continuationToken } }
+      '/venues', { params: { type, continuationToken, sortBy, sortDirection, groupBy } }
     ),
 
   get: (id: string) =>

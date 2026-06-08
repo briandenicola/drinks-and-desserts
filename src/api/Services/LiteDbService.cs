@@ -137,7 +137,9 @@ public class LiteDbService : ICosmosDbService, IDisposable
         string partitionKey,
         string? continuationToken = null,
         int maxItems = 25,
-        Expression<Func<T, bool>>? predicate = null)
+        Expression<Func<T, bool>>? predicate = null,
+        Expression<Func<T, object>>? orderBy = null,
+        bool orderDescending = false)
     {
         var col = GetCollection(containerName);
 
@@ -147,6 +149,14 @@ public class LiteDbService : ICosmosDbService, IDisposable
         if (predicate != null)
         {
             items = items.AsQueryable().Where(predicate).ToList();
+        }
+
+        // Apply ordering if specified
+        if (orderBy != null)
+        {
+            items = orderDescending
+                ? items.AsQueryable().OrderByDescending(orderBy).ToList()
+                : items.AsQueryable().OrderBy(orderBy).ToList();
         }
 
         // Simple pagination via offset encoded in continuation token

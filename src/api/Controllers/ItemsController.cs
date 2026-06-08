@@ -36,15 +36,18 @@ public class ItemsController : ControllerBase
     public async Task<ActionResult<PagedResponse<Item>>> ListItems(
         [FromQuery] string? type,
         [FromQuery] string? status,
-        [FromQuery] string? continuationToken)
+        [FromQuery] string? continuationToken,
+        [FromQuery] string? sortBy,
+        [FromQuery] string? sortDirection,
+        [FromQuery] string? groupBy)
     {
         using var activity = Diagnostics.General.StartActivity("ItemsList");
         var userId = GetUserId();
         activity?.SetTag("user.id", userId);
         activity?.SetTag("item.type", type);
         activity?.SetTag("item.status", status);
-        _logger.LogDebug("Listing items for user {UserId}, typeFilter={TypeFilter}, statusFilter={StatusFilter}",
-            userId, type, status);
+        _logger.LogDebug("Listing items for user {UserId}, typeFilter={TypeFilter}, statusFilter={StatusFilter}, sortBy={SortBy}, sortDirection={SortDirection}, groupBy={GroupBy}",
+            userId, type, status, sortBy, sortDirection, groupBy);
 
         System.Linq.Expressions.Expression<Func<Item, bool>>? predicate = null;
 
@@ -61,16 +64,129 @@ public class ItemsController : ControllerBase
                 : i => i.Status != ItemStatus.Wishlist;
         }
 
-        var (items, nextToken) = await _cosmosDb.QueryAsync(ContainerName, userId, continuationToken, predicate: predicate);
+        var normalizedGroupBy = groupBy?.Trim().ToLowerInvariant();
+        if (!string.IsNullOrEmpty(normalizedGroupBy) && normalizedGroupBy is not ("type" or "brand" or "status"))
+        {
+            return BadRequest(new { message = $"Invalid groupBy field: {groupBy}. Allowed: type, brand, status" });
+        }
+
+        // Grouping on paged responses is represented as primary ordering by the group field.
+        var effectiveSortBy = !string.IsNullOrEmpty(normalizedGroupBy) ? normalizedGroupBy : sortBy;
+
+        // Server-side ordering: build ORDER BY expression
+        System.Linq.Expressions.Expression<Func<Item, object>>? orderByExpr = null;
+        bool descending = string.Equals(sortDirection, "desc", StringComparison.OrdinalIgnoreCase);
+
+        if (!string.IsNullOrEmpty(effectiveSortBy))
+        {
+            orderByExpr = effectiveSortBy.ToLowerInvariant() switch
+            {
+                "name" => i => i.Name,
+                "createdat" => i => i.CreatedAt,
+                "updatedat" => i => i.UpdatedAt,
+                "userrating" => i => i.UserRating ?? 0,
+                "rating" => i => i.UserRating ?? 0,
+                "brand" => i => i.Brand ?? string.Empty,
+                "type" => i => i.Type,
+                _ => null
+            };
+
+            if (orderByExpr == null)
+            {
+                return BadRequest(new { message = $"Invalid sortBy field: {effectiveSortBy}. Allowed: name, createdAt, updatedAt, rating, userRating, brand, type" });
+            }
+        }
+
+        var (items, nextToken) = await _cosmosDb.QueryAsync(
+            ContainerName, userId, continuationToken,
+            predicate: predicate,
+            orderBy: orderByExpr,
+            orderDescending: descending);
 
         activity?.SetTag("items.count", items.Count);
-        _logger.LogInformation("Listed {Count} items for user {UserId} (type={TypeFilter}, status={StatusFilter}), hasMore={HasMore}",
-            items.Count, userId, type, status, nextToken != null);
+        _logger.LogInformation("Listed {Count} items for user {UserId} (type={TypeFilter}, status={StatusFilter}, sortBy={SortBy}, direction={SortDirection}, groupBy={GroupBy}), hasMore={HasMore}",
+            items.Count, userId, type, status, effectiveSortBy, sortDirection, normalizedGroupBy, nextToken != null);
         return Ok(new PagedResponse<Item>
         {
             Items = items,
             ContinuationToken = nextToken,
             HasMore = nextToken != null
+        });
+    }
+
+    /// <summary>
+    /// GET /api/items/grouped?groupBy={field} - Returns all items grouped by specified field.
+    /// Note: Grouping is incompatible with continuation-token pagination (aggregation requires full dataset).
+    /// This endpoint fetches all user items in memory and groups client-side. Use for analytics/overview, not large datasets.
+    /// </summary>
+    [HttpGet("grouped")]
+    public async Task<ActionResult<GroupedResponse<Item>>> GetGroupedItems(
+        [FromQuery] string groupBy,
+        [FromQuery] string? type,
+        [FromQuery] string? status)
+    {
+        using var activity = Diagnostics.General.StartActivity("ItemsGrouped");
+        var userId = GetUserId();
+        activity?.SetTag("user.id", userId);
+        activity?.SetTag("group_by", groupBy);
+
+        if (string.IsNullOrEmpty(groupBy))
+            return BadRequest(new { message = "groupBy parameter is required" });
+
+        // Fetch all items (no pagination for grouping)
+        var allItems = new List<Item>();
+        string? token = null;
+        do
+        {
+            System.Linq.Expressions.Expression<Func<Item, bool>>? predicate = null;
+            if (status == ItemStatus.Wishlist)
+            {
+                predicate = !string.IsNullOrEmpty(type)
+                    ? i => i.Status == ItemStatus.Wishlist && i.Type == type
+                    : i => i.Status == ItemStatus.Wishlist;
+            }
+            else
+            {
+                predicate = !string.IsNullOrEmpty(type)
+                    ? i => i.Status != ItemStatus.Wishlist && i.Type == type
+                    : i => i.Status != ItemStatus.Wishlist;
+            }
+
+            var (items, nextToken) = await _cosmosDb.QueryAsync<Item>(ContainerName, userId, token, predicate: predicate);
+            allItems.AddRange(items);
+            token = nextToken;
+        } while (token != null);
+
+        // Client-side grouping
+        var groups = new Dictionary<string, List<Item>>();
+        foreach (var item in allItems)
+        {
+            var key = groupBy.ToLowerInvariant() switch
+            {
+                "type" => item.Type ?? "(none)",
+                "brand" => item.Brand ?? "(none)",
+                "status" => item.Status ?? "(none)",
+                _ => "(unknown)"
+            };
+
+            if (!groups.ContainsKey(key))
+                groups[key] = new List<Item>();
+            groups[key].Add(item);
+        }
+
+        if (groupBy.ToLowerInvariant() is not ("type" or "brand" or "status"))
+        {
+            return BadRequest(new { message = $"Invalid groupBy field: {groupBy}. Allowed: type, brand, status" });
+        }
+
+        _logger.LogInformation("Grouped {Count} items by {GroupBy} for user {UserId} ({GroupCount} groups)",
+            allItems.Count, groupBy, userId, groups.Count);
+
+        return Ok(new GroupedResponse<Item>
+        {
+            Groups = groups,
+            GroupBy = groupBy,
+            TotalCount = allItems.Count
         });
     }
 

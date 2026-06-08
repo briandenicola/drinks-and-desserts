@@ -177,6 +177,18 @@ public class PagedResponse<T>
     public bool HasMore { get; set; }
 }
 
+public class GroupedResponse<T>
+{
+    [JsonPropertyName("groups")]
+    public Dictionary<string, List<T>> Groups { get; set; } = new();
+
+    [JsonPropertyName("groupBy")]
+    public string GroupBy { get; set; } = string.Empty;
+
+    [JsonPropertyName("totalCount")]
+    public int TotalCount { get; set; }
+}
+
 // Auth
 public class RegisterRequest
 {

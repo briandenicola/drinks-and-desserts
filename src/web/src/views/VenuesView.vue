@@ -1,18 +1,33 @@
 <script setup lang="ts">
-import { ref, inject, onMounted, computed } from 'vue'
+import { ref, inject, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useVenuesStore } from '../stores/venues'
+import { useAuthStore } from '../stores/auth'
 import { RefreshKey } from '../composables/refreshKey'
 import { useBreakpoint } from '../composables/useBreakpoint'
 import { useVirtualizer } from '@tanstack/vue-virtual'
 import StarRating from '../components/common/StarRating.vue'
 import VenueLeaderboard from '../components/venues/VenueLeaderboard.vue'
+import type { Venue } from '../services/venues'
 
 const router = useRouter()
 const venuesStore = useVenuesStore()
+const auth = useAuthStore()
 const registerRefresh = inject(RefreshKey)
 const { isDesktop } = useBreakpoint()
 const leaderboardSort = ref<'rating' | 'items'>('rating')
+function getDefaultSortDirection(sort: string): 'asc' | 'desc' {
+  return sort === 'type' ? 'asc' : 'desc'
+}
+const activeSort = ref(auth.user?.preferences?.venueSort || 'rating')
+const activeSortDirection = ref<'asc' | 'desc'>(
+  auth.user?.preferences?.venueSortDirection || getDefaultSortDirection(activeSort.value)
+)
+const activeGroupBy = ref<string | undefined>(undefined)
+const defaultFilter = auth.user?.preferences?.venueFilter || undefined
+const showActionMenu = ref(false)
+const searchQuery = ref('')
+const activeFilter = ref<string | undefined>(defaultFilter)
 
 const showAddForm = ref(false)
 const addMode = ref<'manual' | 'url'>('manual')
@@ -31,90 +46,61 @@ const venueTypeOptions = [
   { label: 'Cafe', value: 'cafe' },
   { label: 'Other', value: 'other' },
 ]
-
+const sortOptions = [
+  { label: 'Rating', value: 'rating' },
+  { label: 'Type', value: 'type' },
+  { label: 'Added', value: 'createdAt' },
+  { label: 'Updated', value: 'updatedAt' },
+]
+const sortDirectionOptions = [
+  { label: 'Ascending', value: 'asc' as const },
+  { label: 'Descending', value: 'desc' as const },
+]
+const groupByOptions = [
+  { label: 'None', value: undefined },
+  { label: 'Type', value: 'type' },
+]
+const venueTypeFilters = [{ label: 'All', value: undefined }, ...venueTypeOptions]
 registerRefresh?.(async () => {
-  await venuesStore.loadVenues(undefined, true)
+  await venuesStore.loadVenues(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
 })
 
-onMounted(() => {
-  venuesStore.loadVenues(undefined, true)
+onMounted(async () => {
+  await venuesStore.loadVenues(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
+  document.addEventListener('click', closeActionMenu)
 })
 
-interface VenueGroup {
-  title: string
-  venues: typeof venuesStore.venues
-}
-
-const groupedVenues = computed<VenueGroup[]>(() => {
-  const venues = venuesStore.venues
-
-  // Separate venues with "to-try" label
-  const toTryVenues = venues.filter(v => v.labels?.some(l => l.toLowerCase() === 'to-try'))
-  const regularVenues = venues.filter(v => !v.labels?.some(l => l.toLowerCase() === 'to-try'))
-
-  const groups: VenueGroup[] = []
-
-  // Helper to create groups by type
-  const createTypeGroups = (venueList: typeof venues, prefix: string) => {
-    const typeMap = new Map<string, typeof venues>()
-
-    venueList.forEach(venue => {
-      const type = venue.type.toLowerCase()
-      if (!typeMap.has(type)) {
-        typeMap.set(type, [])
-      }
-      typeMap.get(type)!.push(venue)
-    })
-
-    // Sort each type group by rating (descending), then by updatedAt
-    typeMap.forEach((typeVenues) => {
-      typeVenues.sort((a, b) => {
-        const ra = a.rating ?? 0
-        const rb = b.rating ?? 0
-        if (rb !== ra) return rb - ra
-        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-      })
-    })
-
-    // Create groups in specific order
-    const typeOrder = ['bar', 'lounge', 'restaurant', 'cafe', 'other']
-    typeOrder.forEach(type => {
-      if (typeMap.has(type) && typeMap.get(type)!.length > 0) {
-        const typeName = type.charAt(0).toUpperCase() + type.slice(1)
-        groups.push({
-          title: prefix ? `${prefix} - ${typeName}` : typeName,
-          venues: typeMap.get(type)!
-        })
-      }
-    })
-  }
-
-  // Add all "to-try" venues as a single group, sorted by rating then date
-  if (toTryVenues.length > 0) {
-    const sorted = [...toTryVenues].sort((a, b) => {
-      const ra = a.rating ?? 0
-      const rb = b.rating ?? 0
-      if (rb !== ra) return rb - ra
-      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-    })
-    groups.push({ title: 'To Try', venues: sorted })
-  }
-
-  // Add regular venue groups
-  if (regularVenues.length > 0) {
-    createTypeGroups(regularVenues, '')
-  }
-
-  return groups
+onUnmounted(() => {
+  document.removeEventListener('click', closeActionMenu)
 })
 
 const sortedVenues = computed(() => {
-  // Flatten grouped venues for leaderboard
-  return groupedVenues.value.flatMap(g => g.venues)
+  // Server handles primary sorting; client-side is fallback only for display consistency
+  return venuesStore.venues
+})
+
+const normalizedSearch = computed(() => searchQuery.value.trim().toLowerCase())
+
+function matchesVenueSearch(venue: Venue, search: string): boolean {
+  if (!search) return true
+  const fields = [venue.name, venue.address, venue.website, venue.type]
+  if (fields.some(field => field?.toLowerCase().includes(search))) {
+    return true
+  }
+  if (venue.labels?.some(label => label.toLowerCase().includes(search))) {
+    return true
+  }
+  return false
+}
+
+const searchFilteredVenues = computed(() => {
+  const search = normalizedSearch.value
+  if (!search) return sortedVenues.value
+  return sortedVenues.value.filter(venue => matchesVenueSearch(venue, search))
 })
 
 const leaderboardVenues = computed(() => {
-  return sortedVenues.value.map(v => ({
+  return searchFilteredVenues.value.map(v => ({
     id: v.id,
     name: v.name,
     type: v.type,
@@ -125,31 +111,83 @@ const leaderboardVenues = computed(() => {
 
 const scrollContainerRef = ref<HTMLElement | null>(null)
 
-// Flatten grouped venues with headers for virtual scrolling
 interface VirtualItem {
-  type: 'header' | 'venue'
-  groupTitle?: string
-  venue?: typeof venuesStore.venues[0]
+  venue: typeof venuesStore.venues[0]
 }
 
 const virtualItems = computed<VirtualItem[]>(() => {
-  const items: VirtualItem[] = []
-  groupedVenues.value.forEach(group => {
-    items.push({ type: 'header', groupTitle: group.title })
-    group.venues.forEach(venue => {
-      items.push({ type: 'venue', venue })
-    })
-  })
-  return items
+  return searchFilteredVenues.value.map(venue => ({ venue }))
 })
 
 const virtualizer = useVirtualizer(computed(() => ({
   count: virtualItems.value.length,
   getScrollElement: () => scrollContainerRef.value,
-  estimateSize: (index) => virtualItems.value[index].type === 'header' ? 40 : 100,
+  estimateSize: () => 100,
   overscan: 5,
   gap: 12,
 })))
+
+const isLoadingMore = ref(false)
+const lastVirtualIndex = computed(() => {
+  const rows = virtualizer.value.getVirtualItems()
+  return rows.length ? rows[rows.length - 1].index : -1
+})
+
+async function maybeLoadMore() {
+  if (isLoadingMore.value || lastVirtualIndex.value < 0) return
+  if (virtualItems.value.length - 1 - lastVirtualIndex.value > 3) return
+  if (!venuesStore.continuationToken || venuesStore.isLoading) return
+
+  isLoadingMore.value = true
+  try {
+    await venuesStore.loadVenues(activeFilter.value, false, activeSort.value, activeSortDirection.value, activeGroupBy.value)
+  } finally {
+    isLoadingMore.value = false
+  }
+}
+
+watch(lastVirtualIndex, () => {
+  void maybeLoadMore()
+})
+
+watch(searchQuery, () => {
+  virtualizer.value.scrollToOffset(0)
+})
+
+function closeActionMenu(e: MouseEvent) {
+  const target = e.target as HTMLElement
+  if (!target.closest('.action-menu-dropdown')) {
+    showActionMenu.value = false
+  }
+}
+
+async function setSort(value: string) {
+  activeSort.value = value
+  showActionMenu.value = false
+  await venuesStore.loadVenues(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
+  virtualizer.value.scrollToOffset(0)
+}
+
+async function setSortDirection(value: 'asc' | 'desc') {
+  activeSortDirection.value = value
+  showActionMenu.value = false
+  await venuesStore.loadVenues(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
+  virtualizer.value.scrollToOffset(0)
+}
+
+async function setGroupBy(value?: string) {
+  activeGroupBy.value = value
+  showActionMenu.value = false
+  await venuesStore.loadVenues(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
+  virtualizer.value.scrollToOffset(0)
+}
+
+async function setFilter(value?: string) {
+  activeFilter.value = value
+  showActionMenu.value = false
+  await venuesStore.loadVenues(value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
+  virtualizer.value.scrollToOffset(0)
+}
 
 async function addVenue() {
   if (!newName.value.trim()) return
@@ -217,17 +255,117 @@ function resetForm() {
       </button>
     </div>
 
+    <div class="flex items-center gap-2 mb-4">
+      <div class="relative flex-1">
+        <input
+          v-model="searchQuery"
+          placeholder="Search venues..."
+          class="w-full bg-[#041e3e] border border-[#1e407c]/50 rounded-xl pl-10 pr-3 py-2.5 text-sm text-white placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
+        />
+        <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#4a7aa5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </div>
+
+      <div class="relative action-menu-dropdown shrink-0">
+        <button
+          @click="showActionMenu = !showActionMenu"
+          class="h-[44px] w-[44px] bg-[#041e3e] border border-[#1e407c]/50 rounded-xl text-[#96BEE6] hover:border-[#1e407c] transition-colors flex items-center justify-center"
+          aria-label="Open actions menu"
+          title="Actions"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M3.75 6h3.75m3 12h9.75m-16.5 0h3.75m0-12a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0Zm6 12a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0Zm0-12h4.5m-4.5 12h4.5" />
+          </svg>
+        </button>
+
+        <div
+          v-if="showActionMenu"
+          class="absolute right-0 top-full mt-1 w-72 max-h-[70vh] overflow-y-auto bg-[#041e3e] border border-[#1e407c]/50 rounded-xl shadow-lg z-20 p-3 space-y-4"
+        >
+          <div>
+            <p class="text-[11px] uppercase tracking-wide text-[#4a7aa5] mb-2">Filter</p>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                v-for="opt in venueTypeFilters"
+                :key="opt.label"
+                @click="setFilter(opt.value)"
+                class="px-3 py-2 rounded-lg text-xs border text-left transition-colors"
+                :class="activeFilter === opt.value
+                  ? 'bg-[#1e407c] border-[#1e407c] text-white'
+                  : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6]'"
+              >
+                {{ opt.label }}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <p class="text-[11px] uppercase tracking-wide text-[#4a7aa5] mb-2">Sort</p>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                v-for="opt in sortOptions"
+                :key="opt.value"
+                @click="setSort(opt.value)"
+                class="px-3 py-2 rounded-lg text-xs border text-left transition-colors"
+                :class="activeSort === opt.value
+                  ? 'bg-[#1e407c] border-[#1e407c] text-white'
+                  : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6]'"
+              >
+                {{ opt.label }}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <p class="text-[11px] uppercase tracking-wide text-[#4a7aa5] mb-2">Sort Direction</p>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                v-for="opt in sortDirectionOptions"
+                :key="opt.value"
+                @click="setSortDirection(opt.value)"
+                class="px-3 py-2 rounded-lg text-xs border text-left transition-colors"
+                :class="activeSortDirection === opt.value
+                  ? 'bg-[#1e407c] border-[#1e407c] text-white'
+                  : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6]'"
+              >
+                {{ opt.label }}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <p class="text-[11px] uppercase tracking-wide text-[#4a7aa5] mb-2">Group By</p>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                v-for="opt in groupByOptions"
+                :key="opt.label"
+                @click="setGroupBy(opt.value)"
+                class="px-3 py-2 rounded-lg text-xs border text-left transition-colors"
+                :class="activeGroupBy === opt.value
+                  ? 'bg-[#1e407c] border-[#1e407c] text-white'
+                  : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6]'"
+              >
+                {{ opt.label }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Loading -->
-    <div v-if="venuesStore.isLoading && !groupedVenues.length" class="text-[#96BEE6]/70 text-center py-12">
+    <div v-if="venuesStore.isLoading && !virtualItems.length" class="text-[#96BEE6]/70 text-center py-12">
       Loading...
     </div>
 
     <!-- Empty -->
-    <div v-else-if="!groupedVenues.length" class="text-[#96BEE6]/70 text-center py-12">
-      <p>No venues yet. Add your favorite spots.</p>
+    <div v-else-if="!virtualItems.length" class="text-[#96BEE6]/70 text-center py-12">
+      <p v-if="normalizedSearch">No results for "{{ searchQuery.trim() }}".</p>
+      <p v-else>No venues yet. Add your favorite spots.</p>
     </div>
 
-    <!-- Venue list (virtual scroll with groups) -->
+    <!-- Venue list (virtual scroll) -->
     <div
       v-else
       ref="scrollContainerRef"
@@ -243,16 +381,9 @@ function resetForm() {
           :ref="(el: any) => { if (el?.$el || el) virtualizer.measureElement(el?.$el ?? el) }"
           :style="{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${row.start}px)` }"
         >
-          <!-- Group Header -->
-          <div v-if="virtualItems[row.index].type === 'header'" class="mb-3">
-            <h3 class="text-sm font-semibold text-[#96BEE6] uppercase tracking-wide">
-              {{ virtualItems[row.index].groupTitle }}
-            </h3>
-          </div>
-
           <!-- Venue Item -->
           <router-link
-            v-else-if="virtualItems[row.index].venue"
+            v-if="virtualItems[row.index].venue"
             :to="`/venues/${virtualItems[row.index].venue!.id}`"
             class="block bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 hover:border-[#1e407c]/50 transition-colors"
           >
@@ -300,7 +431,7 @@ function resetForm() {
 
     <!-- Desktop: Leaderboard sidebar -->
     <VenueLeaderboard
-      v-if="isDesktop && sortedVenues.length"
+      v-if="isDesktop && searchFilteredVenues.length"
       :venues="leaderboardVenues"
       :sort-by="leaderboardSort"
       @sort="leaderboardSort = $event"

@@ -1,201 +1,167 @@
-<!--
-  Sync Impact Report
-  Version change: 0.0.0 -> 1.0.0 (initial ratification)
-  Added principles:
-    - I. Code Quality & Defensive Coding
-    - II. Testing Standards
-    - III. User Experience Consistency
-    - IV. Performance & Reliability
-  Added sections:
-    - Security Requirements
-    - Development Workflow
-  Templates requiring updates:
-    - .specify/templates/plan-template.md ✅ no changes needed (Constitution Check section is dynamic)
-    - .specify/templates/spec-template.md ✅ no changes needed (success criteria already support performance)
-    - .specify/templates/tasks-template.md ✅ no changes needed (polish phase covers security/perf)
-  Follow-up TODOs: none
--->
-
 # Whiskey & Smokes Constitution
 
-## Core Principles
+> **This document is the non-negotiable contract for how this project is built.**
+> Every AI agent session must read this file first. Every PR must comply.
 
-### I. Code Quality & Defensive Coding
+**Project**: Whiskey & Smokes  
+**Version**: 1.1.0  
+**Ratified**: 2026-04-03  
+**Last Amended**: 2026-05-28
 
-All code MUST follow defensive coding practices that prevent
-runtime failures and security vulnerabilities.
+---
 
-- Every API endpoint MUST validate all inputs (null checks,
-  length limits, type checks) before processing.
-- Path operations MUST use canonical path validation
-  (`Path.GetFullPath`) and verify results stay within allowed
-  directories. String replacement sanitization is prohibited.
-- User-supplied data interpolated into AI prompts MUST be wrapped
-  in explicit delimiters marked as untrusted input.
-- Blob and resource URLs MUST be validated for ownership (user ID
-  in path) before allowing modification or deletion.
-- Error responses MUST NOT leak stack traces, internal paths, or
-  implementation details. Use structured error codes.
-- Secrets MUST NOT be committed to source control. Production
-  startup MUST fail if required secrets are not configured.
-- All `catch` blocks MUST either handle the error meaningfully or
-  log it with sufficient context. Empty catch blocks are prohibited.
-- Fire-and-forget operations MUST log failures at Warning level.
-- String comparisons on security-sensitive values (hashes, tokens)
-  MUST use constant-time comparison functions.
+## 0. Hierarchy of Authority
 
-**Rationale**: This application handles user photos, personal
-tasting notes, and API keys. Defensive coding prevents data
-leakage, unauthorized access, and silent failures that erode
-trust in the system.
+When guidance conflicts, resolve in this order:
+1. **This constitution**
+2. **Feature spec** (`/specs/NNN-feature-name/spec.md`)
+3. **Implementation plan** (`/specs/NNN-feature-name/plan.md`)
+4. **Task list** (`/specs/NNN-feature-name/tasks.md`)
+5. **Repository documentation** (`README.md`, `docs/`)
+6. **Agent judgment**
 
-### II. Testing Standards
+Conflicts with higher authority must be surfaced and resolved explicitly.
 
-All features MUST be verified through build and type-check gates
-before merging. Manual testing supplements automated checks.
+---
 
-- The .NET API MUST compile with zero errors and zero warnings
-  under `dotnet build -c Release`.
-- The Vue frontend MUST pass `vue-tsc --noEmit` type checking
-  with zero errors.
-- The Vite production build MUST succeed without errors.
-- CI (`ci.yml`) MUST run API build and frontend type-check on
-  every pull request. PRs with build failures MUST NOT be merged.
-- AI workflow parsing MUST reject unparseable responses rather
-  than auto-approving malformed data. Best-effort fallback is
-  acceptable only when a valid JSON array can be extracted.
-- New API endpoints MUST be manually verified with curl or the
-  frontend before committing.
-- Security-critical paths (authentication, file uploads, blob
-  operations) SHOULD have integration tests as coverage expands.
+## 1. Mission Alignment
 
-**Rationale**: The project currently has no automated test suite.
-Build and type-check gates are the primary quality safety net.
-As the project matures, integration tests for security-critical
-paths will be added incrementally.
+- Changes must improve reliability, security, and day-to-day usability of the app.
+- No speculative rewrites: prioritize concrete user/admin workflows and production safety.
+- Scope creep is deferred to backlog items under `/specs/_backlog/`.
 
-### III. User Experience Consistency
+---
 
-The application MUST deliver a consistent, polished experience
-across all platforms, with PWA on iOS as the primary target.
+## 2. Architecture (Non-Negotiable)
 
-- No emojis in application UI text. Icons and visual indicators
-  MUST use SVG or CSS-based rendering.
-- All interactive elements MUST have hover/active states and
-  appropriate touch targets (minimum 44x44px on mobile).
-- Modals and overlays MUST be centered using `fixed inset-0` with
-  flexbox centering. Navigation elements MUST NOT shift content
-  layout (use absolute positioning for overlays on narrow screens).
-- Form inputs MUST use consistent styling: `bg-stone-800`,
-  `border-stone-700`, `rounded-xl`, amber accent for focus states.
-- The bottom navigation bar MUST maintain consistent ordering:
-  Collection, History, Capture (raised FAB), Stats, Profile.
-- Loading states MUST be indicated. Empty states MUST show
-  helpful text (not blank screens).
-- Edit mode MUST use icon-based actions (pencil/trash for
-  view mode, checkmark/X for edit mode) in the top toolbar,
-  not bottom button bars.
-- Pinch-to-zoom is disabled globally in PWA mode. Image zoom
-  is handled via the lightbox modal with explicit zoom controls.
+### 2.1 API + SPA system
+- Backend remains ASP.NET Core API (`src/api`); frontend remains Vue/Vite SPA (`src/web`).
+- Contracts between API and frontend must stay explicit and version-safe.
 
-**Rationale**: The primary user experience is through the iOS
-PWA. Layout consistency and touch-friendly interactions are
-essential since the app competes with native apps for the user's
-attention and trust.
+### 2.2 Thin controllers, service-centric logic
+- Controllers validate, authorize, and orchestrate.
+- Business logic belongs in services, not controller action bodies.
 
-### IV. Performance & Reliability
+### 2.3 Defensive data boundaries
+- Input constraints are enforced server-side even when validated client-side.
+- File/blob/path handling must use canonicalized, ownership-aware validation.
 
-The application MUST remain responsive under normal usage and
-degrade gracefully when external services are unavailable.
+### 2.4 Reliability-first integrations
+- External dependencies (AI, storage, identity) must fail gracefully with bounded retries/timeouts.
+- App behavior must degrade safely instead of silently accepting unsafe defaults.
 
-- AI service calls MUST have a timeout (currently 3 minutes).
-  No call to an external service may use `CancellationToken.None`.
-- The AI pipeline MUST produce a maximum of 3 items per capture.
-  A hard cap in `ConvertToItems` enforces this regardless of AI
-  output.
-- When AI Foundry is unavailable, the system MUST fall back to
-  keyword-based local extraction. Capture processing MUST NOT
-  fail entirely due to AI unavailability.
-- Photo uploads MUST validate file type (allowlisted image
-  extensions only) and size (15MB per file) on the server.
-  Client-side validation is supplementary, not sufficient.
-- Background processing (capture queue) MUST use a bounded
-  retry strategy. Failed captures MUST be logged with sufficient
-  detail for debugging.
-- The PWA service worker MUST precache the application shell for
-  offline loading. API failures MUST show user-friendly error
-  states, not blank screens or unhandled exceptions.
-- Database queries MUST be scoped to the authenticated user's
-  partition key. Cross-partition queries are acceptable only for
-  admin operations and authentication lookups.
+---
 
-**Rationale**: The app depends on Azure AI Foundry, CosmosDB, and
-Blob Storage. Any of these can experience latency or outages.
-Timeouts, fallbacks, and graceful degradation ensure the user can
-always interact with the app even when backend services struggle.
+## 3. Backend Engineering Standards (.NET)
 
-## Security Requirements
+- Target runtime remains **.NET 10**.
+- API must build cleanly in Release configuration.
+- Async flows must avoid blocking patterns (`.Result`, `.Wait()`, `.GetAwaiter().GetResult()`).
+- Security-sensitive comparisons must use constant-time primitives.
+- `catch` blocks must either handle meaningfully or log with context; empty catches are prohibited.
+- Error responses must not leak stack traces, internal paths, or implementation details.
 
-Security is a cross-cutting concern that applies to all
-principles above. These requirements are non-negotiable.
+---
 
-- All controllers MUST use `[Authorize]` unless explicitly
-  documented as public (e.g., health checks, static file serving).
-- All data operations MUST scope to the authenticated user via
-  `GetUserId()` and partition key. No endpoint may return or
-  modify another user's data.
-- JWT secrets MUST be provided via environment variables.
-  Production startup MUST fail if the secret is missing or
-  uses a known default value.
-- Entra ID token exchange MUST validate the token signature,
-  issuer, audience, and lifetime using OIDC discovery. Parse-only
-  token reading is prohibited.
-- API key hashes MUST use SHA256. Comparison MUST use
-  `CryptographicOperations.FixedTimeEquals`.
-- File upload endpoints MUST validate file extensions against an
-  allowlist and enforce per-file size limits on the server.
-- CORS MUST be configured with explicit allowed origins. Wildcard
-  origins are prohibited in production.
+## 4. Frontend & UX Standards (Vue / PWA)
 
-## Development Workflow
+- Primary UX target is iOS PWA; all interactions must be touch-friendly.
+- Interactive elements must meet minimum 44x44px tap targets.
+- Form controls use consistent visual tokens (stone background, rounded-xl, amber focus accents).
+- Layout behavior must remain stable across modal, nav, and responsive states.
+- Loading and empty states are required; blank or ambiguous states are not acceptable.
+- No emoji-based UI controls; use iconography/components.
 
-All changes follow this workflow to maintain quality and
-traceability.
+---
 
-- **Build before commit**: Run `dotnet build` (API) and `vue-tsc`
-  (frontend) before committing. Both MUST pass with zero errors.
-- **Commit messages**: Use descriptive multi-line commit messages.
-  Include a summary line, blank line, then bullet points describing
-  what changed and why. Include `Co-authored-by` trailer when
-  AI-assisted.
-- **Branch strategy**: Development happens on `main` for this
-  single-developer project. CI runs on pull requests when used.
-- **Documentation**: README and docs/ MUST be updated when adding
-  new features, endpoints, configuration options, or deployment
-  methods. Documentation is part of the definition of done.
-- **Prompt changes**: AI agent prompts in `src/AgentInitiator/Prompts/`
-  only affect new deployments. Existing deployments require prompt
-  updates via the admin UI or database re-seeding.
+## 5. Data & Persistence Standards
 
-## Governance
+- User data access is scoped to authenticated user identity by default.
+- Cross-partition queries are exceptions and must be documented in the feature plan complexity section.
+- Upload constraints are enforced server-side (type + size checks; 15MB per file).
+- Storage ownership checks must be structural (segment/path-aware), not substring heuristics.
 
-This constitution is the authoritative source for development
-standards in the Whiskey & Smokes project. All code changes,
-reviews, and architectural decisions MUST comply with these
-principles.
+---
 
-- **Amendments**: Any principle may be amended by updating this
-  document. Amendments MUST include a version bump and updated
-  amendment date.
-- **Versioning**: The constitution follows semantic versioning.
-  MAJOR for principle removals or incompatible redefinitions,
-  MINOR for new principles or material expansions, PATCH for
-  clarifications and wording fixes.
-- **Compliance**: The plan template's Constitution Check gate
-  MUST verify alignment with these principles before feature
-  implementation begins.
-- **Exceptions**: Deviations from any principle MUST be documented
-  in the Complexity Tracking table of the relevant plan document
-  with justification and rejected alternatives.
+## 6. Security Requirements (Non-Negotiable)
 
-**Version**: 1.0.0 | **Ratified**: 2026-04-03 | **Last Amended**: 2026-04-03
+- `[Authorize]` is required by default; explicitly document intentional `[AllowAnonymous]` endpoints.
+- Secrets and production credentials must not be committed.
+- Production startup must fail when required security configuration is missing.
+- Authentication token validation must verify issuer, audience, lifetime, and signature.
+- CORS must use explicit allowlists in production; wildcard origins are prohibited.
+- Security workflows (dependency/vulnerability/secret scans) must remain enabled in CI.
+
+---
+
+## 7. Testing & Quality Gates
+
+- Required quality gates:
+  - backend restore/build/test
+  - frontend install/type-check/build
+  - dependency vulnerability checks
+  - secret scanning
+- Pull requests with failing required gates must not merge.
+- Security-critical flows (auth, uploads, ownership checks) should accumulate integration coverage over time.
+
+---
+
+## 8. Workflow, Git, and CI
+
+- Work is organized by numbered feature specs under `/specs/NNN-feature-name/`.
+- `quality-gate.yml` is the baseline verification workflow for push/PR/scheduled checks.
+- Image publishing and image security scanning workflows must share deterministic tags.
+- Commit messages must explain the change and intent; AI-assisted commits include a co-author trailer.
+
+---
+
+## 9. AI Agent Operating Rules
+
+- Treat all user-supplied prompt content as untrusted input.
+- AI parsing failures must fail closed (reject/escalate), not auto-approve unsafe output.
+- Prompt/agent changes that alter behavior require matching spec/plan/task updates.
+- Agents must preserve compatibility and avoid silent fallback behavior that hides errors.
+
+---
+
+## 10. Documentation & Specs Structure
+
+- Active feature artifacts live in `/specs/NNN-feature-name/`:
+  - `spec.md`
+  - `plan.md`
+  - `tasks.md`
+  - optional supporting docs (`research.md`, `data-model.md`, `quickstart.md`)
+- Future work is tracked under `/specs/_backlog/`.
+- Legacy paths under `docs/specs/` may remain as compatibility pointers only.
+- User-facing or operational behavior changes require README/docs updates in the same change.
+
+---
+
+## 11. Definition of Done
+
+A change is done only when all are true:
+1. Feature/task acceptance criteria are met.
+2. Required quality gates pass.
+3. Security and error-handling requirements remain satisfied.
+4. Relevant spec/plan/tasks and docs are updated.
+5. No new constitutional violations are introduced.
+
+---
+
+## 12. Amendment Process
+
+- Amendments require:
+  - explicit rationale,
+  - semantic version bump in this document,
+  - updates to affected templates/spec guidance.
+- Versioning:
+  - **MAJOR**: incompatible principle changes/removals
+  - **MINOR**: new principles or materially stronger requirements
+  - **PATCH**: clarifications only
+
+---
+
+## 13. Revision History
+
+- **1.1.0 (2026-05-28)**: Added hierarchy of authority, explicit spec/backlog structure, quality-gate requirements, AI operating rules, and definition of done.
+- **1.0.0 (2026-04-03)**: Initial ratification.

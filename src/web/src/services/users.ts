@@ -10,7 +10,11 @@ export interface User {
     favoriteTypes: string[]
     defaultView: string
     collectionSort: string
+    collectionSortDirection?: 'asc' | 'desc'
     collectionFilter?: string
+    venueSort: string
+    venueSortDirection?: 'asc' | 'desc'
+    venueFilter?: string
     pushoverAppToken?: string
     pushoverUserKey?: string
     pushoverEnabled?: boolean

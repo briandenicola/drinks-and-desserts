@@ -12,6 +12,7 @@ import FilterSidebar from '../components/collection/FilterSidebar.vue'
 import type { CollectionFilters } from '../components/collection/FilterSidebar.vue'
 import CollectionGrid from '../components/collection/CollectionGrid.vue'
 import DetailPanel from '../components/collection/DetailPanel.vue'
+import type { Item } from '../services/items'
 
 const { isDesktop } = useBreakpoint()
 
@@ -31,13 +32,20 @@ const activeTab = computed({
   get: () => itemsStore.activeTab,
   set: (v) => { itemsStore.activeTab = v }
 })
+function getDefaultSortDirection(sort: string): 'asc' | 'desc' {
+  return sort === 'type' ? 'asc' : 'desc'
+}
 const activeSort = ref(auth.user?.preferences?.collectionSort || 'rating')
+const activeSortDirection = ref<'asc' | 'desc'>(
+  auth.user?.preferences?.collectionSortDirection || getDefaultSortDirection(activeSort.value)
+)
+const activeGroupBy = ref<string | undefined>(undefined)
 const registerRefresh = inject(RefreshKey)
 
 // Wishlist add form
 const showAddForm = ref(false)
-const showSortMenu = ref(false)
-const showFilterMenu = ref(false)
+const showActionMenu = ref(false)
+const searchQuery = ref('')
 const newName = ref('')
 const newType = ref('whiskey')
 const newBrand = ref('')
@@ -49,15 +57,25 @@ const urlError = ref('')
 
 const sortOptions = [
   { label: 'Rating', value: 'rating' },
+  { label: 'Type', value: 'type' },
   { label: 'Added', value: 'createdAt' },
   { label: 'Updated', value: 'updatedAt' },
+]
+const sortDirectionOptions = [
+  { label: 'Ascending', value: 'asc' as const },
+  { label: 'Descending', value: 'desc' as const },
+]
+
+const groupByOptions = [
+  { label: 'None', value: undefined },
+  { label: 'Type', value: 'type' },
 ]
 
 registerRefresh?.(async () => {
   if (activeTab.value === 'wishlist') {
-    await itemsStore.loadWishlist(activeFilter.value, true)
+    await itemsStore.loadWishlist(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
   } else {
-    await itemsStore.loadItems(activeFilter.value, true)
+    await itemsStore.loadItems(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
   }
 })
 
@@ -96,26 +114,57 @@ const typeOptions = [
   { label: 'Custom', value: 'custom' },
 ]
 
-const activeFilterLabel = computed(() =>
-  typeFilters.find(f => f.value === activeFilter.value)?.label ?? 'All'
-)
+async function setSort(value: string) {
+  activeSort.value = value
+  showActionMenu.value = false
+  if (activeTab.value === 'wishlist') {
+    await itemsStore.loadWishlist(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
+  } else {
+    await itemsStore.loadItems(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
+  }
+  virtualizer.value.scrollToOffset(0)
+}
+
+async function setSortDirection(value: 'asc' | 'desc') {
+  activeSortDirection.value = value
+  showActionMenu.value = false
+  if (activeTab.value === 'wishlist') {
+    await itemsStore.loadWishlist(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
+  } else {
+    await itemsStore.loadItems(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
+  }
+  virtualizer.value.scrollToOffset(0)
+}
+
+async function setGroupBy(value?: string) {
+  activeGroupBy.value = value
+  showActionMenu.value = false
+  if (activeTab.value === 'wishlist') {
+    await itemsStore.loadWishlist(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
+  } else {
+    await itemsStore.loadItems(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
+  }
+  virtualizer.value.scrollToOffset(0)
+}
 
 function setFilter(value?: string) {
   activeFilter.value = value
+  showActionMenu.value = false
   if (activeTab.value === 'wishlist') {
-    itemsStore.loadWishlist(value, true)
+    itemsStore.loadWishlist(value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
   } else {
-    itemsStore.loadItems(value, true)
+    itemsStore.loadItems(value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
   }
 }
 
 function switchTab(tab: 'collection' | 'wishlist') {
   activeTab.value = tab
   activeFilter.value = defaultFilter
+  showActionMenu.value = false
   if (tab === 'wishlist') {
-    itemsStore.loadWishlist(defaultFilter, true)
+    itemsStore.loadWishlist(defaultFilter, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
   } else {
-    itemsStore.loadItems(defaultFilter, true)
+    itemsStore.loadItems(defaultFilter, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
   }
 }
 
@@ -162,144 +211,116 @@ async function deleteItem(id: string) {
   await itemsStore.deleteItem(id)
 }
 
-interface ItemGroup {
-  title: string
-  items: typeof itemsStore.items
-}
-
-const groupedItems = computed<ItemGroup[]>(() => {
-  const source = activeTab.value === 'wishlist' ? itemsStore.wishlistItems : itemsStore.items
-
-  // Only group when filter is "All" (undefined) in collection view
-  if (activeFilter.value !== undefined || activeTab.value === 'wishlist') {
-    return []
-  }
-
-  const groups: ItemGroup[] = []
-  const typeMap = new Map<string, typeof source>()
-
-  source.forEach(item => {
-    const type = item.type.toLowerCase()
-    if (!typeMap.has(type)) {
-      typeMap.set(type, [])
-    }
-    typeMap.get(type)!.push(item)
-  })
-
-  // Sort each type group by rating (descending), then by updatedAt
-  typeMap.forEach((typeItems) => {
-    typeItems.sort((a, b) => {
-      const ra = a.userRating ?? 0
-      const rb = b.userRating ?? 0
-      if (rb !== ra) return rb - ra
-      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-    })
-  })
-
-  // Create groups in alphabetical order by type
-  const sortedTypes = Array.from(typeMap.keys()).sort()
-  sortedTypes.forEach(type => {
-    if (typeMap.get(type)!.length > 0) {
-      const typeName = type.charAt(0).toUpperCase() + type.slice(1).replace(/-/g, ' ')
-      groups.push({
-        title: typeName,
-        items: typeMap.get(type)!
-      })
-    }
-  })
-
-  return groups
+const displayItems = computed(() => {
+  // Server handles primary sorting; client-side is fallback only for display consistency
+  return activeTab.value === 'wishlist' ? itemsStore.wishlistItems : itemsStore.items
 })
 
-const displayItems = computed(() => {
-  const source = activeTab.value === 'wishlist' ? itemsStore.wishlistItems : itemsStore.items
-  const sorted = [...source]
-  const sort = activeSort.value
+const normalizedSearch = computed(() => searchQuery.value.trim().toLowerCase())
 
-  sorted.sort((a, b) => {
-    if (sort === 'rating') {
-      const ra = a.userRating ?? 0
-      const rb = b.userRating ?? 0
-      if (rb !== ra) return rb - ra
-      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-    }
-    if (sort === 'updatedAt') {
-      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-    }
-    // createdAt (default)
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  })
+function matchesItemSearch(item: Item, search: string): boolean {
+  if (!search) return true
+  const fields = [
+    item.name,
+    item.brand,
+    item.type,
+    item.userNotes,
+    item.venue?.name,
+  ]
+  if (fields.some(field => field?.toLowerCase().includes(search))) {
+    return true
+  }
+  if (item.tags.some(tag => tag.toLowerCase().includes(search))) {
+    return true
+  }
+  return false
+}
 
-  return sorted
+const searchFilteredItems = computed(() => {
+  const search = normalizedSearch.value
+  if (!search) return displayItems.value
+  return displayItems.value.filter(item => matchesItemSearch(item, search))
 })
 
 const scrollContainerRef = ref<HTMLElement | null>(null)
 
-// Flatten grouped items with headers for virtual scrolling
 interface VirtualItem {
-  type: 'header' | 'item'
-  groupTitle?: string
-  item?: typeof itemsStore.items[0]
+  item: typeof itemsStore.items[0]
 }
 
 const virtualItems = computed<VirtualItem[]>(() => {
-  // Use grouped items when filter is "All" and in collection view
-  if (groupedItems.value.length > 0) {
-    const items: VirtualItem[] = []
-    groupedItems.value.forEach(group => {
-      items.push({ type: 'header', groupTitle: group.title })
-      group.items.forEach(item => {
-        items.push({ type: 'item', item })
-      })
-    })
-    return items
-  }
-
-  // Otherwise, use flat list without headers
-  return displayItems.value.map(item => ({ type: 'item' as const, item }))
+  return searchFilteredItems.value.map(item => ({ item }))
 })
 
 const virtualizer = useVirtualizer(computed(() => ({
   count: virtualItems.value.length,
   getScrollElement: () => scrollContainerRef.value,
-  estimateSize: (index) => {
-    const item = virtualItems.value[index]
-    if (item.type === 'header') return 40
-    return activeTab.value === 'wishlist' ? 140 : 100
-  },
+  estimateSize: () => activeTab.value === 'wishlist' ? 140 : 100,
   overscan: 5,
   gap: 12,
 })))
 
-watch([activeTab, activeFilter], () => {
-  virtualizer.value.scrollToOffset(0)
+const isLoadingMore = ref(false)
+const lastVirtualIndex = computed(() => {
+  const rows = virtualizer.value.getVirtualItems()
+  return rows.length ? rows[rows.length - 1].index : -1
 })
 
-const isLoadingList= computed(() =>
+async function maybeLoadMore() {
+  if (isLoadingMore.value || lastVirtualIndex.value < 0) return
+  if (virtualItems.value.length - 1 - lastVirtualIndex.value > 3) return
+
+  const isWishlist = activeTab.value === 'wishlist'
+  const hasMore = isWishlist
+    ? !!itemsStore.wishlistContinuationToken
+    : !!itemsStore.continuationToken
+  const isLoading = isWishlist
+    ? itemsStore.isLoadingWishlist
+    : itemsStore.isLoading
+
+  if (!hasMore || isLoading) return
+
+  isLoadingMore.value = true
+  try {
+    if (isWishlist) {
+      await itemsStore.loadWishlist(activeFilter.value, false, activeSort.value, activeSortDirection.value, activeGroupBy.value)
+    } else {
+      await itemsStore.loadItems(activeFilter.value, false, activeSort.value, activeSortDirection.value, activeGroupBy.value)
+    }
+  } finally {
+    isLoadingMore.value = false
+  }
+}
+
+watch([activeTab, activeFilter, searchQuery], () => {
+  virtualizer.value.scrollToOffset(0)
+})
+watch(lastVirtualIndex, () => {
+  void maybeLoadMore()
+})
+
+const isLoadingList = computed(() =>
   activeTab.value === 'wishlist' ? itemsStore.isLoadingWishlist : itemsStore.isLoading
 )
 
-function closeSortMenu(e: MouseEvent) {
+function closeActionMenu(e: MouseEvent) {
   const target = e.target as HTMLElement
-  if (!target.closest('.sort-dropdown')) {
-    showSortMenu.value = false
-  }
-  if (!target.closest('.filter-dropdown')) {
-    showFilterMenu.value = false
+  if (!target.closest('.action-menu-dropdown')) {
+    showActionMenu.value = false
   }
 }
 
 onMounted(() => {
   if (activeTab.value === 'wishlist') {
-    itemsStore.loadWishlist(activeFilter.value, true)
+    itemsStore.loadWishlist(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
   } else {
-    itemsStore.loadItems(activeFilter.value, true)
+    itemsStore.loadItems(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
   }
-  document.addEventListener('click', closeSortMenu)
+  document.addEventListener('click', closeActionMenu)
 })
 
 onUnmounted(() => {
-  document.removeEventListener('click', closeSortMenu)
+  document.removeEventListener('click', closeActionMenu)
 })
 
 // Desktop collection state
@@ -308,12 +329,12 @@ const desktopFilters = ref<CollectionFilters>({ category: undefined, minRating: 
 
 const desktopFilteredItems = computed(() => {
   const f = desktopFilters.value
-  return displayItems.value.filter(item => {
+  return searchFilteredItems.value.filter(item => {
     if (f.category && item.type !== f.category) return false
     if (f.minRating > 0 && (item.userRating ?? 0) < f.minRating) return false
     if (f.labels.trim()) {
-      const search = f.labels.toLowerCase()
-      if (!item.tags.some(t => t.toLowerCase().includes(search))) return false
+      const labelSearch = f.labels.toLowerCase()
+      if (!item.tags.some(t => t.toLowerCase().includes(labelSearch))) return false
     }
     return true
   })
@@ -350,88 +371,130 @@ function navigateToItem(id: string) {
   <!-- Mobile layout (< 1024px) -->
   <template v-else>
   <div class="p-4 max-w-lg mx-auto">
-    <!-- Collection / Wishlist toggle -->
-    <div class="flex bg-[#041e3e] border border-[#0a2a52] rounded-xl p-1 mb-4">
-      <button
-        @click="switchTab('collection')"
-        class="flex-1 py-2 min-h-[44px] rounded-lg text-sm font-medium transition-colors"
-        :class="activeTab === 'collection' ? 'bg-[#1e407c] text-white' : 'text-[#96BEE6] hover:text-white'"
-      >
-        Collection
-      </button>
-      <button
-        @click="switchTab('wishlist')"
-        class="flex-1 py-2 min-h-[44px] rounded-lg text-sm font-medium transition-colors"
-        :class="activeTab === 'wishlist' ? 'bg-[#1e407c] text-white' : 'text-[#96BEE6] hover:text-white'"
-      >
-        Wishlist
-      </button>
+    <div class="mb-4">
+      <h2 class="text-xl font-bold text-white">Collections</h2>
     </div>
 
-    <!-- Filters + Sort -->
+    <!-- Search + Action Menu -->
     <div class="flex items-center gap-2 mb-4">
-      <!-- Filter dropdown -->
-      <div class="relative filter-dropdown">
-        <button
-          @click="showFilterMenu = !showFilterMenu"
-          class="flex items-center gap-1 px-3 py-2.5 min-h-[44px] rounded-full text-xs border transition-colors"
-          :class="activeFilter
-            ? 'bg-[#1e407c] border-[#1e407c] text-white'
-            : 'border-[#1e407c]/50 text-[#96BEE6] hover:border-[#1e407c]'"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-          </svg>
-          <span>{{ activeFilterLabel }}</span>
-        </button>
-
-        <div
-          v-if="showFilterMenu"
-          class="absolute left-0 top-full mt-1 bg-[#041e3e] border border-[#1e407c]/50 rounded-xl overflow-hidden shadow-lg z-10 min-w-[140px]"
-        >
-          <button
-            v-for="opt in typeFilters"
-            :key="opt.label"
-            @click="setFilter(opt.value); showFilterMenu = false"
-            class="w-full text-left px-4 py-2.5 text-sm transition-colors"
-            :class="activeFilter === opt.value
-              ? 'text-[#96BEE6] bg-[#0a2a52]'
-              : 'text-[#96BEE6] hover:bg-[#0a2a52]'"
-          >
-            {{ opt.label }}
-          </button>
-        </div>
+      <div class="relative flex-1">
+        <input
+          v-model="searchQuery"
+          :placeholder="activeTab === 'wishlist' ? 'Search wishlist...' : 'Search collection...'"
+          class="w-full bg-[#041e3e] border border-[#1e407c]/50 rounded-xl pl-10 pr-3 py-2.5 text-sm text-white placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
+        />
+        <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#4a7aa5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
       </div>
 
-      <div class="flex-1"></div>
-
-      <!-- Sort dropdown -->
-      <div class="relative shrink-0 sort-dropdown">
+      <div class="relative action-menu-dropdown shrink-0">
         <button
-          @click="showSortMenu = !showSortMenu"
-          class="flex items-center gap-1 px-3 py-2.5 min-h-[44px] rounded-full text-xs border border-[#1e407c]/50 text-[#96BEE6] hover:border-[#1e407c] transition-colors"
+          @click="showActionMenu = !showActionMenu"
+          class="h-[44px] w-[44px] bg-[#041e3e] border border-[#1e407c]/50 rounded-xl text-[#96BEE6] hover:border-[#1e407c] transition-colors flex items-center justify-center"
+          aria-label="Open actions menu"
+          title="Actions"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M3.75 6h3.75m3 12h9.75m-16.5 0h3.75m0-12a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0Zm6 12a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0Zm0-12h4.5m-4.5 12h4.5" />
           </svg>
-          <span>{{ sortOptions.find(o => o.value === activeSort)?.label }}</span>
         </button>
 
         <div
-          v-if="showSortMenu"
-          class="absolute right-0 top-full mt-1 bg-[#041e3e] border border-[#1e407c]/50 rounded-xl overflow-hidden shadow-lg z-10 min-w-[140px]"
+          v-if="showActionMenu"
+          class="absolute right-0 top-full mt-1 w-72 max-h-[70vh] overflow-y-auto bg-[#041e3e] border border-[#1e407c]/50 rounded-xl shadow-lg z-20 p-3 space-y-4"
         >
-          <button
-            v-for="opt in sortOptions"
-            :key="opt.value"
-            @click="activeSort = opt.value; showSortMenu = false"
-            class="w-full text-left px-4 py-2.5 text-sm transition-colors"
-            :class="activeSort === opt.value
-              ? 'text-[#96BEE6] bg-[#0a2a52]'
-              : 'text-[#96BEE6] hover:bg-[#0a2a52]'"
-          >
-            {{ opt.label }}
-          </button>
+          <div>
+            <p class="text-[11px] uppercase tracking-wide text-[#4a7aa5] mb-2">Collection & Wishlist</p>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                @click="switchTab('collection')"
+                class="px-3 py-2 rounded-lg text-sm border transition-colors"
+                :class="activeTab === 'collection'
+                  ? 'bg-[#1e407c] border-[#1e407c] text-white'
+                  : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6]'"
+              >
+                Collection
+              </button>
+              <button
+                @click="switchTab('wishlist')"
+                class="px-3 py-2 rounded-lg text-sm border transition-colors"
+                :class="activeTab === 'wishlist'
+                  ? 'bg-[#1e407c] border-[#1e407c] text-white'
+                  : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6]'"
+              >
+                Wishlist
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <p class="text-[11px] uppercase tracking-wide text-[#4a7aa5] mb-2">Filter</p>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                v-for="opt in typeFilters"
+                :key="opt.label"
+                @click="setFilter(opt.value)"
+                class="px-3 py-2 rounded-lg text-xs border text-left transition-colors"
+                :class="activeFilter === opt.value
+                  ? 'bg-[#1e407c] border-[#1e407c] text-white'
+                  : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6]'"
+              >
+                {{ opt.label }}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <p class="text-[11px] uppercase tracking-wide text-[#4a7aa5] mb-2">Sort</p>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                v-for="opt in sortOptions"
+                :key="opt.value"
+                @click="setSort(opt.value)"
+                class="px-3 py-2 rounded-lg text-xs border text-left transition-colors"
+                :class="activeSort === opt.value
+                  ? 'bg-[#1e407c] border-[#1e407c] text-white'
+                  : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6]'"
+              >
+                {{ opt.label }}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <p class="text-[11px] uppercase tracking-wide text-[#4a7aa5] mb-2">Sort Direction</p>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                v-for="opt in sortDirectionOptions"
+                :key="opt.value"
+                @click="setSortDirection(opt.value)"
+                class="px-3 py-2 rounded-lg text-xs border text-left transition-colors"
+                :class="activeSortDirection === opt.value
+                  ? 'bg-[#1e407c] border-[#1e407c] text-white'
+                  : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6]'"
+              >
+                {{ opt.label }}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <p class="text-[11px] uppercase tracking-wide text-[#4a7aa5] mb-2">Group By</p>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                v-for="opt in groupByOptions"
+                :key="opt.label"
+                @click="setGroupBy(opt.value)"
+                class="px-3 py-2 rounded-lg text-xs border text-left transition-colors"
+                :class="activeGroupBy === opt.value
+                  ? 'bg-[#1e407c] border-[#1e407c] text-white'
+                  : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6]'"
+              >
+                {{ opt.label }}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -524,7 +587,8 @@ function navigateToItem(id: string) {
 
     <!-- Empty states -->
     <div v-else-if="!virtualItems.length" class="text-[#96BEE6]/70 text-center py-12">
-      <p v-if="activeTab === 'wishlist'">No wishlist items yet. Add something you want to try.</p>
+      <p v-if="normalizedSearch">No results for "{{ searchQuery.trim() }}".</p>
+      <p v-else-if="activeTab === 'wishlist'">No wishlist items yet. Add something you want to try.</p>
       <p v-else>No items yet. Capture something first!</p>
     </div>
 
@@ -544,16 +608,9 @@ function navigateToItem(id: string) {
           :ref="(el: any) => { if (el?.$el || el) virtualizer.measureElement(el?.$el ?? el) }"
           :style="{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${row.start}px)` }"
         >
-          <!-- Group Header -->
-          <div v-if="virtualItems[row.index].type === 'header'" class="mb-3">
-            <h3 class="text-sm font-semibold text-[#96BEE6] uppercase tracking-wide">
-              {{ virtualItems[row.index].groupTitle }}
-            </h3>
-          </div>
-
           <!-- Collection item -->
           <router-link
-            v-else-if="activeTab === 'collection' && virtualItems[row.index].item"
+            v-if="activeTab === 'collection'"
             :to="`/items/${virtualItems[row.index].item!.id}`"
             class="block bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 hover:border-[#1e407c]/50 transition-colors"
           >
@@ -584,7 +641,7 @@ function navigateToItem(id: string) {
 
           <!-- Wishlist item -->
           <div
-            v-else-if="activeTab === 'wishlist' && virtualItems[row.index].item"
+            v-else-if="activeTab === 'wishlist'"
             class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4"
           >
             <router-link :to="`/items/${virtualItems[row.index].item!.id}`" class="block">
