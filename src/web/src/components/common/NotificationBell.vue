@@ -59,6 +59,16 @@ async function markAllRead() {
   }
 }
 
+async function clearNotifications() {
+  try {
+    await notificationsApi.clearAll()
+    notifications.value = []
+    unreadCount.value = 0
+  } catch (e) {
+    console.warn('Failed to clear notifications', e)
+  }
+}
+
 async function handleNotificationClick(n: AppNotification) {
   if (!n.isRead) {
     try {
@@ -133,9 +143,14 @@ onUnmounted(() => {
       class="absolute right-0 top-8 w-80 max-h-96 overflow-y-auto bg-[#041e3e] border border-[#0a2a52] rounded-xl shadow-xl z-50">
       <div class="flex items-center justify-between p-3 border-b border-[#0a2a52]">
         <h3 class="text-sm font-medium text-white">Notifications</h3>
-        <button v-if="unreadCount > 0" @click="markAllRead" class="text-xs text-[#96BEE6] hover:text-white">
-          Mark all read
-        </button>
+        <div class="flex items-center gap-2">
+          <button v-if="unreadCount > 0" @click="markAllRead" class="text-xs text-[#96BEE6] hover:text-white">
+            Mark all read
+          </button>
+          <button v-if="notifications.length > 0" @click="clearNotifications" class="text-xs text-[#96BEE6] hover:text-white">
+            Clear all
+          </button>
+        </div>
       </div>
 
       <div v-if="isLoading" class="p-4 text-center text-[#5a8ab5] text-sm">Loading...</div>

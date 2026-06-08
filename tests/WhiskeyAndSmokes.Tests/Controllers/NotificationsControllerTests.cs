@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using FluentAssertions;
 using NSubstitute;
 using WhiskeyAndSmokes.Api.Models;
@@ -117,5 +118,31 @@ public class NotificationsControllerTests : IClassFixture<CustomWebApplicationFa
 
         var response = await _client.PutAsync("/api/notifications/read-all", null);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task ClearNotifications_DeletesUntilNoNotificationsRemainUsingUserPartition()
+    {
+        var firstPage = new List<Notification>
+        {
+            new() { Id = "n1", UserId = CustomWebApplicationFactory.TestUserId, Title = "A" },
+            new() { Id = "n2", UserId = "unexpected-user", Title = "B" },
+        };
+
+        _factory.CosmosDb.QueryAsync(
+            "notifications",
+            CustomWebApplicationFactory.TestUserId,
+            Arg.Any<string?>(),
+            200,
+            Arg.Any<Expression<Func<Notification, bool>>?>())
+            .Returns((firstPage, (string?)"more"), (new List<Notification>(), (string?)null));
+
+        var response = await _client.DeleteAsync("/api/notifications");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("deleted").GetInt32().Should().Be(2);
+        await _factory.CosmosDb.Received(1).DeleteAsync("notifications", "n1", CustomWebApplicationFactory.TestUserId);
+        await _factory.CosmosDb.Received(1).DeleteAsync("notifications", "n2", CustomWebApplicationFactory.TestUserId);
     }
 }

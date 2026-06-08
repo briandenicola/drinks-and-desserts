@@ -3,7 +3,7 @@ import api from './api'
 export interface AppNotification {
   id: string
   userId: string
-  type: 'friend-request' | 'friend-accepted' | 'new-thought' | 'workflow-completed'
+  type: 'friend-request' | 'friend-accepted' | 'new-thought' | 'workflow-completed' | 'workflow-failed'
   title: string
   detail?: string
   sourceUserId: string
@@ -24,4 +24,5 @@ export const notificationsApi = {
   unreadCount: () => api.get<{ unreadCount: number }>('/notifications/unread-count'),
   markRead: (id: string) => api.put(`/notifications/${id}/read`),
   markAllRead: () => api.put('/notifications/read-all'),
+  clearAll: () => api.delete('/notifications'),
 }

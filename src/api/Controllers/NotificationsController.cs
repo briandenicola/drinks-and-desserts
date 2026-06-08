@@ -81,4 +81,28 @@ public class NotificationsController : ControllerBase
 
         return Ok(new { updated = notifications.Count });
     }
+
+    [HttpDelete]
+    public async Task<ActionResult> ClearNotifications()
+    {
+        var userId = GetUserId();
+        var deleted = 0;
+
+        do
+        {
+            var (notifications, _) = await _cosmosDb.QueryAsync<Notification>(
+                ContainerName, userId, maxItems: 200);
+
+            foreach (var notification in notifications)
+            {
+                await _cosmosDb.DeleteAsync(ContainerName, notification.Id, userId);
+                deleted++;
+            }
+
+            if (notifications.Count == 0)
+                break;
+        } while (true);
+
+        return Ok(new { deleted });
+    }
 }

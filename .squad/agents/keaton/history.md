@@ -8,3 +8,5 @@
 ## Learnings
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
+
+- Notification deletes should stay partition-safe by querying only the authenticated user's partition and deleting with that same authenticated user partition key; for bulk clears, drain repeated first pages after deletion instead of continuing through a mutating result set.
