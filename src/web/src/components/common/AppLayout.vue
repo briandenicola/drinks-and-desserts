@@ -4,6 +4,7 @@ import { useAuthStore } from '../../stores/auth'
 import { useRoute } from 'vue-router'
 import { usePullToRefresh } from '../../composables/usePullToRefresh'
 import { useBreakpoint } from '../../composables/useBreakpoint'
+import { useKeyboardFocus } from '../../composables/useKeyboardFocus'
 import { RefreshKey } from '../../composables/refreshKey'
 import NotificationBell from './NotificationBell.vue'
 import PwaInstallPrompt from './PwaInstallPrompt.vue'
@@ -12,6 +13,7 @@ import DesktopSidebar from './DesktopSidebar.vue'
 const auth = useAuthStore()
 const route = useRoute()
 const { isDesktop } = useBreakpoint()
+const { isInputFocused } = useKeyboardFocus()
 
 const isPwa = ('standalone' in window.navigator && (window.navigator as any).standalone) ||
   window.matchMedia('(display-mode: standalone)').matches
@@ -113,7 +115,7 @@ const navItems = [
     <PwaInstallPrompt />
 
     <!-- Bottom Navigation (mobile only) -->
-    <nav v-if="auth.isAuthenticated && !isDesktop" class="fixed bottom-0 inset-x-0 bg-[#041e3e] border-t border-[#0a2a52] safe-area-bottom">
+    <nav v-if="auth.isAuthenticated && !isDesktop" class="fixed bottom-0 inset-x-0 bg-[#041e3e] border-t border-[#0a2a52] safe-area-bottom nav-keyboard-hide" :class="{ 'nav-hidden': isInputFocused }">
       <div class="flex justify-around items-end pt-1 pb-2">
         <template v-for="item in navItems" :key="item.path">
           <!-- Raised Capture FAB -->
@@ -182,5 +184,12 @@ const navItems = [
 .capture-fab {
   position: relative;
   z-index: 1;
+}
+.nav-keyboard-hide {
+  transition: transform 0.2s ease-in-out;
+  will-change: transform;
+}
+.nav-hidden {
+  transform: translateY(100%);
 }
 </style>
