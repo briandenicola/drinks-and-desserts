@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, inject, onMounted, computed } from 'vue'
+import { ref, inject, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { venuesApi, type Venue } from '../services/venues'
 import { itemsApi, type Item } from '../services/items'
@@ -34,8 +34,11 @@ const isUploadingPhoto = ref(false)
 
 // Item association
 const allItems = ref<Item[]>([])
+const currentItemSearchIds = ref<Set<string>>(new Set())
 const selectedItemIds = ref<Set<string>>(new Set())
 const itemSearchQuery = ref('')
+let itemSearchRequest = 0
+let itemSearchTimer: ReturnType<typeof setTimeout> | undefined
 
 // Labels
 const editLabels = ref<string[]>([])
@@ -62,8 +65,7 @@ async function refreshVenue() {
   resetEditFields(data)
 
   try {
-    const { data: itemsData } = await venuesApi.getItems(id)
-    linkedItems.value = itemsData.items as Item[]
+    linkedItems.value = await loadAllVenueItems(id)
   } catch {
     linkedItems.value = []
   }
@@ -110,23 +112,54 @@ function startEditing() {
   selectedItemIds.value = new Set(linkedItems.value.map(i => i.id))
   itemSearchQuery.value = ''
   isEditing.value = true
-  loadAllItems()
+  allItems.value = mergeItems([], linkedItems.value)
+  loadItemSuggestions()
 }
 
-async function loadAllItems() {
+async function loadItemSuggestions(search?: string) {
+  const requestId = ++itemSearchRequest
   try {
-    const { data } = await itemsApi.list(undefined, undefined, 'collected')
-    allItems.value = data.items
+    const { data } = await itemsApi.list(
+      undefined,
+      undefined,
+      'collected',
+      undefined,
+      undefined,
+      undefined,
+      { search, pageSize: 50 }
+    )
+    if (requestId === itemSearchRequest) {
+      allItems.value = mergeItems(allItems.value, data.items)
+      currentItemSearchIds.value = new Set(data.items.map(i => i.id))
+    }
   } catch {
-    allItems.value = []
+    if (requestId === itemSearchRequest) currentItemSearchIds.value = new Set()
   }
 }
 
+function mergeItems(existing: Item[], incoming: Item[]) {
+  const byId = new Map(existing.map(i => [i.id, i]))
+  for (const item of incoming) byId.set(item.id, item)
+  return [...byId.values()]
+}
+
+async function loadAllVenueItems(venueId: string): Promise<Item[]> {
+  const items: Item[] = []
+  let continuationToken: string | undefined
+
+  do {
+    const { data } = await venuesApi.getItems(venueId, continuationToken)
+    items.push(...(data.items as Item[]))
+    continuationToken = data.continuationToken ?? undefined
+  } while (continuationToken)
+
+  return items
+}
+
 const filteredItems = computed(() => {
-  const q = itemSearchQuery.value.toLowerCase().trim()
   const items = allItems.value.filter(i => {
-    if (!q) return true
-    return i.name.toLowerCase().includes(q) || i.type.toLowerCase().includes(q)
+    if (selectedItemIds.value.has(i.id)) return true
+    return currentItemSearchIds.value.has(i.id)
   })
   // Show selected items first, then unselected
   return items.sort((a, b) => {
@@ -134,6 +167,14 @@ const filteredItems = computed(() => {
     const bSelected = selectedItemIds.value.has(b.id) ? 0 : 1
     return aSelected - bSelected
   }).slice(0, 20)
+})
+
+watch(itemSearchQuery, (query) => {
+  if (!isEditing.value) return
+  if (itemSearchTimer) clearTimeout(itemSearchTimer)
+  itemSearchTimer = setTimeout(() => {
+    loadItemSuggestions(query.trim() || undefined)
+  }, 250)
 })
 
 function toggleItemLink(itemId: string) {
@@ -283,8 +324,7 @@ async function saveEdits() {
 
     // Refresh linked items
     try {
-      const { data: itemsData } = await venuesApi.getItems(venue.value.id)
-      linkedItems.value = itemsData.items as Item[]
+      linkedItems.value = await loadAllVenueItems(venue.value.id)
     } catch {
       linkedItems.value = []
     }

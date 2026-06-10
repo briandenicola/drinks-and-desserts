@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
 using NSubstitute;
+using NSubstitute.ClearExtensions;
 using WhiskeyAndSmokes.Api.Models;
 using Xunit;
 
@@ -93,6 +94,49 @@ public class ItemsControllerTests : IClassFixture<CustomWebApplicationFactory>
         var body = await response.Content.ReadFromJsonAsync<PagedResponse<Item>>();
         body.Should().NotBeNull();
         body!.Items.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task ListItems_WithSearch_FiltersCollectedItemsBeforePaging()
+    {
+        _factory.CosmosDb.ClearSubstitute();
+
+        var allItems = Enumerable.Range(1, 30)
+            .Select(i => new Item { Id = $"filler-{i}", UserId = TestUserId, Name = $"Filler {i}", Type = ItemType.Whiskey, Status = ItemStatus.Reviewed })
+            .Append(new Item { Id = "steak-1", UserId = TestUserId, Name = "Steak Dinner", Type = ItemType.Custom, Status = ItemStatus.Reviewed })
+            .Append(new Item { Id = "wishlist-steak", UserId = TestUserId, Name = "Wishlist Steak", Type = ItemType.Custom, Status = ItemStatus.Wishlist })
+            .ToList();
+
+        _factory.CosmosDb.QueryAsync<Item>(
+            "items",
+            TestUserId,
+            Arg.Any<string?>(),
+            Arg.Any<int>(),
+            Arg.Any<Expression<Func<Item, bool>>?>(),
+            Arg.Any<Expression<Func<Item, object>>?>(),
+            Arg.Any<bool>())
+            .Returns(callInfo =>
+            {
+                var maxItems = callInfo.ArgAt<int>(3);
+                var predicate = callInfo.ArgAt<Expression<Func<Item, bool>>?>(4);
+                var filtered = predicate == null ? allItems : allItems.Where(predicate.Compile()).ToList();
+                return (filtered.Take(maxItems).ToList(), (string?)null);
+            });
+
+        var response = await _client.GetAsync("/api/items?status=collected&search=steak&pageSize=10");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<PagedResponse<Item>>();
+        body.Should().NotBeNull();
+        body!.Items.Should().ContainSingle().Which.Id.Should().Be("steak-1");
+        await _factory.CosmosDb.Received(1).QueryAsync<Item>(
+            "items",
+            TestUserId,
+            Arg.Any<string?>(),
+            10,
+            Arg.Any<Expression<Func<Item, bool>>?>(),
+            Arg.Any<Expression<Func<Item, object>>?>(),
+            Arg.Any<bool>());
     }
 
     [Fact]

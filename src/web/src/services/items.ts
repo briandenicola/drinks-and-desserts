@@ -1,5 +1,14 @@
 import api from './api'
 
+export interface ListQueryOptions {
+  search?: string
+  pageSize?: number
+}
+
+const normalizePageSize = (pageSize?: number) =>
+  typeof pageSize === 'number' ? Math.min(Math.max(Math.floor(pageSize), 1), 100) : undefined
+
+
 export interface Item {
   id: string
   userId: string
@@ -61,9 +70,28 @@ export interface CreateWishlistRequest {
 }
 
 export const itemsApi = {
-  list: (type?: string, continuationToken?: string, status?: string, sortBy?: string, sortDirection?: 'asc' | 'desc', groupBy?: string) =>
+  list: (
+    type?: string,
+    continuationToken?: string,
+    status?: string,
+    sortBy?: string,
+    sortDirection?: 'asc' | 'desc',
+    groupBy?: string,
+    options?: ListQueryOptions
+  ) =>
     api.get<{ items: Item[]; continuationToken?: string; hasMore: boolean }>(
-      '/items', { params: { type, continuationToken, status, sortBy, sortDirection, groupBy } }
+      '/items', {
+        params: {
+          type,
+          continuationToken,
+          status,
+          sortBy,
+          sortDirection,
+          groupBy,
+          search: options?.search?.trim() || undefined,
+          pageSize: normalizePageSize(options?.pageSize),
+        },
+      }
     ),
 
   get: (id: string) =>

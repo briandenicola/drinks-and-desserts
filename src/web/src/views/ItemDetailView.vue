@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, inject, onMounted, computed } from 'vue'
+import { ref, inject, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useItemsStore } from '../stores/items'
-import { useVenuesStore } from '../stores/venues'
 import { itemsApi, type Item } from '../services/items'
+import { venuesApi, type Venue } from '../services/venues'
 import { thoughtsApi, type Thought } from '../services/thoughts'
 import { useAuthStore } from '../stores/auth'
 import StarRating from '../components/common/StarRating.vue'
@@ -14,7 +14,6 @@ import { RefreshKey } from '../composables/refreshKey'
 const route = useRoute()
 const router = useRouter()
 const itemsStore = useItemsStore()
-const venuesStore = useVenuesStore()
 const registerRefresh = inject(RefreshKey)
 
 const item = ref<Item | null>(null)
@@ -115,18 +114,29 @@ function resetLightboxZoom() {
 const nameSuggestions = ref<string[]>([])
 const brandSuggestions = ref<string[]>([])
 const tagSuggestions = ref<string[]>([])
+const venueLookupSuggestions = ref<Venue[]>([])
+let venueSearchRequest = 0
+let venueSearchTimer: ReturnType<typeof setTimeout> | undefined
 
 const venueSuggestions = computed(() =>
-  venuesStore.venues.map(v => v.name)
+  venueLookupSuggestions.value.map(v => v.name)
 )
 
 function onVenueSelected(name: string) {
   editVenueName.value = name
-  const match = venuesStore.venues.find(v => v.name === name)
+  const match = venueLookupSuggestions.value.find(v => v.name === name)
   if (match?.address) {
     editVenueAddress.value = match.address
   }
 }
+
+watch(editVenueName, (name) => {
+  if (!isEditing.value) return
+  if (venueSearchTimer) clearTimeout(venueSearchTimer)
+  venueSearchTimer = setTimeout(() => {
+    loadVenueSuggestions(name)
+  }, 250)
+})
 
 const typeOptions = [
   { label: 'Whiskey', value: 'whiskey' },
@@ -146,6 +156,25 @@ async function loadSuggestions() {
     brandSuggestions.value = data.brands
     tagSuggestions.value = data.tags
   } catch { /* ignore */ }
+}
+
+async function loadVenueSuggestions(search?: string) {
+  const requestId = ++venueSearchRequest
+  try {
+    const { data } = await venuesApi.list(undefined, undefined, undefined, undefined, undefined, {
+      search,
+      pageSize: 20,
+    })
+    if (requestId === venueSearchRequest) {
+      venueLookupSuggestions.value = mergeVenues(venueLookupSuggestions.value, data.items)
+    }
+  } catch { /* ignore */ }
+}
+
+function mergeVenues(existing: Venue[], incoming: Venue[]) {
+  const byId = new Map(existing.map(v => [v.id, v]))
+  for (const venue of incoming) byId.set(venue.id, venue)
+  return [...byId.values()]
 }
 
 async function refreshItem() {
@@ -194,7 +223,22 @@ function startEditing() {
   pendingPhotoDeletes.value = new Set()
   pendingPhotoAdds.value = []
   isEditing.value = true
-  venuesStore.loadVenues(undefined, true)
+  venueLookupSuggestions.value = item.value?.venue?.venueId
+    ? [{
+        id: item.value.venue.venueId,
+        userId: '',
+        name: item.value.venue.name,
+        address: item.value.venue.address,
+        type: '',
+        photoUrls: [],
+        labels: [],
+        status: '',
+        workflowSteps: [],
+        createdAt: '',
+        updatedAt: '',
+      }]
+    : []
+  loadVenueSuggestions(editVenueName.value)
   loadSuggestions()
 }
 
@@ -283,7 +327,7 @@ async function save() {
       brand: editBrand.value || undefined,
       userNotes: editNotes.value || undefined,
       venue: editVenueName.value ? {
-        venueId: venuesStore.venues.find(v => v.name === editVenueName.value)?.id,
+        venueId: venueLookupSuggestions.value.find(v => v.name === editVenueName.value)?.id,
         name: editVenueName.value,
         address: editVenueAddress.value || undefined,
       } : undefined,

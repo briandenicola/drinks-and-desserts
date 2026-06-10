@@ -9,6 +9,7 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
+- Item/venue collection endpoints default to 25-item pages via the shared repository; lookup UIs should use server-side `search` plus bounded `pageSize` rather than filtering the first page client-side.
 - Notification deletes should stay partition-safe by querying only the authenticated user's partition and deleting with that same authenticated user partition key; for bulk clears, drain repeated first pages after deletion instead of continuing through a mutating result set.
 ### Issue #72: Server-Side Ordering and Grouping (2026-05-29)
 

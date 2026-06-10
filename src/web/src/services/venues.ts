@@ -1,5 +1,14 @@
 import api from './api'
 
+export interface ListQueryOptions {
+  search?: string
+  pageSize?: number
+}
+
+const normalizePageSize = (pageSize?: number) =>
+  typeof pageSize === 'number' ? Math.min(Math.max(Math.floor(pageSize), 1), 100) : undefined
+
+
 export interface VenueWorkflowStep {
   stepId: string
   agentName: string
@@ -49,9 +58,26 @@ export interface UpdateVenueRequest {
 }
 
 export const venuesApi = {
-  list: (type?: string, continuationToken?: string, sortBy?: string, sortDirection?: 'asc' | 'desc', groupBy?: string) =>
+  list: (
+    type?: string,
+    continuationToken?: string,
+    sortBy?: string,
+    sortDirection?: 'asc' | 'desc',
+    groupBy?: string,
+    options?: ListQueryOptions
+  ) =>
     api.get<{ items: Venue[]; continuationToken?: string; hasMore: boolean }>(
-      '/venues', { params: { type, continuationToken, sortBy, sortDirection, groupBy } }
+      '/venues', {
+        params: {
+          type,
+          continuationToken,
+          sortBy,
+          sortDirection,
+          groupBy,
+          search: options?.search?.trim() || undefined,
+          pageSize: normalizePageSize(options?.pageSize),
+        },
+      }
     ),
 
   get: (id: string) =>
@@ -66,9 +92,15 @@ export const venuesApi = {
   delete: (id: string) =>
     api.delete(`/venues/${id}`),
 
-  getItems: (id: string, continuationToken?: string) =>
+  getItems: (id: string, continuationToken?: string, options?: ListQueryOptions) =>
     api.get<{ items: unknown[]; continuationToken?: string; hasMore: boolean }>(
-      `/venues/${id}/items`, { params: { continuationToken } }
+      `/venues/${id}/items`, {
+        params: {
+          continuationToken,
+          search: options?.search?.trim() || undefined,
+          pageSize: normalizePageSize(options?.pageSize),
+        },
+      }
     ),
 
   getPhotoUploadUrl: (id: string, fileName: string) =>

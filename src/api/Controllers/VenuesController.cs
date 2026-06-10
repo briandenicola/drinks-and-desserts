@@ -18,6 +18,8 @@ public class VenuesController : ControllerBase
     private readonly Channel<VenueUrlWorkItem> _venueUrlChannel;
     private readonly ILogger<VenuesController> _logger;
     private const string ContainerName = "venues";
+    private const int DefaultPageSize = 25;
+    private const int MaxPageSize = 100;
 
     private static readonly HashSet<string> AllowedImageExtensions =
         [".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif"];
@@ -38,13 +40,37 @@ public class VenuesController : ControllerBase
         [FromQuery] string? continuationToken,
         [FromQuery] string? sortBy,
         [FromQuery] string? sortDirection,
-        [FromQuery] string? groupBy)
+        [FromQuery] string? groupBy,
+        [FromQuery] string? search,
+        [FromQuery] int? pageSize)
     {
         var userId = GetUserId();
+        var normalizedSearch = NormalizeSearch(search);
+        var clampedPageSize = ClampPageSize(pageSize);
 
         System.Linq.Expressions.Expression<Func<Venue, bool>>? predicate = null;
-        if (!string.IsNullOrEmpty(type))
+        if (!string.IsNullOrEmpty(type) && normalizedSearch != null)
+        {
+            predicate = v => v.Type == type && (
+                v.Name.ToLower().Contains(normalizedSearch) ||
+                v.Type.ToLower().Contains(normalizedSearch) ||
+                (v.Address != null && v.Address.ToLower().Contains(normalizedSearch)) ||
+                (v.Website != null && v.Website.ToLower().Contains(normalizedSearch)) ||
+                v.Labels.Any(l => l.ToLower().Contains(normalizedSearch)));
+        }
+        else if (!string.IsNullOrEmpty(type))
+        {
             predicate = v => v.Type == type;
+        }
+        else if (normalizedSearch != null)
+        {
+            predicate = v =>
+                v.Name.ToLower().Contains(normalizedSearch) ||
+                v.Type.ToLower().Contains(normalizedSearch) ||
+                (v.Address != null && v.Address.ToLower().Contains(normalizedSearch)) ||
+                (v.Website != null && v.Website.ToLower().Contains(normalizedSearch)) ||
+                v.Labels.Any(l => l.ToLower().Contains(normalizedSearch));
+        }
 
         var normalizedGroupBy = groupBy?.Trim().ToLowerInvariant();
         if (!string.IsNullOrEmpty(normalizedGroupBy) && normalizedGroupBy is not ("type" or "status"))
@@ -79,12 +105,13 @@ public class VenuesController : ControllerBase
 
         var (venues, nextToken) = await _cosmosDb.QueryAsync(
             ContainerName, userId, continuationToken,
+            maxItems: clampedPageSize,
             predicate: predicate,
             orderBy: orderByExpr,
             orderDescending: descending);
 
-        _logger.LogInformation("Listed {Count} venues for user {UserId} (sortBy={SortBy}, direction={SortDirection}, groupBy={GroupBy})",
-            venues.Count, userId, effectiveSortBy, sortDirection, normalizedGroupBy);
+        _logger.LogInformation("Listed {Count} venues for user {UserId} (sortBy={SortBy}, direction={SortDirection}, groupBy={GroupBy}, search={Search})",
+            venues.Count, userId, effectiveSortBy, sortDirection, normalizedGroupBy, normalizedSearch);
         return Ok(new PagedResponse<Venue>
         {
             Items = venues,
@@ -92,6 +119,11 @@ public class VenuesController : ControllerBase
             HasMore = nextToken != null
         });
     }
+
+    private static int ClampPageSize(int? pageSize) => Math.Clamp(pageSize ?? DefaultPageSize, 1, MaxPageSize);
+
+    private static string? NormalizeSearch(string? search) =>
+        string.IsNullOrWhiteSpace(search) ? null : search.Trim().ToLowerInvariant();
 
     /// <summary>
     /// GET /api/venues/grouped?groupBy={field} - Returns all venues grouped by specified field.
@@ -283,15 +315,31 @@ public class VenuesController : ControllerBase
     }
 
     [HttpGet("{id}/items")]
-    public async Task<ActionResult<PagedResponse<Item>>> GetVenueItems(string id, [FromQuery] string? continuationToken)
+    public async Task<ActionResult<PagedResponse<Item>>> GetVenueItems(
+        string id,
+        [FromQuery] string? continuationToken,
+        [FromQuery] string? search,
+        [FromQuery] int? pageSize)
     {
         var userId = GetUserId();
+        var normalizedSearch = NormalizeSearch(search);
+        var clampedPageSize = ClampPageSize(pageSize);
         var venue = await _cosmosDb.GetAsync<Venue>(ContainerName, id, userId);
         if (venue == null)
             return NotFound();
 
+        System.Linq.Expressions.Expression<Func<Item, bool>> predicate = normalizedSearch != null
+            ? i => i.Venue != null && i.Venue.VenueId == id && (
+                i.Name.ToLower().Contains(normalizedSearch) ||
+                i.Type.ToLower().Contains(normalizedSearch) ||
+                (i.Brand != null && i.Brand.ToLower().Contains(normalizedSearch)) ||
+                (i.Category != null && i.Category.ToLower().Contains(normalizedSearch)) ||
+                i.Tags.Any(t => t.ToLower().Contains(normalizedSearch)))
+            : i => i.Venue != null && i.Venue.VenueId == id;
+
         var (items, nextToken) = await _cosmosDb.QueryAsync<Item>("items", userId, continuationToken,
-            predicate: i => i.Venue != null && i.Venue.VenueId == id);
+            maxItems: clampedPageSize,
+            predicate: predicate);
 
         return Ok(new PagedResponse<Item>
         {

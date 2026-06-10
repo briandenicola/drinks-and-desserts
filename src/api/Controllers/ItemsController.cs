@@ -18,6 +18,8 @@ public class ItemsController : ControllerBase
     private readonly Channel<WishlistUrlWorkItem> _wishlistUrlQueue;
     private readonly ILogger<ItemsController> _logger;
     private const string ContainerName = "items";
+    private const int DefaultPageSize = 25;
+    private const int MaxPageSize = 100;
 
     public ItemsController(ICosmosDbService cosmosDb, IBlobStorageService blobStorage, Channel<WishlistUrlWorkItem> wishlistUrlQueue, ILogger<ItemsController> logger)
     {
@@ -39,23 +41,64 @@ public class ItemsController : ControllerBase
         [FromQuery] string? continuationToken,
         [FromQuery] string? sortBy,
         [FromQuery] string? sortDirection,
-        [FromQuery] string? groupBy)
+        [FromQuery] string? groupBy,
+        [FromQuery] string? search,
+        [FromQuery] int? pageSize)
     {
         using var activity = Diagnostics.General.StartActivity("ItemsList");
         var userId = GetUserId();
+        var normalizedSearch = NormalizeSearch(search);
+        var clampedPageSize = ClampPageSize(pageSize);
         activity?.SetTag("user.id", userId);
         activity?.SetTag("item.type", type);
         activity?.SetTag("item.status", status);
-        _logger.LogDebug("Listing items for user {UserId}, typeFilter={TypeFilter}, statusFilter={StatusFilter}, sortBy={SortBy}, sortDirection={SortDirection}, groupBy={GroupBy}",
-            userId, type, status, sortBy, sortDirection, groupBy);
+        activity?.SetTag("item.search", normalizedSearch);
+        _logger.LogDebug("Listing items for user {UserId}, typeFilter={TypeFilter}, statusFilter={StatusFilter}, sortBy={SortBy}, sortDirection={SortDirection}, groupBy={GroupBy}, search={Search}, pageSize={PageSize}",
+            userId, type, status, sortBy, sortDirection, groupBy, normalizedSearch, clampedPageSize);
 
         System.Linq.Expressions.Expression<Func<Item, bool>>? predicate = null;
 
-        if (status == ItemStatus.Wishlist)
+        if (status == ItemStatus.Wishlist && normalizedSearch != null)
+        {
+            predicate = !string.IsNullOrEmpty(type)
+                ? i => i.Status == ItemStatus.Wishlist && i.Type == type && (
+                    i.Name.ToLower().Contains(normalizedSearch) ||
+                    i.Type.ToLower().Contains(normalizedSearch) ||
+                    (i.Brand != null && i.Brand.ToLower().Contains(normalizedSearch)) ||
+                    (i.Category != null && i.Category.ToLower().Contains(normalizedSearch)) ||
+                    (i.Venue != null && i.Venue.Name.ToLower().Contains(normalizedSearch)) ||
+                    i.Tags.Any(t => t.ToLower().Contains(normalizedSearch)))
+                : i => i.Status == ItemStatus.Wishlist && (
+                    i.Name.ToLower().Contains(normalizedSearch) ||
+                    i.Type.ToLower().Contains(normalizedSearch) ||
+                    (i.Brand != null && i.Brand.ToLower().Contains(normalizedSearch)) ||
+                    (i.Category != null && i.Category.ToLower().Contains(normalizedSearch)) ||
+                    (i.Venue != null && i.Venue.Name.ToLower().Contains(normalizedSearch)) ||
+                    i.Tags.Any(t => t.ToLower().Contains(normalizedSearch)));
+        }
+        else if (status == ItemStatus.Wishlist)
         {
             predicate = !string.IsNullOrEmpty(type)
                 ? i => i.Status == ItemStatus.Wishlist && i.Type == type
                 : i => i.Status == ItemStatus.Wishlist;
+        }
+        else if (normalizedSearch != null)
+        {
+            predicate = !string.IsNullOrEmpty(type)
+                ? i => i.Status != ItemStatus.Wishlist && i.Type == type && (
+                    i.Name.ToLower().Contains(normalizedSearch) ||
+                    i.Type.ToLower().Contains(normalizedSearch) ||
+                    (i.Brand != null && i.Brand.ToLower().Contains(normalizedSearch)) ||
+                    (i.Category != null && i.Category.ToLower().Contains(normalizedSearch)) ||
+                    (i.Venue != null && i.Venue.Name.ToLower().Contains(normalizedSearch)) ||
+                    i.Tags.Any(t => t.ToLower().Contains(normalizedSearch)))
+                : i => i.Status != ItemStatus.Wishlist && (
+                    i.Name.ToLower().Contains(normalizedSearch) ||
+                    i.Type.ToLower().Contains(normalizedSearch) ||
+                    (i.Brand != null && i.Brand.ToLower().Contains(normalizedSearch)) ||
+                    (i.Category != null && i.Category.ToLower().Contains(normalizedSearch)) ||
+                    (i.Venue != null && i.Venue.Name.ToLower().Contains(normalizedSearch)) ||
+                    i.Tags.Any(t => t.ToLower().Contains(normalizedSearch)));
         }
         else
         {
@@ -99,13 +142,14 @@ public class ItemsController : ControllerBase
 
         var (items, nextToken) = await _cosmosDb.QueryAsync(
             ContainerName, userId, continuationToken,
+            maxItems: clampedPageSize,
             predicate: predicate,
             orderBy: orderByExpr,
             orderDescending: descending);
 
         activity?.SetTag("items.count", items.Count);
-        _logger.LogInformation("Listed {Count} items for user {UserId} (type={TypeFilter}, status={StatusFilter}, sortBy={SortBy}, direction={SortDirection}, groupBy={GroupBy}), hasMore={HasMore}",
-            items.Count, userId, type, status, effectiveSortBy, sortDirection, normalizedGroupBy, nextToken != null);
+        _logger.LogInformation("Listed {Count} items for user {UserId} (type={TypeFilter}, status={StatusFilter}, sortBy={SortBy}, direction={SortDirection}, groupBy={GroupBy}, search={Search}), hasMore={HasMore}",
+            items.Count, userId, type, status, effectiveSortBy, sortDirection, normalizedGroupBy, normalizedSearch, nextToken != null);
         return Ok(new PagedResponse<Item>
         {
             Items = items,
@@ -113,6 +157,11 @@ public class ItemsController : ControllerBase
             HasMore = nextToken != null
         });
     }
+
+    private static int ClampPageSize(int? pageSize) => Math.Clamp(pageSize ?? DefaultPageSize, 1, MaxPageSize);
+
+    private static string? NormalizeSearch(string? search) =>
+        string.IsNullOrWhiteSpace(search) ? null : search.Trim().ToLowerInvariant();
 
     /// <summary>
     /// GET /api/items/grouped?groupBy={field} - Returns all items grouped by specified field.

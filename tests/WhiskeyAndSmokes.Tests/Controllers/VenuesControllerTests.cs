@@ -74,6 +74,110 @@ public class VenuesControllerTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task ListVenues_WithSearch_FiltersBeforePaging()
+    {
+        _factory.CosmosDb.ClearSubstitute();
+
+        var allVenues = Enumerable.Range(1, 30)
+            .Select(i => new Venue { Id = $"filler-{i}", UserId = TestUserId, Name = $"Venue {i}", Type = VenueType.Bar })
+            .Append(new Venue { Id = "venue-1845", UserId = TestUserId, Name = "1845 Steakhouse", Type = VenueType.Restaurant })
+            .ToList();
+
+        _factory.CosmosDb.QueryAsync<Venue>(
+            "venues",
+            TestUserId,
+            Arg.Any<string?>(),
+            Arg.Any<int>(),
+            Arg.Any<Expression<Func<Venue, bool>>?>(),
+            Arg.Any<Expression<Func<Venue, object>>?>(),
+            Arg.Any<bool>())
+            .Returns(callInfo =>
+            {
+                var maxItems = callInfo.ArgAt<int>(3);
+                var predicate = callInfo.ArgAt<Expression<Func<Venue, bool>>?>(4);
+                var filtered = predicate == null ? allVenues : allVenues.Where(predicate.Compile()).ToList();
+                return (filtered.Take(maxItems).ToList(), (string?)null);
+            });
+
+        var response = await _client.GetAsync("/api/venues?search=1845&pageSize=5");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<PagedResponse<Venue>>();
+        body.Should().NotBeNull();
+        body!.Items.Should().ContainSingle().Which.Id.Should().Be("venue-1845");
+        await _factory.CosmosDb.Received(1).QueryAsync<Venue>(
+            "venues",
+            TestUserId,
+            Arg.Any<string?>(),
+            5,
+            Arg.Any<Expression<Func<Venue, bool>>?>(),
+            Arg.Any<Expression<Func<Venue, object>>?>(),
+            Arg.Any<bool>());
+    }
+
+    [Fact]
+    public async Task GetVenueItems_WithSearch_FiltersLinkedItemsBeforePaging()
+    {
+        _factory.CosmosDb.ClearSubstitute();
+
+        var venue = new Venue { Id = "v1", UserId = TestUserId, Name = "1845", Type = VenueType.Restaurant };
+        var allItems = Enumerable.Range(1, 30)
+            .Select(i => new Item
+            {
+                Id = $"filler-{i}",
+                UserId = TestUserId,
+                Name = $"Filler {i}",
+                Type = ItemType.Whiskey,
+                Status = ItemStatus.Reviewed,
+                Venue = new VenueInfo { VenueId = "v1", Name = "1845" }
+            })
+            .Append(new Item
+            {
+                Id = "steak-1",
+                UserId = TestUserId,
+                Name = "Steak Dinner",
+                Type = ItemType.Custom,
+                Status = ItemStatus.Reviewed,
+                Venue = new VenueInfo { VenueId = "v1", Name = "1845" }
+            })
+            .Append(new Item
+            {
+                Id = "other-steak",
+                UserId = TestUserId,
+                Name = "Steak Elsewhere",
+                Type = ItemType.Custom,
+                Status = ItemStatus.Reviewed,
+                Venue = new VenueInfo { VenueId = "other", Name = "Other Venue" }
+            })
+            .ToList();
+
+        _factory.CosmosDb.GetAsync<Venue>("venues", "v1", TestUserId)
+            .Returns(venue);
+        _factory.CosmosDb.QueryAsync<Item>(
+            "items",
+            TestUserId,
+            Arg.Any<string?>(),
+            Arg.Any<int>(),
+            Arg.Any<Expression<Func<Item, bool>>?>(),
+            Arg.Any<Expression<Func<Item, object>>?>(),
+            Arg.Any<bool>())
+            .Returns(callInfo =>
+            {
+                var maxItems = callInfo.ArgAt<int>(3);
+                var predicate = callInfo.ArgAt<Expression<Func<Item, bool>>?>(4);
+                var filtered = predicate == null ? allItems : allItems.Where(predicate.Compile()).ToList();
+                return (filtered.Take(maxItems).ToList(), (string?)null);
+            });
+
+        var response = await _client.GetAsync("/api/venues/v1/items?search=steak&pageSize=5");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<PagedResponse<Item>>();
+        body.Should().NotBeNull();
+        body!.Items.Should().ContainSingle().Which.Id.Should().Be("steak-1");
+    }
+
+    [Fact]
     public async Task GetVenue_ReturnsOk()
     {
         _factory.CosmosDb.ClearSubstitute();
