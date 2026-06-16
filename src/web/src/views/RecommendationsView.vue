@@ -1,26 +1,30 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { onMounted } from 'vue'
 import { useCamera } from '../composables/useCamera'
 import { useBreakpoint } from '../composables/useBreakpoint'
-import { capturesApi } from '../services/captures'
-import { recommendationsApi, type RecommendedItem, type UserRatingProfile } from '../services/recommendations'
-import { itemsApi } from '../services/items'
+import { useRecommendationsStore } from '../stores/recommendations'
+import { storeToRefs } from 'pinia'
 
 const { isDesktop } = useBreakpoint()
 const { photos, previews, addFromInput, removePhoto, clearPhotos } = useCamera()
+const store = useRecommendationsStore()
 
-const preferences = ref('')
-const isLoadingRecommendations = ref(false)
-const isLoadingProfile = ref(false)
-const isUploadingPhoto = ref(false)
-const isError = ref(false)
-const recommendations = ref<RecommendedItem[]>([])
-const reasoning = ref<string>('')
-const basedOnItems = ref<string[]>([])
-const extractedMenuItems = ref<string[]>([])
-const menuPhotoUrl = ref<string>('')
-const profileData = ref<UserRatingProfile | null>(null)
-const selectedTypes = ref<string[]>([])
+const {
+  preferences,
+  isLoadingRecommendations,
+  isLoadingProfile,
+  isUploadingPhoto,
+  isError,
+  recommendations,
+  reasoning,
+  basedOnItems,
+  extractedMenuItems,
+  profileData,
+  selectedTypes,
+  hasRecommendations,
+  savedItems,
+  savingItems,
+} = storeToRefs(store)
 
 const availableTypes = [
   'whiskey',
@@ -38,130 +42,21 @@ const availableTypes = [
   'pour-over',
 ]
 
-const hasRecommendations = computed(() => recommendations.value.length > 0)
-
-async function loadUserProfile() {
-  isLoadingProfile.value = true
-  try {
-    const { data } = await recommendationsApi.getUserProfile()
-    profileData.value = data
-  } catch (error) {
-    console.error('Failed to load user profile:', error)
-  } finally {
-    isLoadingProfile.value = false
-  }
+async function handleGetRecommendations() {
+  const photo = photos.value.length > 0 ? photos.value[0] : undefined
+  await store.getRecommendations(photo)
 }
 
-async function uploadMenuPhoto(): Promise<string> {
-  if (photos.value.length === 0) return menuPhotoUrl.value
-
-  isUploadingPhoto.value = true
-  try {
-    const photo = photos.value[0]
-    const { data } = await capturesApi.getUploadUrl(photo.name)
-
-    const headers: Record<string, string> = {
-      'Content-Type': photo.type,
-    }
-
-    if (data.uploadUrl.includes('blob.core.windows.net') || data.uploadUrl.includes('devstoreaccount')) {
-      headers['x-ms-blob-type'] = 'BlockBlob'
-    } else {
-      const token = localStorage.getItem('whiskey_and_smokes_token')
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`
-      }
-    }
-
-    await fetch(data.uploadUrl, {
-      method: 'PUT',
-      headers,
-      body: photo,
-    })
-
-    menuPhotoUrl.value = data.blobUrl
-    return data.blobUrl
-  } finally {
-    isUploadingPhoto.value = false
-  }
-}
-
-async function getRecommendations() {
-  isLoadingRecommendations.value = true
-  isError.value = false
-  try {
-    let photoUrl = menuPhotoUrl.value
-
-    if (photos.value.length > 0) {
-      photoUrl = await uploadMenuPhoto()
-    }
-
-    const { data } = await recommendationsApi.getRecommendations({
-      preferences: preferences.value || undefined,
-      menuPhoto: photoUrl || undefined,
-      itemTypes: selectedTypes.value.length > 0 ? selectedTypes.value : undefined,
-      limit: 5,
-    })
-
-    recommendations.value = data.recommendations
-    reasoning.value = data.reasoning || ''
-    basedOnItems.value = data.basedOnItems
-    extractedMenuItems.value = data.extractedMenuItems || []
-  } catch (error: unknown) {
-    console.error('Failed to get recommendations:', error)
-    const apiError = error as { response?: { data?: { error?: string } } }
-    reasoning.value = apiError.response?.data?.error || 'Failed to generate recommendations'
-    isError.value = true
-  } finally {
-    isLoadingRecommendations.value = false
-  }
-}
-
-function toggleType(type: string) {
-  const index = selectedTypes.value.indexOf(type)
-  if (index > -1) {
-    selectedTypes.value.splice(index, 1)
-  } else {
-    selectedTypes.value.push(type)
-  }
-}
-
-function reset() {
+function handleReset() {
   clearPhotos()
-  menuPhotoUrl.value = ''
-  recommendations.value = []
-  reasoning.value = ''
-  basedOnItems.value = []
-  extractedMenuItems.value = []
-  preferences.value = ''
-  selectedTypes.value = []
-  isError.value = false
-  savedItems.value.clear()
+  store.reset()
 }
 
-const savedItems = ref<Set<number>>(new Set())
-const savingItems = ref<Set<number>>(new Set())
-
-async function saveToWishlist(rec: RecommendedItem, index: number) {
-  if (savedItems.value.has(index) || savingItems.value.has(index)) return
-
-  savingItems.value.add(index)
-  try {
-    await itemsApi.createWishlistItem({
-      name: rec.name,
-      type: rec.type,
-      brand: rec.brand || undefined,
-      notes: rec.reason,
-    })
-    savedItems.value.add(index)
-  } catch (error) {
-    console.error('Failed to save to wishlist:', error)
-  } finally {
-    savingItems.value.delete(index)
+onMounted(() => {
+  if (!store.profileData) {
+    store.loadUserProfile()
   }
-}
-
-loadUserProfile()
+})
 </script>
 
 <template>
@@ -267,7 +162,7 @@ loadUserProfile()
         <button
           v-for="type in availableTypes"
           :key="type"
-          @click="toggleType(type)"
+          @click="store.toggleType(type)"
           :class="[
             'px-3 py-1 rounded-full text-xs border transition-colors',
             selectedTypes.includes(type)
@@ -282,7 +177,7 @@ loadUserProfile()
 
     <!-- Get Recommendations Button -->
     <button
-      @click="getRecommendations"
+      @click="handleGetRecommendations"
       :disabled="isLoadingRecommendations || isUploadingPhoto || (profileData !== null && profileData.totalRatedItems === 0)"
       class="w-full bg-[#1e407c] hover:bg-[#2d5596] text-white font-medium py-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors mb-6"
     >
@@ -334,7 +229,7 @@ loadUserProfile()
             <button
               v-if="!savedItems.has(index)"
               :disabled="savingItems.has(index)"
-              @click="saveToWishlist(rec, index)"
+              @click="store.saveToWishlist(rec, index)"
               class="text-xs bg-amber-700/50 hover:bg-amber-700/80 text-amber-200 px-2 py-1 rounded transition-colors disabled:opacity-50"
             >
               <span v-if="savingItems.has(index)">Saving...</span>
@@ -349,7 +244,7 @@ loadUserProfile()
       </div>
 
       <button
-        @click="reset"
+        @click="handleReset"
         class="w-full bg-[#0a2a52] hover:bg-[#1e407c] border border-[#1e407c]/50 text-[#96BEE6] font-medium py-3 rounded-xl transition-colors"
       >
         Start Over
