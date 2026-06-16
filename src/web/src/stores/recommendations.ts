@@ -43,7 +43,8 @@ export const useRecommendationsStore = defineStore('recommendations', () => {
         'Content-Type': photo.type,
       }
 
-      if (data.uploadUrl.includes('blob.core.windows.net') || data.uploadUrl.includes('devstoreaccount')) {
+      const uploadHost = new URL(data.uploadUrl).hostname
+      if (uploadHost.endsWith('.blob.core.windows.net') || uploadHost.includes('devstoreaccount')) {
         headers['x-ms-blob-type'] = 'BlockBlob'
       } else {
         const token = localStorage.getItem('whiskey_and_smokes_token')
@@ -153,7 +154,6 @@ export const useRecommendationsStore = defineStore('recommendations', () => {
     savingItems,
     hasRecommendations,
     loadUserProfile,
-    uploadMenuPhoto,
     getRecommendations,
     toggleType,
     reset,
