@@ -32,6 +32,11 @@ public class RecommendationService : IRecommendationService
 
     private static readonly TimeSpan AiTimeout = TimeSpan.FromSeconds(90);
 
+    private static string NormalizeItemType(string? type)
+    {
+        return string.IsNullOrWhiteSpace(type) ? ItemType.Custom : type;
+    }
+
     public async Task<RecommendationResponse> GetRecommendationsAsync(string userId, RecommendationRequest request, CancellationToken cancellationToken = default)
     {
         using var activity = Diagnostics.General.StartActivity("GetRecommendations");
@@ -122,7 +127,7 @@ public class RecommendationService : IRecommendationService
 
         // Build type preferences
         var typePreferences = ratedItems
-            .GroupBy(i => i.Type)
+            .GroupBy(i => NormalizeItemType(i.Type))
             .ToDictionary(
                 g => g.Key,
                 g => new TypePreference
@@ -143,7 +148,7 @@ public class RecommendationService : IRecommendationService
             {
                 ItemId = i.Id,
                 Name = i.Name,
-                Type = i.Type,
+                Type = NormalizeItemType(i.Type),
                 Brand = i.Brand,
                 Category = i.Category,
                 Rating = i.UserRating!.Value,
