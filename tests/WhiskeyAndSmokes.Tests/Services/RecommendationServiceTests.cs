@@ -21,7 +21,14 @@ public class RecommendationServiceTests
         var options = Options.Create(new AiFoundryOptions());
 
         cosmosDb
-            .QueryAsync<Item>(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<int>(), Arg.Any<System.Linq.Expressions.Expression<Func<Item, bool>>?>(), Arg.Any<System.Linq.Expressions.Expression<Func<Item, object>>?>(), Arg.Any<bool>())
+            .QueryAsync<Item>(
+                "items",
+                userId,
+                Arg.Any<string?>(),
+                Arg.Any<int>(),
+                Arg.Any<System.Linq.Expressions.Expression<Func<Item, bool>>?>(),
+                Arg.Any<System.Linq.Expressions.Expression<Func<Item, object>>?>(),
+                Arg.Any<bool>())
             .Returns((new List<Item>
             {
                 new()
