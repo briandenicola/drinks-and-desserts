@@ -120,12 +120,9 @@ public class RecommendationService : IRecommendationService
         // Calculate average rating
         var avgRating = ratedItems.Average(i => i.UserRating!.Value);
 
-        static string NormalizeItemType(string? type) =>
-            string.IsNullOrWhiteSpace(type) ? ItemType.Custom : type;
-
         // Build type preferences
         var typePreferences = ratedItems
-            .GroupBy(i => NormalizeItemType(i.Type))
+            .GroupBy(i => i.Type)
             .ToDictionary(
                 g => g.Key,
                 g => new TypePreference
@@ -146,7 +143,7 @@ public class RecommendationService : IRecommendationService
             {
                 ItemId = i.Id,
                 Name = i.Name,
-                Type = NormalizeItemType(i.Type),
+                Type = i.Type,
                 Brand = i.Brand,
                 Category = i.Category,
                 Rating = i.UserRating!.Value,
