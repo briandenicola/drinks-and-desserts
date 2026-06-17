@@ -33,3 +33,32 @@ Implemented server-side ordering for paginated list endpoints to fix issue where
 - Expression-based ordering in repository layer keeps business logic out of data access
 - Invalid sortBy fields return 400 BadRequest with allowed values
 - OpenTelemetry spans log ordering metadata for observability
+
+### Null Item Type Crash Fix (2026-06-17)
+
+Fixed ArgumentNullException in recommendation service when legacy items have null/blank `Type` values.
+
+**Root cause:**
+- In `RecommendationService.BuildUserProfileAsync`, the code grouped items by Type and used `ToDictionary(g => g.Key, ...)`. Legacy items with null Type caused Dictionary key constraints to throw ArgumentNullException, resulting in 500 errors and "Failed to generate recommendations" message.
+
+**Fix approach:**
+- Added `NormalizeItemType(string? type)` helper that converts null/whitespace Type to `ItemType.Custom`
+- Applied normalization in two places:
+  1. Before GroupBy: `.GroupBy(i => NormalizeItemType(i.Type))`
+  2. In RatedItemSummary: `Type = NormalizeItemType(i.Type)`
+- This ensures consistency: null Types are grouped under Custom and surfaced as Custom in recommendations
+
+**Key files:**
+- `src/api/Services/RecommendationService.cs` - Added NormalizeItemType helper, applied in BuildUserProfileAsync
+- `tests/WhiskeyAndSmokes.Tests/Services/RecommendationServiceTests.cs` - Added 4 targeted regression tests covering null/blank Type scenarios
+
+**Test coverage:**
+- `BuildUserProfile_WithNullItemType_NormalizesToCustom` - Mixed null/blank/normal types
+- `BuildUserProfile_WithOnlyNullTypes_DoesNotThrow` - All null types edge case
+- `BuildUserProfile_WithNoRatedItems_ReturnsEmptyProfile` - Baseline unrated scenario
+- `BuildUserProfile_WithMixedTypes_GroupsCorrectly` - Normal grouping + null type
+
+**Test command:**
+```bash
+dotnet test src/WhiskeyAndSmokes.sln --filter "FullyQualifiedName~RecommendationServiceTests"
+```
