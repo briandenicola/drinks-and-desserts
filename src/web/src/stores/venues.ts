@@ -6,28 +6,45 @@ export const useVenuesStore = defineStore('venues', () => {
   const venues = ref<Venue[]>([])
   const isLoading = ref(false)
   const continuationToken = ref<string | undefined>()
+  const currentType = ref<string | undefined>()
   const currentSortBy = ref<string | undefined>()
   const currentSortDirection = ref<'asc' | 'desc'>('desc')
   const currentGroupBy = ref<string | undefined>()
+  const hasInitialLoad = ref(false)
+  const scrollPosition = ref(0)
+
+  const activeFilter = ref<string | undefined>(undefined)
+  const searchQuery = ref('')
+  const viewSort = ref<string | undefined>(undefined)
+  const viewSortDirection = ref<'asc' | 'desc'>('desc')
+  const viewGroupBy = ref<string | undefined>(undefined)
 
   async function loadVenues(
     type?: string,
     reset = false,
     sortBy?: string,
     sortDirection?: 'asc' | 'desc',
-    groupBy?: string
+    groupBy?: string,
+    skipIfLoaded = false
   ) {
-    // Reset pagination if sort/group criteria changed
-    const sortChanged = sortBy !== currentSortBy.value ||
-                       sortDirection !== currentSortDirection.value ||
-                       groupBy !== currentGroupBy.value
-    
-    if (reset || sortChanged) {
+    const criteriaChanged = type !== currentType.value ||
+                           sortBy !== currentSortBy.value ||
+                           sortDirection !== currentSortDirection.value ||
+                           groupBy !== currentGroupBy.value
+
+    if (skipIfLoaded && hasInitialLoad.value && venues.value.length > 0 && !criteriaChanged) {
+      return
+    }
+
+    if (reset || criteriaChanged) {
       venues.value = []
       continuationToken.value = undefined
+      currentType.value = type
       currentSortBy.value = sortBy
       currentSortDirection.value = sortDirection ?? 'desc'
       currentGroupBy.value = groupBy
+      hasInitialLoad.value = false
+      scrollPosition.value = 0
     }
     
     isLoading.value = true
@@ -39,12 +56,13 @@ export const useVenuesStore = defineStore('venues', () => {
         currentSortDirection.value,
         currentGroupBy.value
       )
-      if (reset || sortChanged) {
+      if (reset || criteriaChanged) {
         venues.value = data.items
       } else {
         venues.value.push(...data.items)
       }
       continuationToken.value = data.continuationToken
+      hasInitialLoad.value = true
     } finally {
       isLoading.value = false
     }
@@ -78,13 +96,21 @@ export const useVenuesStore = defineStore('venues', () => {
     venues,
     isLoading,
     continuationToken,
+    currentType,
     currentSortBy,
     currentSortDirection,
     currentGroupBy,
+    hasInitialLoad,
+    scrollPosition,
     loadVenues,
     createVenue,
     updateVenue,
     deleteVenue,
     createVenueFromUrl,
+    activeFilter,
+    searchQuery,
+    viewSort,
+    viewSortDirection,
+    viewGroupBy,
   }
 })

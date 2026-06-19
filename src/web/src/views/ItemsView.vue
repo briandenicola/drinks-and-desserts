@@ -3,6 +3,7 @@ import { ref, inject, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useItemsStore } from '../stores/items'
 import { useAuthStore } from '../stores/auth'
+import { usePwa } from '../composables/usePwa'
 import { RefreshKey } from '../composables/refreshKey'
 import { getErrorMessage } from '../services/errors'
 import { useVirtualizer } from '@tanstack/vue-virtual'
@@ -15,15 +16,34 @@ import DetailPanel from '../components/collection/DetailPanel.vue'
 import type { Item } from '../services/items'
 
 const { isDesktop } = useBreakpoint()
+const { isPwa } = usePwa()
 
 const router = useRouter()
 const itemsStore = useItemsStore()
 const auth = useAuthStore()
-const defaultFilter = auth.user?.preferences?.collectionFilter || undefined
-// Initialize store state from user preferences if not already set
-if (!itemsStore.activeFilter && defaultFilter) {
-  itemsStore.activeFilter = defaultFilter
+
+function getDefaultSortDirection(sort: string): 'asc' | 'desc' {
+  return sort === 'type' ? 'asc' : 'desc'
 }
+
+const defaultFilter = auth.user?.preferences?.collectionFilter || undefined
+const defaultSort = auth.user?.preferences?.collectionSort || 'rating'
+const defaultSortDirection = auth.user?.preferences?.collectionSortDirection || getDefaultSortDirection(defaultSort)
+
+if (isPwa.value) {
+  if (!itemsStore.viewSort) {
+    itemsStore.activeFilter = defaultFilter
+    itemsStore.viewSort = defaultSort
+    itemsStore.viewSortDirection = defaultSortDirection
+  }
+} else {
+  if (!itemsStore.activeFilter && defaultFilter) itemsStore.activeFilter = defaultFilter
+  itemsStore.viewSort = defaultSort
+  itemsStore.viewSortDirection = defaultSortDirection
+  itemsStore.viewGroupBy = undefined
+  itemsStore.searchQuery = ''
+}
+
 const activeFilter = computed({
   get: () => itemsStore.activeFilter,
   set: (v) => { itemsStore.activeFilter = v }
@@ -32,20 +52,28 @@ const activeTab = computed({
   get: () => itemsStore.activeTab,
   set: (v) => { itemsStore.activeTab = v }
 })
-function getDefaultSortDirection(sort: string): 'asc' | 'desc' {
-  return sort === 'type' ? 'asc' : 'desc'
-}
-const activeSort = ref(auth.user?.preferences?.collectionSort || 'rating')
-const activeSortDirection = ref<'asc' | 'desc'>(
-  auth.user?.preferences?.collectionSortDirection || getDefaultSortDirection(activeSort.value)
-)
-const activeGroupBy = ref<string | undefined>(undefined)
+const activeSort = computed({
+  get: () => itemsStore.viewSort || 'rating',
+  set: (v) => { itemsStore.viewSort = v }
+})
+const activeSortDirection = computed({
+  get: () => itemsStore.viewSortDirection,
+  set: (v) => { itemsStore.viewSortDirection = v }
+})
+const activeGroupBy = computed({
+  get: () => itemsStore.viewGroupBy,
+  set: (v) => { itemsStore.viewGroupBy = v }
+})
+const searchQuery = computed({
+  get: () => itemsStore.searchQuery,
+  set: (v) => { itemsStore.searchQuery = v }
+})
+
 const registerRefresh = inject(RefreshKey)
 
 // Wishlist add form
 const showAddForm = ref(false)
 const showActionMenu = ref(false)
-const searchQuery = ref('')
 const newName = ref('')
 const newType = ref('whiskey')
 const newBrand = ref('')
@@ -159,6 +187,7 @@ function setFilter(value?: string) {
 
 function switchTab(tab: 'collection' | 'wishlist') {
   activeTab.value = tab
+  const defaultFilter = auth.user?.preferences?.collectionFilter || undefined
   activeFilter.value = defaultFilter
   showActionMenu.value = false
   if (tab === 'wishlist') {
@@ -311,15 +340,38 @@ function closeActionMenu(e: MouseEvent) {
 }
 
 onMounted(() => {
+  // In PWA mode, skip load if already initialized (preserves state across navigation)
+  const skipIfLoaded = isPwa.value
   if (activeTab.value === 'wishlist') {
-    itemsStore.loadWishlist(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
+    itemsStore.loadWishlist(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value, skipIfLoaded)
   } else {
-    itemsStore.loadItems(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
+    itemsStore.loadItems(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value, skipIfLoaded)
   }
+
+  // Restore scroll position in PWA mode
+  if (skipIfLoaded) {
+    requestAnimationFrame(() => {
+      const scrollPos = activeTab.value === 'wishlist'
+        ? itemsStore.wishlistScrollPosition
+        : itemsStore.scrollPosition
+      virtualizer.value.scrollToOffset(scrollPos, { behavior: 'auto' })
+    })
+  }
+
   document.addEventListener('click', closeActionMenu)
 })
 
 onUnmounted(() => {
+  // Save scroll position in PWA mode before unmount
+  if (isPwa.value) {
+    const currentScrollPos = virtualizer.value.scrollOffset ?? 0
+    if (activeTab.value === 'wishlist') {
+      itemsStore.wishlistScrollPosition = currentScrollPos
+    } else {
+      itemsStore.scrollPosition = currentScrollPos
+    }
+  }
+
   document.removeEventListener('click', closeActionMenu)
 })
 

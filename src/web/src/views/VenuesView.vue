@@ -3,6 +3,7 @@ import { ref, inject, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useVenuesStore } from '../stores/venues'
 import { useAuthStore } from '../stores/auth'
+import { usePwa } from '../composables/usePwa'
 import { RefreshKey } from '../composables/refreshKey'
 import { useBreakpoint } from '../composables/useBreakpoint'
 import { useVirtualizer } from '@tanstack/vue-virtual'
@@ -15,19 +16,53 @@ const venuesStore = useVenuesStore()
 const auth = useAuthStore()
 const registerRefresh = inject(RefreshKey)
 const { isDesktop } = useBreakpoint()
+const { isPwa } = usePwa()
 const leaderboardSort = ref<'rating' | 'items'>('rating')
+
 function getDefaultSortDirection(sort: string): 'asc' | 'desc' {
   return sort === 'type' ? 'asc' : 'desc'
 }
-const activeSort = ref(auth.user?.preferences?.venueSort || 'rating')
-const activeSortDirection = ref<'asc' | 'desc'>(
-  auth.user?.preferences?.venueSortDirection || getDefaultSortDirection(activeSort.value)
-)
-const activeGroupBy = ref<string | undefined>(undefined)
+
 const defaultFilter = auth.user?.preferences?.venueFilter || undefined
+const defaultSort = auth.user?.preferences?.venueSort || 'rating'
+const defaultSortDirection = auth.user?.preferences?.venueSortDirection || getDefaultSortDirection(defaultSort)
+
+if (isPwa.value) {
+  if (!venuesStore.viewSort) {
+    venuesStore.activeFilter = defaultFilter
+    venuesStore.viewSort = defaultSort
+    venuesStore.viewSortDirection = defaultSortDirection
+  }
+} else {
+  venuesStore.activeFilter = defaultFilter
+  venuesStore.viewSort = defaultSort
+  venuesStore.viewSortDirection = defaultSortDirection
+  venuesStore.viewGroupBy = undefined
+  venuesStore.searchQuery = ''
+}
+
+const activeSort = computed({
+  get: () => venuesStore.viewSort || 'rating',
+  set: (v) => { venuesStore.viewSort = v }
+})
+const activeSortDirection = computed({
+  get: () => venuesStore.viewSortDirection,
+  set: (v) => { venuesStore.viewSortDirection = v }
+})
+const activeGroupBy = computed({
+  get: () => venuesStore.viewGroupBy,
+  set: (v) => { venuesStore.viewGroupBy = v }
+})
+const activeFilter = computed({
+  get: () => venuesStore.activeFilter,
+  set: (v) => { venuesStore.activeFilter = v }
+})
+const searchQuery = computed({
+  get: () => venuesStore.searchQuery,
+  set: (v) => { venuesStore.searchQuery = v }
+})
+
 const showActionMenu = ref(false)
-const searchQuery = ref('')
-const activeFilter = ref<string | undefined>(defaultFilter)
 
 const showAddForm = ref(false)
 const addMode = ref<'manual' | 'url'>('manual')
@@ -66,11 +101,26 @@ registerRefresh?.(async () => {
 })
 
 onMounted(async () => {
-  await venuesStore.loadVenues(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
+  // In PWA mode, skip load if already initialized (preserves state across navigation)
+  const skipIfLoaded = isPwa.value
+  await venuesStore.loadVenues(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value, skipIfLoaded)
+
+  // Restore scroll position in PWA mode
+  if (skipIfLoaded && venuesStore.hasInitialLoad) {
+    requestAnimationFrame(() => {
+      virtualizer.value.scrollToOffset(venuesStore.scrollPosition, { behavior: 'auto' })
+    })
+  }
+
   document.addEventListener('click', closeActionMenu)
 })
 
 onUnmounted(() => {
+  // Save scroll position in PWA mode before unmount
+  if (isPwa.value) {
+    venuesStore.scrollPosition = virtualizer.value.scrollOffset ?? 0
+  }
+
   document.removeEventListener('click', closeActionMenu)
 })
 
