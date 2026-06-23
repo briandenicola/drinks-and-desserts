@@ -2,18 +2,30 @@
 import type { Item } from '../../services/items'
 import StarRating from '../common/StarRating.vue'
 
-defineProps<{
+const props = defineProps<{
   items: Item[]
   selectedId: string | null
+  isLoading: boolean
+  hasMore: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'select', id: string): void
+  (e: 'load-more'): void
 }>()
+
+function onScroll(e: Event) {
+  if (!props.hasMore || props.isLoading) return
+
+  const el = e.currentTarget as HTMLElement
+  if (el.scrollHeight - el.scrollTop - el.clientHeight < 400) {
+    emit('load-more')
+  }
+}
 </script>
 
 <template>
-  <div class="flex-1 overflow-y-auto p-6">
+  <div class="flex-1 overflow-y-auto p-6" @scroll="onScroll">
     <div
       v-if="!items.length"
       class="text-[#96BEE6]/70 text-center py-20"
@@ -56,6 +68,10 @@ const emit = defineEmits<{
           <StarRating :rating="item.userRating" size="sm" />
         </div>
       </button>
+    </div>
+
+    <div v-if="isLoading && items.length" class="text-[#96BEE6]/70 text-center py-6 text-sm">
+      Loading more...
     </div>
   </div>
 </template>

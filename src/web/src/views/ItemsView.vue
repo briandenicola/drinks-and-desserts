@@ -69,6 +69,11 @@ const searchQuery = computed({
   set: (v) => { itemsStore.searchQuery = v }
 })
 
+// Desktop collection state
+const selectedItemId = ref<string | null>(null)
+const desktopFilters = ref<CollectionFilters>({ category: defaultFilter, minRating: 0, labels: '' })
+const collectionTypeFilter = computed(() => isDesktop.value ? desktopFilters.value.category : activeFilter.value)
+
 const registerRefresh = inject(RefreshKey)
 
 // Wishlist add form
@@ -103,7 +108,7 @@ registerRefresh?.(async () => {
   if (activeTab.value === 'wishlist') {
     await itemsStore.loadWishlist(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
   } else {
-    await itemsStore.loadItems(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
+    await itemsStore.loadItems(collectionTypeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
   }
 })
 
@@ -148,7 +153,7 @@ async function setSort(value: string) {
   if (activeTab.value === 'wishlist') {
     await itemsStore.loadWishlist(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
   } else {
-    await itemsStore.loadItems(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
+    await itemsStore.loadItems(collectionTypeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
   }
   virtualizer.value.scrollToOffset(0)
 }
@@ -159,7 +164,7 @@ async function setSortDirection(value: 'asc' | 'desc') {
   if (activeTab.value === 'wishlist') {
     await itemsStore.loadWishlist(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
   } else {
-    await itemsStore.loadItems(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
+    await itemsStore.loadItems(collectionTypeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
   }
   virtualizer.value.scrollToOffset(0)
 }
@@ -170,7 +175,7 @@ async function setGroupBy(value?: string) {
   if (activeTab.value === 'wishlist') {
     await itemsStore.loadWishlist(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
   } else {
-    await itemsStore.loadItems(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
+    await itemsStore.loadItems(collectionTypeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
   }
   virtualizer.value.scrollToOffset(0)
 }
@@ -290,35 +295,40 @@ const virtualizer = useVirtualizer(computed(() => ({
 })))
 
 const isLoadingMore = ref(false)
+const hasMoreCurrentList = computed(() =>
+  activeTab.value === 'wishlist'
+    ? !!itemsStore.wishlistContinuationToken
+    : !!itemsStore.continuationToken
+)
 const lastVirtualIndex = computed(() => {
   const rows = virtualizer.value.getVirtualItems()
   return rows.length ? rows[rows.length - 1].index : -1
 })
 
-async function maybeLoadMore() {
-  if (isLoadingMore.value || lastVirtualIndex.value < 0) return
-  if (virtualItems.value.length - 1 - lastVirtualIndex.value > 3) return
-
+async function loadMoreCurrentList() {
   const isWishlist = activeTab.value === 'wishlist'
-  const hasMore = isWishlist
-    ? !!itemsStore.wishlistContinuationToken
-    : !!itemsStore.continuationToken
   const isLoading = isWishlist
     ? itemsStore.isLoadingWishlist
     : itemsStore.isLoading
 
-  if (!hasMore || isLoading) return
+  if (isLoadingMore.value || !hasMoreCurrentList.value || isLoading) return
 
   isLoadingMore.value = true
   try {
     if (isWishlist) {
       await itemsStore.loadWishlist(activeFilter.value, false, activeSort.value, activeSortDirection.value, activeGroupBy.value)
     } else {
-      await itemsStore.loadItems(activeFilter.value, false, activeSort.value, activeSortDirection.value, activeGroupBy.value)
+      await itemsStore.loadItems(collectionTypeFilter.value, false, activeSort.value, activeSortDirection.value, activeGroupBy.value)
     }
   } finally {
     isLoadingMore.value = false
   }
+}
+
+async function maybeLoadMore() {
+  if (lastVirtualIndex.value < 0) return
+  if (virtualItems.value.length - 1 - lastVirtualIndex.value > 3) return
+  await loadMoreCurrentList()
 }
 
 watch([activeTab, activeFilter, searchQuery], () => {
@@ -339,13 +349,19 @@ function closeActionMenu(e: MouseEvent) {
   }
 }
 
+watch(() => desktopFilters.value.category, async () => {
+  if (!isDesktop.value) return
+  selectedItemId.value = null
+  await itemsStore.loadItems(collectionTypeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value)
+})
+
 onMounted(() => {
   // In PWA mode, skip load if already initialized (preserves state across navigation)
   const skipIfLoaded = isPwa.value
   if (activeTab.value === 'wishlist') {
     itemsStore.loadWishlist(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value, skipIfLoaded)
   } else {
-    itemsStore.loadItems(activeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value, skipIfLoaded)
+    itemsStore.loadItems(collectionTypeFilter.value, true, activeSort.value, activeSortDirection.value, activeGroupBy.value, skipIfLoaded)
   }
 
   // Restore scroll position in PWA mode
@@ -374,10 +390,6 @@ onUnmounted(() => {
 
   document.removeEventListener('click', closeActionMenu)
 })
-
-// Desktop collection state
-const selectedItemId = ref<string | null>(null)
-const desktopFilters = ref<CollectionFilters>({ category: undefined, minRating: 0, labels: '' })
 
 const desktopFilteredItems = computed(() => {
   const f = desktopFilters.value
@@ -409,7 +421,10 @@ function navigateToItem(id: string) {
       <CollectionGrid
         :items="desktopFilteredItems"
         :selected-id="selectedItemId"
+        :is-loading="isLoadingList || isLoadingMore"
+        :has-more="hasMoreCurrentList"
         @select="selectItem"
+        @load-more="loadMoreCurrentList"
       />
       <DetailPanel
         v-if="selectedItemId"
