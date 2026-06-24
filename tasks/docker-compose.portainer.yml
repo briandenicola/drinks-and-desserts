@@ -9,10 +9,19 @@ services:
       - LiteDb__Path=/data/whiskey-and-smokes.db
       - LocalStorage__Path=/data/uploads
       - LocalStorage__BaseUrl=/uploads
+      - Jwt__Secret=${JWT_SECRET:?Set JWT_SECRET in stack.env (min 32 chars)}
       - Jwt__Issuer=whiskey-and-smokes
       - Jwt__Audience=whiskey-and-smokes
+      - Oidc__PublicOrigin=${OIDC_PUBLIC_ORIGIN:?Set OIDC_PUBLIC_ORIGIN to the public web origin}
+      - AiFoundry__ProjectEndpoint=${AI_FOUNDRY_PROJECT_ENDPOINT:-}
       - AiFoundry__Models__Vision=gpt-4o
       - AiFoundry__Models__Reasoning=gpt-5-mini
+      - AZURE_CLIENT_ID=${AZURE_CLIENT_ID:-}
+      - AZURE_TENANT_ID=${AZURE_TENANT_ID:-}
+      - AZURE_CLIENT_SECRET=${AZURE_CLIENT_SECRET:-}
+      - EntraId__TenantId=${ENTRA_TENANT_ID:-}
+      - EntraId__ClientId=${ENTRA_CLIENT_ID:-}
+      - EntraId__Audience=${ENTRA_AUDIENCE:-}
       - Cors__AllowedOrigins__0=http://localhost:${WEB_PORT:-8080}
       - Cors__AllowedOrigins__1=http://127.0.0.1:${WEB_PORT:-8080}
     env_file:

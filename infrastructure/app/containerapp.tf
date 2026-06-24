@@ -29,12 +29,37 @@ resource "azurerm_container_app" "api" {
     identity = azurerm_user_assigned_identity.app.id
   }
 
+  secret {
+    name  = "jwt-secret"
+    value = var.jwt_secret
+  }
+
   template {
     container {
       name   = "api"
       image  = local.api_image
       cpu    = 1
       memory = "2Gi"
+
+      env {
+        name        = "Jwt__Secret"
+        secret_name = "jwt-secret"
+      }
+
+      env {
+        name  = "Jwt__Issuer"
+        value = "whiskey-and-smokes"
+      }
+
+      env {
+        name  = "Jwt__Audience"
+        value = "whiskey-and-smokes"
+      }
+
+      env {
+        name  = "Oidc__PublicOrigin"
+        value = coalesce(var.oidc_public_origin, "https://${azurerm_static_web_app.web.default_host_name}")
+      }
 
       env {
         name  = "AiFoundry__ProjectEndpoint"
@@ -74,6 +99,21 @@ resource "azurerm_container_app" "api" {
       env {
         name  = "AZURE_CLIENT_ID"
         value = azurerm_user_assigned_identity.app.client_id
+      }
+
+      env {
+        name  = "EntraId__TenantId"
+        value = var.entra_tenant_id
+      }
+
+      env {
+        name  = "EntraId__ClientId"
+        value = var.entra_client_id
+      }
+
+      env {
+        name  = "EntraId__Audience"
+        value = var.entra_audience
       }
     }
 

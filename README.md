@@ -115,6 +115,7 @@ For detailed architectural explanation, see [Recommendation Engine Documentation
 | [Local Development](docs/local-development.md) | Prerequisites, setup, running, building, testing, troubleshooting |
 | [Local Docker Deployment](docs/local-docker-deployment.md) | Self-hosted deployment with Docker Compose and Portainer |
 | [Azure Deployment](docs/azure-deployment.md) | Terraform stacks, GitHub Actions, OIDC setup, secrets & variables |
+| [OIDC Sign-in Provider Setup](docs/oidc-setup.md) | Microsoft Entra ID and Pocket ID provider configuration |
 | [Recommendation Engine](docs/recommendation-engine.md) | Deep dive into recommendation architecture, AI usage, and why not Foundry agents |
 | [Screenshot Guide](docs/screenshot-guide.md) | Auto-capture app screenshots for documentation with Playwright |
 

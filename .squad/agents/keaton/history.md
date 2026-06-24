@@ -62,3 +62,38 @@ Fixed ArgumentNullException in recommendation service when legacy items have nul
 ```bash
 dotnet test src/WhiskeyAndSmokes.sln --filter "FullyQualifiedName~RecommendationServiceTests"
 ```
+
+### OIDC Provider Login Support (2026-06-24)
+
+Ported Aurearia-style OIDC backend behavior for Microsoft Entra ID, Pocket ID, and generic providers.
+
+**Key files:**
+- `src/api/Models/OidcModels.cs` - Provider, auth state, external identity, and OIDC DTO contracts
+- `src/api/Services/OidcService.cs` - Authorization-code + PKCE login/linking, discovery, ID token validation, provider admin operations
+- `src/api/Controllers/OidcController.cs` - Public login, protected linking, linked identity, and admin provider endpoints
+- `src/api/Program.cs` - OIDC service DI and Cosmos containers (`oidc-providers`, `oidc-auth-states`, `external-identities`)
+- `tests/WhiskeyAndSmokes.Tests/Services/OidcServiceTests.cs` - Regression coverage for provider defaults, PKCE state, redirect validation, public provider filtering, and unlink guard
+- `tests/WhiskeyAndSmokes.Tests/Controllers/OidcControllerTests.cs` - Security regression tests for host-header/forwarded-host origin validation
+
+**Design decisions:**
+- Preserved existing `/api/auth/entra` token-exchange behavior for compatibility; new OIDC providers use explicit account linking and do not silently merge or auto-provision users.
+- OIDC login requires a previously linked external identity. Verified-email matches with existing local users return conflict and require explicit linking from account settings.
+- Auth state stores only hashed state/nonce plus plaintext PKCE verifier, expires after 10 minutes, and is marked consumed before token exchange to prevent replay.
+- Unlinking is blocked when a user has no local password and no other linked OIDC identity.
+- **Security:** Configured `Oidc:PublicOrigin` is required for production; OIDC redirect URIs ignore X-Forwarded-Host/Proto headers and validate HTTPS.
+
+**Validation:**
+- `dotnet test src\WhiskeyAndSmokes.sln --no-restore` passed: 135/135 tests.
+
+**Team coordination:**
+- Fenster (Frontend) implemented OIDC login UI, callback routes, profile linking/unlinking, admin provider management
+- McManus (DevOps) wired OIDC deployment config, Cosmos containers, Docker env vars
+- Ralph (Security Review) identified host-header injection vulnerability; Coordinator applied fixes and added regression tests
+
+### Admin Role Management and Auth Settings (2026-06-24)
+
+- Admin role changes are admin-only and work across local, Entra, and OIDC-linked accounts because role is stored on the shared user document.
+- Last-admin protections now block demoting or deleting the only remaining admin account.
+- OIDC public origin is stored in the shared `settings` container as `auth-settings`; this admin-managed value takes precedence over `Oidc:PublicOrigin`, which remains a bootstrap/local fallback.
+- Public origin validation is centralized and requires an absolute origin, HTTPS except localhost HTTP, and no path/query/fragment.
+- Validation: `dotnet test src\WhiskeyAndSmokes.sln --no-restore` passed: 142/142 tests.

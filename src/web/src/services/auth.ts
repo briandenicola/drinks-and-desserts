@@ -20,6 +20,101 @@ export interface AuthResponse {
   user: User
 }
 
+export type OIDCProviderType = 'entra' | 'pocket_id' | 'generic'
+export type OIDCTestStatus = 'unknown' | 'ok' | 'failed'
+
+export interface OIDCPublicProvider {
+  id: string
+  name: string
+  displayName: string
+  providerType: OIDCProviderType
+}
+
+export interface OIDCPublicProvidersResponse {
+  providers: OIDCPublicProvider[]
+}
+
+export interface OIDCStartFlowRequest {
+  redirectPath: string
+  callbackPath?: string
+}
+
+export interface OIDCStartFlowResponse {
+  authorizationUrl: string
+  expiresAt: string
+}
+
+export interface OIDCLinkedIdentity {
+  id: string
+  providerId: string
+  providerDisplayName: string
+  issuer: string
+  subjectPreview: string
+  email: string
+  emailVerified: boolean
+  createdAt: string
+  lastLoginAt?: string | null
+}
+
+export interface OIDCLinkedIdentitiesResponse {
+  identities: OIDCLinkedIdentity[]
+}
+
+export interface OIDCLinkCallbackResponse {
+  message: string
+  identity: OIDCLinkedIdentity
+}
+
+export interface OIDCMessageResponse {
+  message: string
+}
+
+export interface OIDCAdminProvider {
+  id: string
+  name: string
+  displayName: string
+  providerType: OIDCProviderType
+  enabled: boolean
+  issuerUrl: string
+  clientId: string
+  clientSecretConfigured: boolean
+  scopes: string[]
+  callbackPath: string
+  requireVerifiedEmail?: boolean
+  lastTestedAt?: string | null
+  lastTestStatus: OIDCTestStatus
+  lastTestMessage: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface OIDCAdminProvidersResponse {
+  providers: OIDCAdminProvider[]
+}
+
+export interface OIDCAdminProviderInput {
+  name: string
+  displayName: string
+  providerType: OIDCProviderType
+  enabled: boolean
+  issuerUrl: string
+  clientId: string
+  clientSecret?: string
+  scopes: string[]
+  callbackPath?: string
+  requireVerifiedEmail?: boolean
+}
+
+export type OIDCAdminProviderUpdate = Partial<OIDCAdminProviderInput>
+
+export interface OIDCProviderTestResponse {
+  available: boolean
+  message: string
+  issuer: string
+  authorizationEndpoint: string
+  tokenEndpoint: string
+}
+
 const TOKEN_KEY = 'whiskey_and_smokes_token'
 const REFRESH_TOKEN_KEY = 'whiskey_and_smokes_refresh_token'
 const EXPIRES_AT_KEY = 'whiskey_and_smokes_expires_at'
@@ -150,4 +245,40 @@ export const authApi = {
 
   entraLogin: (accessToken: string) =>
     api.post<AuthResponse>('/auth/entra', { accessToken }),
+
+  getOidcPublicProviders: () =>
+    api.get<OIDCPublicProvidersResponse>('/auth/oidc/providers'),
+
+  startOidcLogin: (providerId: string, request: OIDCStartFlowRequest) =>
+    api.post<OIDCStartFlowResponse>(`/auth/oidc/${providerId}/start`, request),
+
+  completeOidcLoginCallback: (providerId: string, code: string, state: string) =>
+    api.get<AuthResponse>(`/auth/oidc/${providerId}/callback`, { params: { code, state } }),
+
+  startOidcLink: (providerId: string, request: OIDCStartFlowRequest) =>
+    api.post<OIDCStartFlowResponse>(`/auth/oidc/${providerId}/link/start`, request),
+
+  completeOidcLinkCallback: (providerId: string, code: string, state: string) =>
+    api.get<OIDCLinkCallbackResponse>(`/auth/oidc/${providerId}/link/callback`, { params: { code, state } }),
+
+  getOidcIdentities: () =>
+    api.get<OIDCLinkedIdentitiesResponse>('/users/me/oidc-identities'),
+
+  deleteOidcIdentity: (identityId: string) =>
+    api.delete<OIDCMessageResponse>(`/users/me/oidc-identities/${identityId}`),
+
+  getAdminOidcProviders: () =>
+    api.get<OIDCAdminProvidersResponse>('/admin/oidc/providers'),
+
+  createAdminOidcProvider: (provider: OIDCAdminProviderInput) =>
+    api.post<OIDCAdminProvider>('/admin/oidc/providers', provider),
+
+  updateAdminOidcProvider: (providerId: string, provider: OIDCAdminProviderUpdate) =>
+    api.put<OIDCAdminProvider>(`/admin/oidc/providers/${providerId}`, provider),
+
+  deleteAdminOidcProvider: (providerId: string) =>
+    api.delete(`/admin/oidc/providers/${providerId}`),
+
+  testAdminOidcProvider: (providerId: string) =>
+    api.post<OIDCProviderTestResponse>(`/admin/oidc/providers/${providerId}/test`),
 }

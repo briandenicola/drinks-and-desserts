@@ -128,14 +128,23 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  function applyAuthResponse(data: {
+    token: string
+    refreshToken: string
+    expiresAt: string
+    user: User
+  }) {
+    storeAuth(data)
+    token.value = data.token
+    user.value = data.user
+    scheduleRefresh()
+  }
+
   async function register(data: RegisterRequest) {
     error.value = null
     try {
       const response = await authApi.register(data)
-      storeAuth(response.data)
-      token.value = response.data.token
-      user.value = response.data.user
-      scheduleRefresh()
+      applyAuthResponse(response.data)
       router.push('/')
     } catch (e: unknown) {
       error.value = getErrorMessage(e, 'Registration failed')
@@ -147,10 +156,7 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
     try {
       const response = await authApi.login(data)
-      storeAuth(response.data)
-      token.value = response.data.token
-      user.value = response.data.user
-      scheduleRefresh()
+      applyAuthResponse(response.data)
       router.push('/')
     } catch (e: unknown) {
       error.value = getErrorMessage(e, 'Login failed')
@@ -163,10 +169,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const msalResult = await loginWithEntra()
       const response = await authApi.entraLogin(msalResult.accessToken)
-      storeAuth(response.data)
-      token.value = response.data.token
-      user.value = response.data.user
-      scheduleRefresh()
+      applyAuthResponse(response.data)
       router.push('/')
     } catch (e: unknown) {
       error.value = getErrorMessage(e, 'Microsoft sign-in failed')
@@ -218,5 +221,5 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { user, isLoading, error, isAuthenticated, isAdmin, initialize, dispose, register, login, loginEntra, logout, loadUser }
+  return { user, isLoading, error, isAuthenticated, isAdmin, initialize, dispose, applyAuthResponse, register, login, loginEntra, logout, loadUser }
 })

@@ -23,6 +23,13 @@ public class EntraIdOptions
     public bool IsConfigured => !string.IsNullOrEmpty(TenantId) && !string.IsNullOrEmpty(ClientId);
 }
 
+public class OidcOptions
+{
+    public const string Section = "Oidc";
+
+    public string PublicOrigin { get; set; } = string.Empty;
+}
+
 public class AiFoundryOptions
 {
     public const string Section = "AiFoundry";

@@ -165,6 +165,52 @@ public class UpdateUserRoleRequest
     public string Role { get; set; } = "user";
 }
 
+public class AppAuthSettings
+{
+    [JsonPropertyName("oidcPublicOrigin")]
+    public string? OidcPublicOrigin { get; set; }
+}
+
+public class UpdateAppAuthSettingsRequest
+{
+    [JsonPropertyName("oidcPublicOrigin")]
+    [StringLength(2048)]
+    public string? OidcPublicOrigin { get; set; }
+}
+
+public class AppAuthSettingsResponse
+{
+    [JsonPropertyName("settings")]
+    public AppAuthSettings Settings { get; set; } = new();
+
+    [JsonPropertyName("effectiveOidcPublicOrigin")]
+    public string? EffectiveOidcPublicOrigin { get; set; }
+
+    [JsonPropertyName("fallbackOidcPublicOrigin")]
+    public string? FallbackOidcPublicOrigin { get; set; }
+}
+
+public class AppAuthSettingsDocument
+{
+    public const string DocumentId = "auth-settings";
+    public const string PartitionKeyValue = "settings";
+
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = DocumentId;
+
+    [JsonPropertyName("partitionKey")]
+    public string PartitionKey { get; set; } = PartitionKeyValue;
+
+    [JsonPropertyName("settings")]
+    public AppAuthSettings Settings { get; set; } = new();
+
+    [JsonPropertyName("updatedAt")]
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    [JsonPropertyName("updatedBy")]
+    public string? UpdatedBy { get; set; }
+}
+
 public class PagedResponse<T>
 {
     [JsonPropertyName("items")]

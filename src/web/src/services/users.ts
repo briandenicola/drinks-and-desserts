@@ -1,10 +1,12 @@
 import api from './api'
 
+export type UserRole = 'user' | 'admin'
+
 export interface User {
   id: string
   displayName: string
   email: string
-  role: string
+  role: UserRole
   authProvider: string
   preferences: {
     favoriteTypes: string[]
@@ -42,6 +44,20 @@ export interface LoggingSettingsResponse {
   settings: LoggingSettings
   availableCategories: Record<string, string>
   availableLevels: string[]
+}
+
+export interface AdminAuthSettings {
+  oidcPublicOrigin?: string | null
+}
+
+export interface AdminAuthSettingsResponse {
+  settings: AdminAuthSettings
+  effectiveOidcPublicOrigin?: string | null
+  fallbackOidcPublicOrigin?: string | null
+}
+
+export interface AdminAuthSettingsUpdate {
+  oidcPublicOrigin: string
 }
 
 export interface FoundryStatus {
@@ -137,7 +153,7 @@ export const usersApi = {
   // Admin - Users
   listUsers: () => api.get<User[]>('/admin/users'),
 
-  updateRole: (userId: string, role: string) =>
+  updateRole: (userId: string, role: UserRole) =>
     api.put<User>(`/admin/users/${userId}/role`, { role }),
 
   resetPassword: (userId: string, newPassword: string) =>
@@ -151,6 +167,12 @@ export const usersApi = {
 
   updatePrompt: (id: string, content: string) =>
     api.put<Prompt>(`/admin/prompts/${id}`, { content }),
+
+  // Admin - Settings
+  getAdminSettings: () => api.get<AdminAuthSettingsResponse>('/admin/auth-settings'),
+
+  updateAdminSettings: (settings: AdminAuthSettingsUpdate) =>
+    api.put<AdminAuthSettingsResponse>('/admin/auth-settings', settings),
 
   // Admin - Logging
   getLoggingSettings: () => api.get<LoggingSettingsResponse>('/admin/logging'),

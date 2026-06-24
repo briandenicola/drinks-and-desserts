@@ -60,3 +60,35 @@ resource "azurerm_cosmosdb_sql_container" "prompts" {
   database_name       = azurerm_cosmosdb_sql_database.app.name
   partition_key_paths = ["/partitionKey"]
 }
+
+resource "azurerm_cosmosdb_sql_container" "oidc_providers" {
+  name                = "oidc-providers"
+  resource_group_name = azurerm_cosmosdb_account.this.resource_group_name
+  account_name        = azurerm_cosmosdb_account.this.name
+  database_name       = azurerm_cosmosdb_sql_database.app.name
+  partition_key_paths = ["/partitionKey"]
+}
+
+resource "azurerm_cosmosdb_sql_container" "oidc_auth_states" {
+  name                = "oidc-auth-states"
+  resource_group_name = azurerm_cosmosdb_account.this.resource_group_name
+  account_name        = azurerm_cosmosdb_account.this.name
+  database_name       = azurerm_cosmosdb_sql_database.app.name
+  partition_key_paths = ["/partitionKey"]
+}
+
+resource "azurerm_cosmosdb_sql_container" "external_identities" {
+  name                = "external-identities"
+  resource_group_name = azurerm_cosmosdb_account.this.resource_group_name
+  account_name        = azurerm_cosmosdb_account.this.name
+  database_name       = azurerm_cosmosdb_sql_database.app.name
+  partition_key_paths = ["/partitionKey"]
+}
+
+resource "azurerm_cosmosdb_sql_container" "settings" {
+  name                = "settings"
+  resource_group_name = azurerm_cosmosdb_account.this.resource_group_name
+  account_name        = azurerm_cosmosdb_account.this.name
+  database_name       = azurerm_cosmosdb_sql_database.app.name
+  partition_key_paths = ["/partitionKey"]
+}

@@ -9,6 +9,17 @@ const routes = [
     meta: { requiresAuth: false },
   },
   {
+    path: '/auth/oidc/callback/:providerId',
+    name: 'OidcLoginCallback',
+    component: () => import('../views/OIDCLoginCallbackView.vue'),
+    meta: { requiresAuth: false },
+  },
+  {
+    path: '/profile/oidc/link/callback/:providerId',
+    name: 'OidcLinkCallback',
+    component: () => import('../views/OIDCLinkCallbackView.vue'),
+  },
+  {
     path: '/',
     redirect: '/items',
   },

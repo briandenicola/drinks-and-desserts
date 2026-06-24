@@ -21,6 +21,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     public ICosmosDbService CosmosDb { get; } = Substitute.For<ICosmosDbService>();
     public IBlobStorageService BlobStorage { get; } = Substitute.For<IBlobStorageService>();
     public IAuthService AuthService { get; } = Substitute.For<IAuthService>();
+    public IOidcService OidcService { get; } = Substitute.For<IOidcService>();
     public IPromptService PromptService { get; } = Substitute.For<IPromptService>();
     public IAgentService AgentService { get; } = Substitute.For<IAgentService>();
     public INotificationService NotificationService { get; } = Substitute.For<INotificationService>();
@@ -62,6 +63,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             ReplaceService<ICosmosDbService>(services, CosmosDb);
             ReplaceService<IBlobStorageService>(services, BlobStorage);
             ReplaceService<IAuthService>(services, AuthService);
+            ReplaceService<IOidcService>(services, OidcService);
             ReplaceService<IPromptService>(services, PromptService);
             ReplaceService<IAgentService>(services, AgentService);
             ReplaceService<INotificationService>(services, NotificationService);

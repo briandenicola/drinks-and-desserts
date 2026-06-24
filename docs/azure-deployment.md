@@ -10,7 +10,7 @@ This project deploys to Azure using **Terraform** for infrastructure and **GitHu
 │                                                         │
 │  Resource Group ─┬─ AI Foundry Hub + Project            │
 │                  ├─ Model Deployments (gpt-4o, gpt-5-mini) │
-│                  ├─ Cosmos DB (items, captures, users, prompts) │
+│                  ├─ Cosmos DB (items, captures, users, prompts, OIDC) │
 │                  ├─ Storage Account (photos blob)        │
 │                  ├─ Application Insights + Log Analytics │
 │                  └─ Container App Environment + ACR      │
@@ -63,6 +63,10 @@ Deploys the container apps and role assignments. Requires the azure stack to be 
 | `commit_version` | Container image tag (git SHA) |
 | `cosmosdb_endpoint` | Cosmos DB endpoint (from azure stack output) |
 | `storage_blob_endpoint` | Storage blob endpoint (from azure stack output) |
+| `jwt_secret` | JWT signing secret, stored as a Container App secret |
+| `entra_tenant_id` | Optional Entra tenant ID for Microsoft sign-in |
+| `entra_client_id` | Optional Entra app registration client ID |
+| `entra_audience` | Optional accepted Entra token audience |
 
 ## GitHub Actions Workflows
 
@@ -229,6 +233,14 @@ echo "AZURE_SUBSCRIPTION_ID: $SUBSCRIPTION_ID"
 | `BlobStorage__Endpoint` | Terraform variable |
 | `APPLICATIONINSIGHTS_CONNECTION_STRING` | App Insights |
 | `AZURE_CLIENT_ID` | Managed identity client ID |
+| `Jwt__Secret` | Container App secret from `jwt_secret` |
+| `Jwt__Issuer` | `whiskey-and-smokes` |
+| `Jwt__Audience` | `whiskey-and-smokes` |
+| `EntraId__TenantId` | Optional Terraform variable |
+| `EntraId__ClientId` | Optional Terraform variable |
+| `EntraId__Audience` | Optional Terraform variable |
+
+Microsoft Entra ID and Pocket ID setup is documented in [OIDC Sign-in Provider Setup](oidc-setup.md). Provider client IDs, secrets, and the canonical OIDC public web origin are managed through the app admin UI; Terraform only supplies runtime prerequisites, bootstrap fallback origin, and optional legacy Entra environment variables.
 
 ## Static Web App
 
@@ -263,6 +275,8 @@ For a fresh environment:
 task azure:up
 
 # 2. Deploy Container Apps + Static Web App
+#    Required: JWT_SECRET (min 32 chars)
+#    Optional Entra: ENTRA_TENANT_ID, ENTRA_CLIENT_ID, ENTRA_AUDIENCE
 task azure:app:deploy
 
 # 3. Note the outputs

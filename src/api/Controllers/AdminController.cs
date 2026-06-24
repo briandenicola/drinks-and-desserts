@@ -17,6 +17,7 @@ public class AdminController : ControllerBase
     private readonly IPromptService _promptService;
     private readonly DynamicLogLevelService _logLevelService;
     private readonly FoundryStatusService _foundryStatus;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<AdminController> _logger;
     private const string UsersContainer = "users";
 
@@ -26,6 +27,7 @@ public class AdminController : ControllerBase
         IPromptService promptService,
         DynamicLogLevelService logLevelService,
         FoundryStatusService foundryStatus,
+        IConfiguration configuration,
         ILogger<AdminController> logger)
     {
         _cosmosDb = cosmosDb;
@@ -33,6 +35,7 @@ public class AdminController : ControllerBase
         _promptService = promptService;
         _logLevelService = logLevelService;
         _foundryStatus = foundryStatus;
+        _configuration = configuration;
         _logger = logger;
     }
 
@@ -72,10 +75,23 @@ public class AdminController : ControllerBase
             return NotFound();
         }
 
+        var requestedRole = request.Role.Trim().ToLowerInvariant();
         var previousRole = user.Role;
-        user.Role = request.Role;
+        if (string.Equals(previousRole, "admin", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(requestedRole, "user", StringComparison.OrdinalIgnoreCase) &&
+            await AdminCountAsync() <= 1)
+        {
+            _logger.LogWarning("Admin {AdminId} attempted to remove the last admin role from user {UserId}", GetUserId(), userId);
+            return BadRequest(new { message = "Cannot remove the last admin" });
+        }
+
+        user.Role = requestedRole;
         user.UpdatedAt = DateTime.UtcNow;
         user = await _cosmosDb.UpsertAsync(UsersContainer, user, user.PartitionKey);
+        if (!string.Equals(previousRole, requestedRole, StringComparison.OrdinalIgnoreCase))
+        {
+            await _authService.RevokeAllRefreshTokensAsync(user.Id);
+        }
 
         _logger.LogInformation("Admin changed user {UserId} ({Email}) role from {OldRole} to {NewRole}",
             userId, user.Email, previousRole, request.Role);
@@ -126,10 +142,55 @@ public class AdminController : ControllerBase
             return NotFound();
         }
 
+        if (string.Equals(user.Role, "admin", StringComparison.OrdinalIgnoreCase) && await AdminCountAsync() <= 1)
+        {
+            _logger.LogWarning("Admin {AdminId} attempted to delete the last admin account {UserId}", currentUserId, userId);
+            return BadRequest(new { message = "Cannot delete the last admin" });
+        }
+
         await _cosmosDb.DeleteAsync(UsersContainer, userId, userId);
 
         _logger.LogInformation("Admin {AdminId} deleted user {UserId} ({Email})", currentUserId, userId, user.Email);
         return Ok(new { message = "User deleted successfully" });
+    }
+
+    // ── Auth/OIDC Settings ────────────────────────────────────
+
+    [HttpGet("auth-settings")]
+    public async Task<ActionResult<AppAuthSettingsResponse>> GetAuthSettings()
+    {
+        var settings = await LoadAuthSettingsAsync();
+        return Ok(AuthSettingsResponse(settings));
+    }
+
+    [HttpPut("auth-settings")]
+    public async Task<ActionResult<AppAuthSettingsResponse>> UpdateAuthSettings([FromBody] UpdateAppAuthSettingsRequest request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        string? normalizedOrigin = null;
+        if (!string.IsNullOrWhiteSpace(request.OidcPublicOrigin))
+        {
+            try
+            {
+                normalizedOrigin = OidcPublicOrigin.Normalize(request.OidcPublicOrigin);
+            }
+            catch (FormatException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        var doc = new AppAuthSettingsDocument
+        {
+            Settings = new AppAuthSettings { OidcPublicOrigin = normalizedOrigin },
+            UpdatedAt = DateTime.UtcNow,
+            UpdatedBy = GetUserId()
+        };
+
+        await _cosmosDb.UpsertAsync("settings", doc, doc.PartitionKey);
+        _logger.LogInformation("Admin {AdminId} updated auth settings", doc.UpdatedBy);
+        return Ok(AuthSettingsResponse(doc.Settings));
     }
 
     // ── Prompt Management ────────────────────────────────────
@@ -190,6 +251,51 @@ public class AdminController : ControllerBase
 
         _logger.LogInformation("Log levels updated and persisted successfully");
         return Ok(_logLevelService.GetSettings());
+    }
+
+    private async Task<int> AdminCountAsync()
+    {
+        var admins = await _cosmosDb.QueryCrossPartitionAsync<User>(
+            UsersContainer,
+            "SELECT * FROM c WHERE c.role = 'admin'",
+            maxItems: 2);
+        return admins.Count(u => string.Equals(u.Role, "admin", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private async Task<AppAuthSettings> LoadAuthSettingsAsync()
+    {
+        var doc = await _cosmosDb.GetAsync<AppAuthSettingsDocument>(
+            "settings",
+            AppAuthSettingsDocument.DocumentId,
+            AppAuthSettingsDocument.PartitionKeyValue);
+        return doc?.Settings ?? new AppAuthSettings();
+    }
+
+    private AppAuthSettingsResponse AuthSettingsResponse(AppAuthSettings settings)
+    {
+        var fallback = NormalizeFallbackOrigin();
+        return new AppAuthSettingsResponse
+        {
+            Settings = settings,
+            EffectiveOidcPublicOrigin = !string.IsNullOrWhiteSpace(settings.OidcPublicOrigin)
+                ? settings.OidcPublicOrigin
+                : fallback,
+            FallbackOidcPublicOrigin = fallback
+        };
+    }
+
+    private string? NormalizeFallbackOrigin()
+    {
+        var configured = _configuration[$"{OidcOptions.Section}:PublicOrigin"];
+        if (string.IsNullOrWhiteSpace(configured)) return null;
+        try
+        {
+            return OidcPublicOrigin.Normalize(configured);
+        }
+        catch (FormatException)
+        {
+            return null;
+        }
     }
 
     // ── Foundry Connectivity ─────────────────────────────────

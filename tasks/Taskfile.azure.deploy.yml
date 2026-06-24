@@ -34,10 +34,15 @@ tasks:
         -var="commit_version={{.COMMIT_VERSION}}"
         -var="cosmosdb_endpoint={{.COSMOSDB_ENDPOINT}}"
         -var="storage_blob_endpoint={{.STORAGE_BLOB_ENDPOINT}}"
+        -var="jwt_secret={{.JWT_SECRET}}"
+        -var="oidc_public_origin={{.OIDC_PUBLIC_ORIGIN}}"
+        -var="entra_tenant_id={{.ENTRA_TENANT_ID}}"
+        -var="entra_client_id={{.ENTRA_CLIENT_ID}}"
+        -var="entra_audience={{.ENTRA_AUDIENCE}}"
     vars:
       APP_NAME: 
         sh: terraform -chdir={{.AZURE_DIR}} output -raw APP_NAME 2>/dev/null || echo ""
-      APP_LOCATION: 
+      APP_LOCATION:
         sh: terraform -chdir={{.AZURE_DIR}} output -raw APP_LOCATION 2>/dev/null || echo ""
       COMMIT_VERSION:
         sh: git rev-parse HEAD
@@ -45,7 +50,16 @@ tasks:
         sh: terraform -chdir={{.AZURE_DIR}} output -raw COSMOSDB_ENDPOINT 2>/dev/null || echo ""
       STORAGE_BLOB_ENDPOINT: 
         sh: terraform -chdir={{.AZURE_DIR}} output -raw STORAGE_BLOB_ENDPOINT 2>/dev/null || echo ""
-
+      JWT_SECRET:
+        sh: if [ -n "$JWT_SECRET" ]; then printf '%s' "$JWT_SECRET"; else echo "Set JWT_SECRET (min 32 chars) before task azure:app:deploy" >&2; exit 1; fi
+      OIDC_PUBLIC_ORIGIN:
+        sh: printf '%s' "$OIDC_PUBLIC_ORIGIN"
+      ENTRA_TENANT_ID:
+        sh: printf '%s' "$ENTRA_TENANT_ID"
+      ENTRA_CLIENT_ID:
+        sh: printf '%s' "$ENTRA_CLIENT_ID"
+      ENTRA_AUDIENCE:
+        sh: printf '%s' "$ENTRA_AUDIENCE"
   output:
     desc: Shows Container Apps deployment outputs
     dir: "{{.APP_DIR}}"
@@ -63,6 +77,10 @@ tasks:
         -var="commit_version={{.COMMIT_VERSION}}"
         -var="cosmosdb_endpoint={{.COSMOSDB_ENDPOINT}}"
         -var="storage_blob_endpoint={{.STORAGE_BLOB_ENDPOINT}}"
+        -var="jwt_secret={{.JWT_SECRET}}"
+        -var="entra_tenant_id={{.ENTRA_TENANT_ID}}"
+        -var="entra_client_id={{.ENTRA_CLIENT_ID}}"
+        -var="entra_audience={{.ENTRA_AUDIENCE}}"
     vars:
       APP_NAME:
         sh: terraform -chdir={{.AZURE_DIR}} output -raw APP_NAME 2>/dev/null || echo ""
@@ -74,4 +92,11 @@ tasks:
         sh: terraform -chdir={{.AZURE_DIR}} output -raw STORAGE_BLOB_ENDPOINT 2>/dev/null || echo ""
       APP_LOCATION: 
         sh: terraform -chdir={{.AZURE_DIR}} output -raw APP_LOCATION 2>/dev/null || echo ""
-      
+      JWT_SECRET:
+        sh: if [ -n "$JWT_SECRET" ]; then printf '%s' "$JWT_SECRET"; else printf '%s' "destroy-only-placeholder-secret-32-chars"; fi
+      ENTRA_TENANT_ID:
+        sh: printf '%s' "$ENTRA_TENANT_ID"
+      ENTRA_CLIENT_ID:
+        sh: printf '%s' "$ENTRA_CLIENT_ID"
+      ENTRA_AUDIENCE:
+        sh: printf '%s' "$ENTRA_AUDIENCE"

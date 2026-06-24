@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, inject, onMounted, onBeforeUnmount } from 'vue'
 import { useAuthStore } from '../stores/auth'
+import { authApi, type OIDCLinkedIdentity, type OIDCPublicProvider } from '../services/auth'
 import { usersApi } from '../services/users'
 import type { ApiKeyResponse, CreateApiKeyResponse } from '../services/users'
 import { RefreshKey } from '../composables/refreshKey'
@@ -84,6 +85,15 @@ const newlyCreatedKey = ref<CreateApiKeyResponse | null>(null)
 const keyCopied = ref(false)
 const keyMessage = ref('')
 
+// External sign-in providers
+const oidcIdentities = ref<OIDCLinkedIdentity[]>([])
+const oidcProviders = ref<OIDCPublicProvider[]>([])
+const oidcLoading = ref(true)
+const oidcMessage = ref('')
+const oidcError = ref(false)
+const linkingProviderId = ref<string | null>(null)
+const unlinkingIdentityId = ref<string | null>(null)
+
 const registerRefresh = inject(RefreshKey)
 registerRefresh?.(async () => {
   await auth.loadUser()
@@ -107,6 +117,115 @@ async function loadApiKeys() {
     const res = await usersApi.listApiKeys()
     apiKeys.value = res.data
   } catch { /* ignore */ }
+}
+
+async function loadOidcAccounts() {
+  oidcLoading.value = true
+  try {
+    const [identitiesResponse, providersResponse] = await Promise.all([
+      authApi.getOidcIdentities(),
+      authApi.getOidcPublicProviders(),
+    ])
+    oidcIdentities.value = identitiesResponse.data.identities ?? []
+    oidcProviders.value = providersResponse.data.providers ?? []
+    oidcError.value = false
+  } catch (e: unknown) {
+    oidcIdentities.value = []
+    oidcProviders.value = []
+    oidcMessage.value = getErrorMessage(e, 'Failed to load linked sign-in providers.')
+    oidcError.value = true
+  } finally {
+    oidcLoading.value = false
+  }
+}
+
+function linkableOidcProviders() {
+  const linkedProviderIds = new Set(oidcIdentities.value.map(identity => identity.providerId))
+  return oidcProviders.value.filter(provider => !linkedProviderIds.has(provider.id))
+}
+
+async function linkOidcProvider(provider: OIDCPublicProvider) {
+  oidcMessage.value = ''
+  oidcError.value = false
+  linkingProviderId.value = provider.id
+  try {
+    const response = await authApi.startOidcLink(provider.id, {
+      redirectPath: '/profile',
+      callbackPath: `/profile/oidc/link/callback/${provider.id}`,
+    })
+    if (!response.data.authorizationUrl) {
+      oidcMessage.value = `${provider.displayName} did not return an authorization URL. Ask an administrator to test the provider.`
+      oidcError.value = true
+      return
+    }
+    window.location.assign(response.data.authorizationUrl)
+  } catch (e: unknown) {
+    oidcMessage.value = mapOidcAccountError(e, 'link')
+    oidcError.value = true
+  } finally {
+    linkingProviderId.value = null
+  }
+}
+
+async function unlinkOidcIdentity(identity: OIDCLinkedIdentity) {
+  const confirmed = window.confirm(`Unlink ${identity.providerDisplayName} from your account?`)
+  if (!confirmed) return
+
+  oidcMessage.value = ''
+  oidcError.value = false
+  unlinkingIdentityId.value = identity.id
+  try {
+    await authApi.deleteOidcIdentity(identity.id)
+    await loadOidcAccounts()
+    oidcMessage.value = `${identity.providerDisplayName} unlinked.`
+  } catch (e: unknown) {
+    oidcMessage.value = mapOidcAccountError(e, 'unlink')
+    oidcError.value = true
+  } finally {
+    unlinkingIdentityId.value = null
+  }
+}
+
+function mapOidcAccountError(error: unknown, action: 'link' | 'unlink') {
+  const response = getErrorResponse(error)
+  const message = getErrorMessage(error, '')
+  const normalized = message.toLowerCase()
+
+  if (response?.status === 409 && action === 'link') {
+    if (normalized.includes('another user') || normalized.includes('already linked')) {
+      return 'This provider account is already linked to another user. Sign in with a different provider account or ask an administrator for help.'
+    }
+    return 'This provider account cannot be linked automatically. Sign in locally with the intended account, then try linking again.'
+  }
+
+  if (response?.status === 409 && action === 'unlink') {
+    return 'This identity cannot be unlinked because your account would have no usable sign-in method. Add a password or another sign-in method first.'
+  }
+
+  if (response?.status === 404) {
+    return 'That linked identity was not found for your account. Refresh settings and try again.'
+  }
+
+  if (normalized.includes('state') || normalized.includes('claims') || response?.status === 400) {
+    return 'The provider response could not be validated. Start the linking flow again from Profile.'
+  }
+
+  if (normalized.includes('configuration') || normalized.includes('discovery') || response?.status === 500) {
+    return 'The sign-in provider is not configured correctly. Ask an administrator to test the provider settings.'
+  }
+
+  return message || `Failed to ${action} OIDC identity.`
+}
+
+function getErrorResponse(error: unknown): { status?: number } | null {
+  if (typeof error !== 'object' || error === null || !('response' in error)) return null
+  const response = (error as { response?: unknown }).response
+  if (typeof response !== 'object' || response === null) return null
+  return response as { status?: number }
+}
+
+function formatDateTime(value: string) {
+  return new Date(value).toLocaleString()
 }
 
 async function createApiKey() {
@@ -183,6 +302,7 @@ onMounted(() => {
     pushoverSound.value = auth.user.preferences?.pushoverSound ?? true
   }
   loadApiKeys()
+  loadOidcAccounts()
 })
 
 onBeforeUnmount(() => {
@@ -439,6 +559,77 @@ async function changePassword() {
         >
           {{ isChangingPassword ? 'Changing...' : 'Change Password' }}
         </button>
+      </section>
+
+      <!-- Connected Sign-in Providers -->
+      <section class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 space-y-4">
+        <div>
+          <h3 class="text-sm font-medium text-[#96BEE6] uppercase tracking-wide">Connected Sign-in Providers</h3>
+          <p class="text-sm text-[#96BEE6]/80 mt-1">
+            Link Entra ID, Pocket ID, or another external provider after signing in locally. This avoids unsafe automatic account merges.
+          </p>
+        </div>
+
+        <div v-if="oidcMessage" class="text-sm" :class="oidcError ? 'text-red-400' : 'text-green-400'">
+          {{ oidcMessage }}
+        </div>
+
+        <div v-if="oidcLoading" class="text-sm text-[#96BEE6]/70">Loading linked providers...</div>
+        <template v-else>
+          <div v-if="oidcIdentities.length" class="space-y-3">
+            <div
+              v-for="identity in oidcIdentities"
+              :key="identity.id"
+              class="rounded-xl border border-[#1e407c]/50 bg-[#0a2a52]/60 p-3"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0 space-y-1">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <p class="font-medium text-white">{{ identity.providerDisplayName }}</p>
+                    <span
+                      class="rounded-full border px-2 py-0.5 text-[10px]"
+                      :class="identity.emailVerified ? 'border-green-700 text-green-400' : 'border-red-800 text-red-400'"
+                    >
+                      {{ identity.emailVerified ? 'Email verified' : 'Email unverified' }}
+                    </span>
+                  </div>
+                  <p class="break-all text-xs text-[#96BEE6]/70">Issuer: {{ identity.issuer }}</p>
+                  <p class="break-all text-xs text-[#96BEE6]/70">Subject: {{ identity.subjectPreview }}</p>
+                  <p class="break-all text-xs text-[#96BEE6]/70">Email: {{ identity.email }}</p>
+                  <p class="text-xs text-[#4a7aa5]">
+                    Linked {{ formatDateTime(identity.createdAt) }}
+                    <template v-if="identity.lastLoginAt"> · Last login {{ formatDateTime(identity.lastLoginAt) }}</template>
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  @click="unlinkOidcIdentity(identity)"
+                  :disabled="unlinkingIdentityId === identity.id"
+                  class="shrink-0 text-xs text-red-400 hover:text-red-300 disabled:text-red-400/50"
+                >
+                  {{ unlinkingIdentityId === identity.id ? 'Unlinking...' : 'Unlink' }}
+                </button>
+              </div>
+            </div>
+          </div>
+          <p v-else class="text-sm text-[#96BEE6]/70">No external sign-in providers linked.</p>
+
+          <div v-if="linkableOidcProviders().length" class="flex flex-wrap gap-2">
+            <button
+              v-for="provider in linkableOidcProviders()"
+              :key="provider.id"
+              type="button"
+              @click="linkOidcProvider(provider)"
+              :disabled="linkingProviderId === provider.id"
+              class="rounded-xl border border-[#1e407c]/50 bg-[#0a2a52] px-3 py-2 text-sm font-medium text-[#96BEE6] hover:bg-[#1e407c] disabled:text-[#4a7aa5]/60"
+            >
+              {{ linkingProviderId === provider.id ? 'Starting...' : `Link ${provider.displayName}` }}
+            </button>
+          </div>
+          <p v-else-if="!oidcProviders.length" class="text-sm text-[#96BEE6]/70">
+            No enabled OIDC providers are available for linking.
+          </p>
+        </template>
       </section>
 
       <!-- API Keys -->

@@ -4,6 +4,7 @@ using Azure.Identity;
 using Azure.Storage.Blobs;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Azure.Cosmos;
 using Microsoft.IdentityModel.Tokens;
 using WhiskeyAndSmokes.Api;
@@ -127,10 +128,13 @@ builder.Services.AddAuthentication()
     .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthHandler>("ApiKey", null);
 
 // Authorization policies
+builder.Services.AddSingleton<IAuthorizationHandler, CurrentAdminAuthorizationHandler>();
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy("AdminOnly", policy =>
-        policy.RequireRole("admin")
-              .RequireAuthenticatedUser());
+    {
+        policy.RequireAuthenticatedUser();
+        policy.Requirements.Add(new CurrentAdminRequirement());
+    });
 
 // Storage services — conditional on provider setting or environment
 // Storage:Provider = "local" | "azure" | "auto" (default)
@@ -204,6 +208,8 @@ else
 builder.Services.AddSingleton(logLevelService);
 builder.Services.AddSingleton<FoundryStatusService>();
 builder.Services.AddSingleton<IAuthService, AuthService>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<IOidcService, OidcService>();
 builder.Services.AddSingleton<IPromptService, PromptService>();
 builder.Services.AddSingleton<ExifLocationService>();
 builder.Services.AddSingleton<IAgentService, WorkflowAgentService>();
@@ -330,8 +336,8 @@ static async Task InitializeCosmosDb(WebApplication app)
 
         var database = await client.CreateDatabaseIfNotExistsAsync(dbName);
 
-        string[] containers = ["users", "captures", "items", "venues", "friendships", "friend-invites", "thoughts", "notifications"];
-        string[] partitionKeys = ["/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey"];
+        string[] containers = ["users", "captures", "items", "venues", "friendships", "friend-invites", "thoughts", "notifications", "oidc-providers", "oidc-auth-states", "external-identities", "settings"];
+        string[] partitionKeys = ["/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey"];
 
         for (int i = 0; i < containers.Length; i++)
         {

@@ -64,6 +64,9 @@ For Portainer, create a new Stack and paste the contents of `docker-compose.port
 | `WEB_PORT` | No | Web UI port (default: 8080) |
 | `ENTRA_TENANT_ID` | No | Entra ID tenant for Microsoft sign-in |
 | `ENTRA_CLIENT_ID` | No | Entra ID app registration client ID |
+| `ENTRA_AUDIENCE` | No | Accepted Entra token audience (defaults to client ID) |
+
+See [OIDC Sign-in Provider Setup](oidc-setup.md) for Entra ID and Pocket ID redirect URI setup. Provider client IDs, secrets, and the canonical OIDC public web origin are configured in the app admin UI; Docker environment files only provide bootstrap fallback values.
 
 ### Portainer-specific variables
 
