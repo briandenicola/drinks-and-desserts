@@ -231,7 +231,7 @@ public class OidcController : ControllerBase
             OidcError.ProviderNotFound => (404, "OIDC provider not found"),
             OidcError.ProviderInvalid => (400, "Invalid OIDC provider configuration"),
             OidcError.ProviderSecretMissing => (400, "OIDC client secret is required"),
-            OidcError.ProviderConfiguration => (500, "OIDC provider is misconfigured"),
+            OidcError.ProviderConfiguration => (500, ProviderConfigurationMessage(ex)),
             OidcError.ProviderDenied => (400, "OIDC provider denied access"),
             OidcError.ProviderDuplicate => (409, "OIDC provider already exists"),
             OidcError.ProviderInUse => (409, "OIDC provider has linked identities"),
@@ -259,6 +259,13 @@ public class OidcController : ControllerBase
         }
 
         return StatusCode(status, new { error = message, detail = ex.Error == OidcError.CodeExchangeFailed ? ex.Message : null });
+    }
+
+    private static string ProviderConfigurationMessage(OidcException ex)
+    {
+        return ex.Message.StartsWith("OIDC public origin", StringComparison.OrdinalIgnoreCase)
+            ? ex.Message
+            : "OIDC provider is misconfigured";
     }
 
     private async Task<string> RequestOriginAsync()

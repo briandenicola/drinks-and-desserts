@@ -503,7 +503,7 @@ public class OidcService : IOidcService
             string.IsNullOrWhiteSpace(metadata.JwksUri) ||
             metadata.AuthorizationEndpoint == metadata.TokenEndpoint)
         {
-            throw new OidcException(OidcError.ProviderConfiguration);
+            throw new OidcException(OidcError.ProviderConfiguration, "OIDC provider discovery failed");
         }
 
         return metadata;

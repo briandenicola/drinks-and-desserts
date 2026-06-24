@@ -106,6 +106,9 @@ function mapCallbackError(error: unknown) {
   }
 
   if (normalized.includes('configuration') || normalized.includes('discovery') || response?.status === 500) {
+    if (normalized.includes('public origin')) {
+      return 'OIDC public web origin is not configured. Sign in locally and set it in Admin Panel > Settings.'
+    }
     return 'The sign-in provider is not configured correctly. Ask an administrator to test the provider settings.'
   }
 

@@ -144,6 +144,9 @@ function mapOidcErrorCategory(category: string, status?: string, message?: strin
     return 'This provider account matches an existing local account. Sign in locally, then link the provider from Profile.'
   }
   if (normalized.includes('misconfig') || normalized.includes('configuration') || normalized.includes('discovery') || status === '500') {
+    if (normalized.includes('public origin')) {
+      return 'OIDC public web origin is not configured. Sign in locally and set it in Admin Panel > Settings.'
+    }
     return 'The sign-in provider is not configured correctly. Ask an administrator to test the provider settings.'
   }
   if (normalized.includes('validation') || normalized.includes('state') || normalized.includes('nonce') || normalized.includes('issuer') || normalized.includes('audience') || normalized.includes('signature') || status === '400' || status === '401') {

@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Json;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -90,6 +91,8 @@ public class OidcControllerTests
 
         var objectResult = result.Result.Should().BeOfType<ObjectResult>().Subject;
         objectResult.StatusCode.Should().Be(500);
+        var json = JsonSerializer.Serialize(objectResult.Value);
+        json.Should().Contain("OIDC public origin is not configured");
         await oidcService.DidNotReceiveWithAnyArgs().StartLoginAsync(default!, default, default, default!);
     }
 
