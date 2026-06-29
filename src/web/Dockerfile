@@ -15,5 +15,8 @@ COPY nginx.conf /etc/nginx/templates/default.conf.template
 ENV API_HOST=whiskey-and-smokes-api
 ENV API_PORT=8080
 
+# Run as non-root user (nginx user in alpine, UID 101)
+USER 101
+
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
