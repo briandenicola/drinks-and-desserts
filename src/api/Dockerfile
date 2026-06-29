@@ -22,6 +22,10 @@ RUN dotnet publish api/WhiskeyAndSmokes.Api.csproj \
 FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-noble-chiseled AS runtime
 WORKDIR /app
 COPY --from=build /app .
+
+# Run as non-root user (chiseled images include UID 1654)
+USER 1654
+
 EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:8080
 ENTRYPOINT ["./WhiskeyAndSmokes.Api"]

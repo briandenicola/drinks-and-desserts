@@ -40,13 +40,14 @@ resource "azurerm_network_security_group" "this" {
   resource_group_name = azurerm_resource_group.core.name
 
   security_rule {
-    name                       = "HTTPS"
-    priority                   = 100
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "443"
+    name                   = "HTTPS"
+    priority               = 100
+    direction              = "Inbound"
+    access                 = "Allow"
+    protocol               = "Tcp"
+    source_port_range      = "*"
+    destination_port_range = "443"
+    #trivy:ignore:AZU-0047 Public-facing HTTPS ingress from any source is required for Azure Container Apps load balancer
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
