@@ -204,4 +204,189 @@ public class FriendsControllerTests : IClassFixture<CustomWebApplicationFactory>
         var response = await _client.GetAsync("/api/friends/friend-1/items");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
+
+    [Fact]
+    public async Task AddFriendItem_WhenFriends_CreatesOwnedCopyWithAttribution()
+    {
+        var friendship = new Friendship
+        {
+            Id = "fs-1",
+            UserId = CustomWebApplicationFactory.TestUserId,
+            FriendId = "friend-1",
+            FriendDisplayName = "Alice",
+            Status = FriendshipStatus.Accepted
+        };
+
+        _factory.CosmosDb.QueryAsync(
+            "friendships",
+            CustomWebApplicationFactory.TestUserId,
+            Arg.Any<string?>(),
+            1,
+            Arg.Any<Expression<Func<Friendship, bool>>?>())
+            .Returns((new List<Friendship> { friendship }, (string?)null));
+
+        var sourceItem = new Item
+        {
+            Id = "item-1",
+            UserId = "friend-1",
+            Name = "Lagavulin 16",
+            Type = ItemType.Whiskey,
+            Brand = "Lagavulin",
+            Tags = ["smoky"],
+            UserRating = 4.5,
+            Status = ItemStatus.Reviewed
+        };
+
+        _factory.CosmosDb.GetAsync<Item>("items", "item-1", "friend-1")
+            .Returns(sourceItem);
+
+        _factory.CosmosDb.CreateAsync("items", Arg.Any<Item>(), Arg.Any<string>())
+            .Returns(callInfo => callInfo.ArgAt<Item>(1));
+
+        var response = await _client.PostAsync("/api/friends/friend-1/items/item-1/add", null);
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var body = await response.Content.ReadFromJsonAsync<Item>();
+        body.Should().NotBeNull();
+        body!.UserId.Should().Be(CustomWebApplicationFactory.TestUserId);
+        body.Name.Should().Be("Lagavulin 16");
+        body.Status.Should().Be(ItemStatus.Reviewed);
+        body.SourceAttribution.Should().NotBeNull();
+        body.SourceAttribution!.SourceUserId.Should().Be("friend-1");
+        body.SourceAttribution.SourceDisplayName.Should().Be("Alice");
+        body.SourceAttribution.SourceItemId.Should().Be("item-1");
+    }
+
+    [Fact]
+    public async Task AddFriendItem_WhenNotFriends_Returns403()
+    {
+        _factory.CosmosDb.QueryAsync(
+            "friendships",
+            CustomWebApplicationFactory.TestUserId,
+            Arg.Any<string?>(),
+            1,
+            Arg.Any<Expression<Func<Friendship, bool>>?>())
+            .Returns((new List<Friendship>(), (string?)null));
+
+        var response = await _client.PostAsync("/api/friends/stranger-id/items/item-1/add", null);
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task AddFriendItem_WhenSourceItemMissing_Returns404()
+    {
+        var friendship = new Friendship
+        {
+            Id = "fs-1",
+            UserId = CustomWebApplicationFactory.TestUserId,
+            FriendId = "friend-1",
+            FriendDisplayName = "Alice",
+            Status = FriendshipStatus.Accepted
+        };
+
+        _factory.CosmosDb.QueryAsync(
+            "friendships",
+            CustomWebApplicationFactory.TestUserId,
+            Arg.Any<string?>(),
+            1,
+            Arg.Any<Expression<Func<Friendship, bool>>?>())
+            .Returns((new List<Friendship> { friendship }, (string?)null));
+
+        _factory.CosmosDb.GetAsync<Item>("items", "missing-item", "friend-1")
+            .Returns((Item?)null);
+
+        var response = await _client.PostAsync("/api/friends/friend-1/items/missing-item/add", null);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task AddFriendVenue_WhenFriends_CreatesOwnedCopyWithAttribution()
+    {
+        var friendship = new Friendship
+        {
+            Id = "fs-1",
+            UserId = CustomWebApplicationFactory.TestUserId,
+            FriendId = "friend-1",
+            FriendDisplayName = "Alice",
+            Status = FriendshipStatus.Accepted
+        };
+
+        _factory.CosmosDb.QueryAsync(
+            "friendships",
+            CustomWebApplicationFactory.TestUserId,
+            Arg.Any<string?>(),
+            1,
+            Arg.Any<Expression<Func<Friendship, bool>>?>())
+            .Returns((new List<Friendship> { friendship }, (string?)null));
+
+        var sourceVenue = new Venue
+        {
+            Id = "venue-1",
+            UserId = "friend-1",
+            Name = "Rare Books Bar",
+            Type = VenueType.Bar,
+            Labels = ["speakeasy"],
+            Status = VenueStatus.Completed
+        };
+
+        _factory.CosmosDb.GetAsync<Venue>("venues", "venue-1", "friend-1")
+            .Returns(sourceVenue);
+
+        _factory.CosmosDb.CreateAsync("venues", Arg.Any<Venue>(), Arg.Any<string>())
+            .Returns(callInfo => callInfo.ArgAt<Venue>(1));
+
+        var response = await _client.PostAsync("/api/friends/friend-1/venues/venue-1/add", null);
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var body = await response.Content.ReadFromJsonAsync<Venue>();
+        body.Should().NotBeNull();
+        body!.UserId.Should().Be(CustomWebApplicationFactory.TestUserId);
+        body.Name.Should().Be("Rare Books Bar");
+        body.SourceAttribution.Should().NotBeNull();
+        body.SourceAttribution!.SourceUserId.Should().Be("friend-1");
+        body.SourceAttribution.SourceDisplayName.Should().Be("Alice");
+        body.SourceAttribution.SourceItemId.Should().Be("venue-1");
+    }
+
+    [Fact]
+    public async Task AddFriendVenue_WhenNotFriends_Returns403()
+    {
+        _factory.CosmosDb.QueryAsync(
+            "friendships",
+            CustomWebApplicationFactory.TestUserId,
+            Arg.Any<string?>(),
+            1,
+            Arg.Any<Expression<Func<Friendship, bool>>?>())
+            .Returns((new List<Friendship>(), (string?)null));
+
+        var response = await _client.PostAsync("/api/friends/stranger-id/venues/venue-1/add", null);
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task AddFriendVenue_WhenSourceVenueMissing_Returns404()
+    {
+        var friendship = new Friendship
+        {
+            Id = "fs-1",
+            UserId = CustomWebApplicationFactory.TestUserId,
+            FriendId = "friend-1",
+            FriendDisplayName = "Alice",
+            Status = FriendshipStatus.Accepted
+        };
+
+        _factory.CosmosDb.QueryAsync(
+            "friendships",
+            CustomWebApplicationFactory.TestUserId,
+            Arg.Any<string?>(),
+            1,
+            Arg.Any<Expression<Func<Friendship, bool>>?>())
+            .Returns((new List<Friendship> { friendship }, (string?)null));
+
+        _factory.CosmosDb.GetAsync<Venue>("venues", "missing-venue", "friend-1")
+            .Returns((Venue?)null);
+
+        var response = await _client.PostAsync("/api/friends/friend-1/venues/missing-venue/add", null);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
 }

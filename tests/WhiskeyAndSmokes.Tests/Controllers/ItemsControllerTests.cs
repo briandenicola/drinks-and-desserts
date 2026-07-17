@@ -406,4 +406,90 @@ public class ItemsControllerTests : IClassFixture<CustomWebApplicationFactory>
         body.Should().NotBeNull();
         body!.PhotoUrls.Should().Contain(request.BlobUrl);
     }
+
+    [Fact]
+    public async Task ShareItem_WhenFriends_CreatesNotificationForRecipient()
+    {
+        _factory.NotificationService.ClearReceivedCalls();
+
+        var item = new Item
+        {
+            Id = "share-item-1",
+            UserId = TestUserId,
+            Name = "Yamazaki 12",
+            Type = ItemType.Whiskey,
+            Status = ItemStatus.Reviewed
+        };
+
+        _factory.CosmosDb.GetAsync<Item>("items", "share-item-1", TestUserId)
+            .Returns(item);
+
+        var friendship = new Friendship
+        {
+            Id = "fs-1",
+            UserId = TestUserId,
+            FriendId = "friend-1",
+            FriendDisplayName = "Bob",
+            Status = FriendshipStatus.Accepted
+        };
+
+        _factory.CosmosDb.QueryAsync(
+            "friendships",
+            TestUserId,
+            Arg.Any<string?>(),
+            1,
+            Arg.Any<Expression<Func<Friendship, bool>>?>())
+            .Returns((new List<Friendship> { friendship }, (string?)null));
+
+        var response = await _client.PostAsJsonAsync("/api/items/share-item-1/share", new ShareRequest { FriendId = "friend-1" });
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        await _factory.NotificationService.Received(1).CreateAsync(Arg.Is<Notification>(n =>
+            n.UserId == "friend-1" &&
+            n.Type == NotificationType.ItemShared &&
+            n.SourceUserId == TestUserId &&
+            n.ReferenceType == "item" &&
+            n.ReferenceId == "share-item-1"));
+    }
+
+    [Fact]
+    public async Task ShareItem_WhenNotFriends_Returns403()
+    {
+        _factory.NotificationService.ClearReceivedCalls();
+
+        var item = new Item
+        {
+            Id = "share-item-2",
+            UserId = TestUserId,
+            Name = "Yamazaki 12",
+            Type = ItemType.Whiskey,
+            Status = ItemStatus.Reviewed
+        };
+
+        _factory.CosmosDb.GetAsync<Item>("items", "share-item-2", TestUserId)
+            .Returns(item);
+
+        _factory.CosmosDb.QueryAsync(
+            "friendships",
+            TestUserId,
+            Arg.Any<string?>(),
+            1,
+            Arg.Any<Expression<Func<Friendship, bool>>?>())
+            .Returns((new List<Friendship>(), (string?)null));
+
+        var response = await _client.PostAsJsonAsync("/api/items/share-item-2/share", new ShareRequest { FriendId = "stranger-id" });
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        await _factory.NotificationService.DidNotReceive().CreateAsync(Arg.Any<Notification>());
+    }
+
+    [Fact]
+    public async Task ShareItem_WhenNotOwner_Returns404()
+    {
+        _factory.CosmosDb.GetAsync<Item>("items", "not-mine", TestUserId)
+            .Returns((Item?)null);
+
+        var response = await _client.PostAsJsonAsync("/api/items/not-mine/share", new ShareRequest { FriendId = "friend-1" });
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
 }

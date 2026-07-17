@@ -8,6 +8,7 @@ import { useAuthStore } from '../stores/auth'
 import { RefreshKey } from '../composables/refreshKey'
 import StarRating from '../components/common/StarRating.vue'
 import ThoughtsList from '../components/common/ThoughtsList.vue'
+import ShareModal from '../components/common/ShareModal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -21,6 +22,9 @@ const isDeleting = ref(false)
 const isSaving = ref(false)
 const friendThoughts = ref<Thought[]>([])
 const isLoadingThoughts = ref(false)
+const showShareModal = ref(false)
+const isSharing = ref(false)
+const shareError = ref('')
 
 const editName = ref('')
 const editAddress = ref('')
@@ -346,6 +350,20 @@ async function deleteVenue() {
   }
 }
 
+async function shareWithFriend(friendId: string) {
+  if (!venue.value || isSharing.value) return
+  isSharing.value = true
+  shareError.value = ''
+  try {
+    await venuesApi.share(venue.value.id, friendId)
+    showShareModal.value = false
+  } catch {
+    shareError.value = 'Failed to share venue'
+  } finally {
+    isSharing.value = false
+  }
+}
+
 const photoUrls = computed(() => venue.value?.photoUrls ?? [])
 </script>
 
@@ -379,6 +397,9 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
           <div>
             <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6] capitalize">{{ venue.type }}</span>
             <h2 class="text-2xl font-bold text-white mt-2">{{ venue.name }}</h2>
+            <p v-if="venue.sourceAttribution" class="text-xs text-[#5a8ab5] mt-1">
+              Added from {{ venue.sourceAttribution.sourceDisplayName }}'s collection
+            </p>
           </div>
 
           <div v-if="venue.rating" class="flex items-center gap-2">
@@ -407,6 +428,12 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
               class="flex-1 bg-[#1e407c] hover:bg-[#2a5299] text-white py-2.5 min-h-[44px] rounded-xl text-sm font-medium lg:flex-none lg:px-8"
             >
               Edit
+            </button>
+            <button
+              @click="showShareModal = true"
+              class="px-4 py-2.5 min-h-[44px] bg-[#0a2a52] text-[#96BEE6] hover:bg-[#1e407c] rounded-xl text-sm"
+            >
+              Share
             </button>
             <button
               @click="deleteVenue"
@@ -699,5 +726,18 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
       </div>
       </div>
     </template>
+
+    <!-- Share error toast -->
+    <div v-if="shareError" class="fixed bottom-4 left-4 right-4 max-w-lg mx-auto bg-red-900/90 border border-red-700 text-red-300 rounded-xl p-3 text-sm z-50">
+      {{ shareError }}
+    </div>
+
+    <!-- Share Modal -->
+    <ShareModal
+      v-model="showShareModal"
+      :item-name="venue.name"
+      :is-sharing="isSharing"
+      @select="shareWithFriend"
+    />
   </div>
 </template>

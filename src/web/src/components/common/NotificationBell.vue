@@ -100,6 +100,12 @@ async function handleNotificationClick(n: AppNotification) {
     } else {
       router.push('/items')
     }
+  } else if (n.type === 'item-shared' && n.referenceId) {
+    // Shared items belong to the sharer — route through the friend-view page
+    // so the recipient sees the "Add to My Collection" action.
+    router.push(`/friends/${n.sourceUserId}/items/${n.referenceId}`)
+  } else if (n.type === 'venue-shared' && n.referenceId) {
+    router.push(`/friends/${n.sourceUserId}/venues/${n.referenceId}`)
   }
 }
 

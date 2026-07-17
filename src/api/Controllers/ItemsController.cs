@@ -15,21 +15,33 @@ public class ItemsController : ControllerBase
 {
     private readonly ICosmosDbService _cosmosDb;
     private readonly IBlobStorageService _blobStorage;
+    private readonly INotificationService _notificationService;
     private readonly Channel<WishlistUrlWorkItem> _wishlistUrlQueue;
     private readonly ILogger<ItemsController> _logger;
     private const string ContainerName = "items";
+    private const string FriendshipsContainer = "friendships";
     private const int DefaultPageSize = 25;
     private const int MaxPageSize = 100;
 
-    public ItemsController(ICosmosDbService cosmosDb, IBlobStorageService blobStorage, Channel<WishlistUrlWorkItem> wishlistUrlQueue, ILogger<ItemsController> logger)
+    public ItemsController(ICosmosDbService cosmosDb, IBlobStorageService blobStorage, INotificationService notificationService, Channel<WishlistUrlWorkItem> wishlistUrlQueue, ILogger<ItemsController> logger)
     {
         _cosmosDb = cosmosDb;
         _blobStorage = blobStorage;
+        _notificationService = notificationService;
         _wishlistUrlQueue = wishlistUrlQueue;
         _logger = logger;
     }
 
     private string GetUserId() => User.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new UnauthorizedAccessException();
+    private string GetDisplayName() => User.FindFirstValue(ClaimTypes.Name) ?? "Unknown";
+
+    private async Task<bool> AreFriendsAsync(string userId, string friendId)
+    {
+        var (friends, _) = await _cosmosDb.QueryAsync<Friendship>(
+            FriendshipsContainer, userId, maxItems: 1,
+            predicate: f => f.FriendId == friendId && f.Status == FriendshipStatus.Accepted);
+        return friends.Count > 0;
+    }
 
     private static readonly HashSet<string> AllowedImageExtensions =
         [".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif"];
@@ -477,6 +489,37 @@ public class ItemsController : ControllerBase
 
         _logger.LogInformation("Converted wishlist item {ItemId} to collection for user {UserId}", id, userId);
         return Ok(item);
+    }
+
+    [HttpPost("{id}/share")]
+    public async Task<ActionResult> ShareItem(string id, [FromBody] ShareRequest request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        var userId = GetUserId();
+
+        var item = await _cosmosDb.GetAsync<Item>(ContainerName, id, userId);
+        if (item == null)
+            return NotFound();
+
+        if (!await AreFriendsAsync(userId, request.FriendId))
+            return Forbid();
+
+        var sharerName = GetDisplayName();
+
+        await _notificationService.CreateAsync(new Notification
+        {
+            UserId = request.FriendId,
+            Type = NotificationType.ItemShared,
+            Title = $"{sharerName} shared {item.Name} with you",
+            SourceUserId = userId,
+            SourceDisplayName = sharerName,
+            ReferenceType = "item",
+            ReferenceId = item.Id,
+        });
+
+        _logger.LogInformation("User {UserId} shared item {ItemId} with friend {FriendId}", userId, id, request.FriendId);
+        return Ok();
     }
 
     [HttpGet("{id}/photos/upload-url")]

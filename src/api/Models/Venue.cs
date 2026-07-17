@@ -46,6 +46,9 @@ public class Venue
     [JsonPropertyName("processingError")]
     public string? ProcessingError { get; set; }
 
+    [JsonPropertyName("sourceAttribution")]
+    public SourceAttribution? SourceAttribution { get; set; }
+
     [JsonPropertyName("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

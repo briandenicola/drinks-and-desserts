@@ -47,6 +47,9 @@ public class Item
     [JsonPropertyName("userNotes")]
     public string? UserNotes { get; set; }
 
+    [JsonPropertyName("sourceAttribution")]
+    public SourceAttribution? SourceAttribution { get; set; }
+
     [JsonPropertyName("journal")]
     public List<JournalEntry> Journal { get; set; } = [];
 
@@ -94,6 +97,21 @@ public class JournalEntry
 
     [JsonPropertyName("source")]
     public string? Source { get; set; }
+}
+
+public class SourceAttribution
+{
+    [JsonPropertyName("sourceUserId")]
+    public string SourceUserId { get; set; } = string.Empty;
+
+    [JsonPropertyName("sourceDisplayName")]
+    public string SourceDisplayName { get; set; } = string.Empty;
+
+    [JsonPropertyName("sourceItemId")]
+    public string SourceItemId { get; set; } = string.Empty;
+
+    [JsonPropertyName("addedAt")]
+    public DateTime AddedAt { get; set; } = DateTime.UtcNow;
 }
 
 public static class ItemType

@@ -29,12 +29,20 @@ export interface Item {
   aiSummary?: string
   userRating?: number
   userNotes?: string
+  sourceAttribution?: SourceAttribution
   journal?: JournalEntry[]
   tags: string[]
   status: string
   processedBy?: string
   createdAt: string
   updatedAt: string
+}
+
+export interface SourceAttribution {
+  sourceUserId: string
+  sourceDisplayName: string
+  sourceItemId: string
+  addedAt: string
 }
 
 export interface JournalEntry {
@@ -123,4 +131,7 @@ export const itemsApi = {
 
   removePhoto: (id: string, blobUrl: string) =>
     api.delete<Item>(`/items/${id}/photos`, { data: { blobUrl } }),
+
+  share: (id: string, friendId: string) =>
+    api.post(`/items/${id}/share`, { friendId }),
 }
