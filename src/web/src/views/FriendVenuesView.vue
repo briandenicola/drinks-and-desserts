@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { friendsApi } from '../services/friends'
 import { thoughtsApi, type Thought, type CreateThoughtRequest } from '../services/thoughts'
@@ -31,6 +31,8 @@ const isDetailMode = computed(() => !!venueId.value)
 async function load() {
   isLoading.value = true
   error.value = ''
+  selectedVenue.value = null
+  addSuccess.value = false
   try {
     if (isDetailMode.value) {
       const [venueRes, thoughtsRes] = await Promise.all([
@@ -98,7 +100,10 @@ const venueTypeLabel = (type: string) => {
   return map[type] || type
 }
 
-onMounted(load)
+// FriendVenues (list) and FriendVenueDetail (detail) share this component;
+// Vue Router reuses the instance across them, so onMounted alone would only
+// fire once and never reload when navigating list -> detail -> another venue.
+watch(() => [route.params.friendId, route.params.id], load, { immediate: true })
 </script>
 
 <template>
