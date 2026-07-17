@@ -17,6 +17,8 @@ const item = ref<Item | null>(null)
 const thoughts = ref<Thought[]>([])
 const isLoading = ref(true)
 const error = ref('')
+const isAdding = ref(false)
+const addSuccess = ref(false)
 
 // Thought composer
 const newThoughtContent = ref('')
@@ -71,20 +73,17 @@ async function deleteThought(thought: Thought) {
   }
 }
 
-async function saveToWishlist() {
-  if (!item.value) return
+async function addToMyCollection() {
+  if (!item.value || isAdding.value) return
+  isAdding.value = true
+  error.value = ''
   try {
-    const { default: api } = await import('../services/api')
-    await api.post('/api/items/wishlist', {
-      name: item.value.name,
-      type: item.value.type,
-      brand: item.value.brand,
-      notes: `From ${route.params.friendId}'s collection`,
-      tags: item.value.tags,
-    })
-    alert('Added to your wishlist')
+    await friendsApi.addFriendItem(friendId.value, itemId.value)
+    addSuccess.value = true
   } catch {
-    error.value = 'Failed to save to wishlist'
+    error.value = 'Failed to add to your collection'
+  } finally {
+    isAdding.value = false
   }
 }
 
@@ -138,13 +137,18 @@ onMounted(load)
         </div>
       </div>
 
-      <!-- Save to wishlist -->
+      <!-- Add to my collection -->
       <button
-        @click="saveToWishlist"
-        class="w-full bg-[#0a2a52] border border-[#1e407c]/50 hover:border-[#1e407c] text-[#96BEE6] py-3 rounded-xl font-medium mb-4 transition-colors"
+        v-if="!addSuccess"
+        @click="addToMyCollection"
+        :disabled="isAdding"
+        class="w-full min-h-[44px] bg-[#0a2a52] border border-[#1e407c]/50 hover:border-[#1e407c] disabled:opacity-60 text-[#96BEE6] py-3 rounded-xl font-medium mb-4 transition-colors"
       >
-        Save to My Wishlist
+        {{ isAdding ? 'Adding...' : 'Add to My Collection' }}
       </button>
+      <div v-else class="w-full min-h-[44px] bg-[#0a2a52] border border-[#1e407c]/50 text-[#96BEE6] py-3 rounded-xl font-medium mb-4 text-center">
+        Added to your collection
+      </div>
 
       <!-- Thoughts section -->
       <section class="space-y-4">

@@ -1,4 +1,6 @@
 import api from './api'
+import type { Item } from './items'
+import type { Venue } from './venues'
 
 export interface Friendship {
   id: string
@@ -45,4 +47,10 @@ export const friendsApi = {
     api.get('/friends/' + friendId + '/venues', { params: { continuationToken } }),
   getFriendVenue: (friendId: string, venueId: string) =>
     api.get('/friends/' + friendId + '/venues/' + venueId),
+
+  // Add from friend's collection
+  addFriendItem: (friendId: string, itemId: string) =>
+    api.post<Item>('/friends/' + friendId + '/items/' + itemId + '/add'),
+  addFriendVenue: (friendId: string, venueId: string) =>
+    api.post<Venue>('/friends/' + friendId + '/venues/' + venueId + '/add'),
 }

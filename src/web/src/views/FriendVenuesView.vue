@@ -22,6 +22,10 @@ const error = ref('')
 const newThoughtContent = ref('')
 const isSubmitting = ref(false)
 
+// Add to my venues
+const isAdding = ref(false)
+const addSuccess = ref(false)
+
 const isDetailMode = computed(() => !!venueId.value)
 
 async function load() {
@@ -72,6 +76,20 @@ async function deleteThought(thought: Thought) {
     thoughts.value = thoughts.value.filter(t => t.id !== thought.id)
   } catch {
     error.value = 'Failed to delete thought'
+  }
+}
+
+async function addToMyVenues() {
+  if (!venueId.value || isAdding.value) return
+  isAdding.value = true
+  error.value = ''
+  try {
+    await friendsApi.addFriendVenue(friendId.value, venueId.value)
+    addSuccess.value = true
+  } catch {
+    error.value = 'Failed to add to your venues'
+  } finally {
+    isAdding.value = false
   }
 }
 
@@ -141,6 +159,9 @@ onMounted(load)
           <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6]">
             {{ venueTypeLabel(selectedVenue.type) }}
           </span>
+          <p v-if="selectedVenue.sourceAttribution" class="text-xs text-[#5a8ab5]">
+            Added from {{ selectedVenue.sourceAttribution.sourceDisplayName }}'s collection
+          </p>
           <p v-if="selectedVenue.address" class="text-sm text-[#5a8ab5]">{{ selectedVenue.address }}</p>
           <a v-if="selectedVenue.website" :href="selectedVenue.website" target="_blank"
             class="text-sm text-[#96BEE6] hover:underline block">
@@ -157,6 +178,19 @@ onMounted(load)
             </span>
           </div>
         </div>
+      </div>
+
+      <!-- Add to my venues -->
+      <button
+        v-if="!addSuccess"
+        @click="addToMyVenues"
+        :disabled="isAdding"
+        class="w-full min-h-[44px] bg-[#0a2a52] border border-[#1e407c]/50 hover:border-[#1e407c] disabled:opacity-60 text-[#96BEE6] py-3 rounded-xl font-medium mb-4 transition-colors"
+      >
+        {{ isAdding ? 'Adding...' : 'Add to My Venues' }}
+      </button>
+      <div v-else class="w-full min-h-[44px] bg-[#0a2a52] border border-[#1e407c]/50 text-[#96BEE6] py-3 rounded-xl font-medium mb-4 text-center">
+        Added to your venues
       </div>
 
       <!-- Thoughts section -->

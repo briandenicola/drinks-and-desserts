@@ -48,4 +48,6 @@ public static class NotificationType
     public const string NewThought = "new-thought";
     public const string WorkflowCompleted = "workflow-completed";
     public const string WorkflowFailed = "workflow-failed";
+    public const string ItemShared = "item-shared";
+    public const string VenueShared = "venue-shared";
 }

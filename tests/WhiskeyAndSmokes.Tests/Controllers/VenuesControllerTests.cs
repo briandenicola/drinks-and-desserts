@@ -515,4 +515,74 @@ public class VenuesControllerTests : IClassFixture<CustomWebApplicationFactory>
 
         await _factory.BlobStorage.Received(1).DeleteBlobAsync(photoUrl);
     }
+
+    [Fact]
+    public async Task ShareVenue_WhenFriends_CreatesNotificationForRecipient()
+    {
+        _factory.NotificationService.ClearReceivedCalls();
+
+        var venue = new Venue
+        {
+            Id = "share-venue-1",
+            UserId = TestUserId,
+            Name = "Rare Books Bar",
+            Type = VenueType.Bar
+        };
+
+        _factory.CosmosDb.GetAsync<Venue>("venues", "share-venue-1", TestUserId)
+            .Returns(venue);
+
+        var friendship = new Friendship
+        {
+            Id = "fs-1",
+            UserId = TestUserId,
+            FriendId = "friend-1",
+            FriendDisplayName = "Bob",
+            Status = FriendshipStatus.Accepted
+        };
+
+        _factory.CosmosDb.QueryAsync(
+            "friendships",
+            TestUserId,
+            Arg.Any<string?>(),
+            1,
+            Arg.Any<Expression<Func<Friendship, bool>>?>())
+            .Returns((new List<Friendship> { friendship }, (string?)null));
+
+        var response = await _client.PostAsJsonAsync("/api/venues/share-venue-1/share", new ShareRequest { FriendId = "friend-1" });
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        await _factory.NotificationService.Received(1).CreateAsync(Arg.Is<Notification>(n =>
+            n.UserId == "friend-1" &&
+            n.Type == NotificationType.VenueShared &&
+            n.SourceUserId == TestUserId &&
+            n.ReferenceType == "venue" &&
+            n.ReferenceId == "share-venue-1"));
+    }
+
+    [Fact]
+    public async Task ShareVenue_WhenNotFriends_Returns403()
+    {
+        var venue = new Venue
+        {
+            Id = "share-venue-2",
+            UserId = TestUserId,
+            Name = "Rare Books Bar",
+            Type = VenueType.Bar
+        };
+
+        _factory.CosmosDb.GetAsync<Venue>("venues", "share-venue-2", TestUserId)
+            .Returns(venue);
+
+        _factory.CosmosDb.QueryAsync(
+            "friendships",
+            TestUserId,
+            Arg.Any<string?>(),
+            1,
+            Arg.Any<Expression<Func<Friendship, bool>>?>())
+            .Returns((new List<Friendship>(), (string?)null));
+
+        var response = await _client.PostAsJsonAsync("/api/venues/share-venue-2/share", new ShareRequest { FriendId = "stranger-id" });
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
 }

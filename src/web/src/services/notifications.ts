@@ -3,7 +3,7 @@ import api from './api'
 export interface AppNotification {
   id: string
   userId: string
-  type: 'friend-request' | 'friend-accepted' | 'new-thought' | 'workflow-completed' | 'workflow-failed'
+  type: 'friend-request' | 'friend-accepted' | 'new-thought' | 'workflow-completed' | 'workflow-failed' | 'item-shared' | 'venue-shared'
   title: string
   detail?: string
   sourceUserId: string

@@ -444,3 +444,12 @@ public class CreateVenueFromUrlRequest
     [Url]
     public string Url { get; set; } = string.Empty;
 }
+
+// Sharing
+public class ShareRequest
+{
+    [JsonPropertyName("friendId")]
+    [Required]
+    [StringLength(100)]
+    public string FriendId { get; set; } = string.Empty;
+}

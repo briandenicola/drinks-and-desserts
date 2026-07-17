@@ -15,24 +15,36 @@ public class VenuesController : ControllerBase
 {
     private readonly ICosmosDbService _cosmosDb;
     private readonly IBlobStorageService _blobStorage;
+    private readonly INotificationService _notificationService;
     private readonly Channel<VenueUrlWorkItem> _venueUrlChannel;
     private readonly ILogger<VenuesController> _logger;
     private const string ContainerName = "venues";
+    private const string FriendshipsContainer = "friendships";
     private const int DefaultPageSize = 25;
     private const int MaxPageSize = 100;
 
     private static readonly HashSet<string> AllowedImageExtensions =
         [".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif"];
 
-    public VenuesController(ICosmosDbService cosmosDb, IBlobStorageService blobStorage, Channel<VenueUrlWorkItem> venueUrlChannel, ILogger<VenuesController> logger)
+    public VenuesController(ICosmosDbService cosmosDb, IBlobStorageService blobStorage, INotificationService notificationService, Channel<VenueUrlWorkItem> venueUrlChannel, ILogger<VenuesController> logger)
     {
         _cosmosDb = cosmosDb;
         _blobStorage = blobStorage;
+        _notificationService = notificationService;
         _venueUrlChannel = venueUrlChannel;
         _logger = logger;
     }
 
     private string GetUserId() => User.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new UnauthorizedAccessException();
+    private string GetDisplayName() => User.FindFirstValue(ClaimTypes.Name) ?? "Unknown";
+
+    private async Task<bool> AreFriendsAsync(string userId, string friendId)
+    {
+        var (friends, _) = await _cosmosDb.QueryAsync<Friendship>(
+            FriendshipsContainer, userId, maxItems: 1,
+            predicate: f => f.FriendId == friendId && f.Status == FriendshipStatus.Accepted);
+        return friends.Count > 0;
+    }
 
     [HttpGet]
     public async Task<ActionResult<PagedResponse<Venue>>> ListVenues(
@@ -285,6 +297,37 @@ public class VenuesController : ControllerBase
 
         _logger.LogInformation("Updated venue {VenueId} for user {UserId}", id, userId);
         return Ok(venue);
+    }
+
+    [HttpPost("{id}/share")]
+    public async Task<ActionResult> ShareVenue(string id, [FromBody] ShareRequest request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        var userId = GetUserId();
+
+        var venue = await _cosmosDb.GetAsync<Venue>(ContainerName, id, userId);
+        if (venue == null)
+            return NotFound();
+
+        if (!await AreFriendsAsync(userId, request.FriendId))
+            return Forbid();
+
+        var sharerName = GetDisplayName();
+
+        await _notificationService.CreateAsync(new Notification
+        {
+            UserId = request.FriendId,
+            Type = NotificationType.VenueShared,
+            Title = $"{sharerName} shared {venue.Name} with you",
+            SourceUserId = userId,
+            SourceDisplayName = sharerName,
+            ReferenceType = "venue",
+            ReferenceId = venue.Id,
+        });
+
+        _logger.LogInformation("User {UserId} shared venue {VenueId} with friend {FriendId}", userId, id, request.FriendId);
+        return Ok();
     }
 
     [HttpDelete("{id}")]

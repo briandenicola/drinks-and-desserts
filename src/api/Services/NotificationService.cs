@@ -67,6 +67,22 @@ public class NotificationService : INotificationService
         if (string.IsNullOrEmpty(notification.ReferenceType) || string.IsNullOrEmpty(notification.ReferenceId))
             return null;
 
+        // Shared items/venues belong to the sharer, not the recipient — route through
+        // the friend-view pages (which surface the "Add to My Collection" action) instead
+        // of the recipient's own (and wrong) /items or /venues routes.
+        if (notification.Type is NotificationType.ItemShared or NotificationType.VenueShared)
+        {
+            if (string.IsNullOrEmpty(notification.SourceUserId))
+                return null;
+
+            return notification.Type switch
+            {
+                NotificationType.ItemShared => $"/friends/{notification.SourceUserId}/items/{notification.ReferenceId}",
+                NotificationType.VenueShared => $"/friends/{notification.SourceUserId}/venues/{notification.ReferenceId}",
+                _ => null,
+            };
+        }
+
         return notification.ReferenceType switch
         {
             "capture" => $"/history/{notification.ReferenceId}",

@@ -307,7 +307,96 @@ public class FriendsController : ControllerBase
         return Ok(venue);
     }
 
+    // ── Add from friend's collection ──
+
+    [HttpPost("{friendId}/items/{itemId}/add")]
+    public async Task<ActionResult<Item>> AddFriendItem(string friendId, string itemId)
+    {
+        var userId = GetUserId();
+        var friendship = await GetAcceptedFriendshipAsync(userId, friendId);
+        if (friendship == null)
+            return Forbid();
+
+        var sourceItem = await _cosmosDb.GetAsync<Item>("items", itemId, friendId);
+        if (sourceItem == null) return NotFound();
+
+        var newItem = new Item
+        {
+            UserId = userId,
+            Type = sourceItem.Type,
+            Name = sourceItem.Name,
+            Brand = sourceItem.Brand,
+            Category = sourceItem.Category,
+            Details = sourceItem.Details,
+            Venue = sourceItem.Venue,
+            PhotoUrls = [.. sourceItem.PhotoUrls],
+            UserRating = sourceItem.UserRating,
+            UserNotes = sourceItem.UserNotes,
+            Tags = [.. sourceItem.Tags],
+            Status = ItemStatus.Reviewed,
+            ProcessedBy = ProcessingSource.Manual,
+            SourceAttribution = new SourceAttribution
+            {
+                SourceUserId = friendId,
+                SourceDisplayName = friendship.FriendDisplayName,
+                SourceItemId = itemId,
+            },
+        };
+
+        newItem = await _cosmosDb.CreateAsync("items", newItem, newItem.PartitionKey);
+
+        _logger.LogInformation("User {UserId} added item {SourceItemId} from friend {FriendId} as new item {NewItemId}",
+            userId, itemId, friendId, newItem.Id);
+        return CreatedAtAction(nameof(GetFriendItem), new { friendId, itemId = newItem.Id }, newItem);
+    }
+
+    [HttpPost("{friendId}/venues/{venueId}/add")]
+    public async Task<ActionResult<Venue>> AddFriendVenue(string friendId, string venueId)
+    {
+        var userId = GetUserId();
+        var friendship = await GetAcceptedFriendshipAsync(userId, friendId);
+        if (friendship == null)
+            return Forbid();
+
+        var sourceVenue = await _cosmosDb.GetAsync<Venue>("venues", venueId, friendId);
+        if (sourceVenue == null) return NotFound();
+
+        var newVenue = new Venue
+        {
+            UserId = userId,
+            Name = sourceVenue.Name,
+            Address = sourceVenue.Address,
+            Website = sourceVenue.Website,
+            Type = sourceVenue.Type,
+            Rating = sourceVenue.Rating,
+            PhotoUrls = [.. sourceVenue.PhotoUrls],
+            Location = sourceVenue.Location,
+            Labels = [.. sourceVenue.Labels],
+            Status = VenueStatus.Completed,
+            SourceAttribution = new SourceAttribution
+            {
+                SourceUserId = friendId,
+                SourceDisplayName = friendship.FriendDisplayName,
+                SourceItemId = venueId,
+            },
+        };
+
+        newVenue = await _cosmosDb.CreateAsync("venues", newVenue, newVenue.PartitionKey);
+
+        _logger.LogInformation("User {UserId} added venue {SourceVenueId} from friend {FriendId} as new venue {NewVenueId}",
+            userId, venueId, friendId, newVenue.Id);
+        return CreatedAtAction(nameof(GetFriendVenue), new { friendId, venueId = newVenue.Id }, newVenue);
+    }
+
     // ── Helpers ──
+
+    private async Task<Friendship?> GetAcceptedFriendshipAsync(string userId, string friendId)
+    {
+        var (friends, _) = await _cosmosDb.QueryAsync<Friendship>(
+            FriendshipsContainer, userId, maxItems: 1,
+            predicate: f => f.FriendId == friendId && f.Status == FriendshipStatus.Accepted);
+        return friends.Count > 0 ? friends[0] : null;
+    }
 
     private async Task<bool> AreFriendsAsync(string userId, string friendId)
     {

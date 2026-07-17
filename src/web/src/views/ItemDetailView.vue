@@ -9,6 +9,7 @@ import { useAuthStore } from '../stores/auth'
 import StarRating from '../components/common/StarRating.vue'
 import ThoughtsList from '../components/common/ThoughtsList.vue'
 import AutocompleteInput from '../components/common/AutocompleteInput.vue'
+import ShareModal from '../components/common/ShareModal.vue'
 import { RefreshKey } from '../composables/refreshKey'
 
 const route = useRoute()
@@ -21,6 +22,9 @@ const isEditing = ref(false)
 const isSaving = ref(false)
 const isAddingNote = ref(false)
 const showDeleteConfirm = ref(false)
+const showShareModal = ref(false)
+const isSharing = ref(false)
+const shareError = ref('')
 const editRating = ref(0)
 const editName = ref('')
 const editType = ref('')
@@ -374,6 +378,20 @@ async function deleteItem() {
 function isAiGenerated(data: Item): boolean {
   return (data.aiConfidence != null && data.aiConfidence > 0)
 }
+
+async function shareWithFriend(friendId: string) {
+  if (!item.value || isSharing.value) return
+  isSharing.value = true
+  shareError.value = ''
+  try {
+    await itemsApi.share(item.value.id, friendId)
+    showShareModal.value = false
+  } catch {
+    shareError.value = 'Failed to share item'
+  } finally {
+    isSharing.value = false
+  }
+}
 </script>
 
 <template>
@@ -386,8 +404,13 @@ function isAiGenerated(data: Item): boolean {
         ← Back
       </button>
       <div class="flex items-center gap-3">
-        <!-- View mode: Edit + Delete icons -->
+        <!-- View mode: Share + Edit + Delete icons -->
         <template v-if="!isEditing">
+          <button @click="showShareModal = true" class="text-[#96BEE6] hover:text-white p-2.5 min-h-[44px] min-w-[44px]" title="Share">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342a3.001 3.001 0 100 2.684m0-2.684a3 3 0 110 2.684m0-2.684l6.632-3.316m-6.632 6l6.632 3.316m0-9.316a3 3 0 105.368-2.684 3 3 0 00-5.368 2.684zm0 6.632a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+          </button>
           <button @click="startEditing" class="text-[#96BEE6] hover:text-[#96BEE6] p-2.5 min-h-[44px] min-w-[44px]" title="Edit">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -502,6 +525,9 @@ function isAiGenerated(data: Item): boolean {
       <span v-if="item.status === 'ai-draft'" class="text-xs text-[#96BEE6] ml-2">AI Draft — tap edit to review</span>
       <h2 class="text-2xl font-bold mt-2">{{ item.name }}</h2>
       <p v-if="item.brand" class="text-[#96BEE6]">{{ item.brand }}</p>
+      <p v-if="item.sourceAttribution" class="text-xs text-[#5a8ab5] mt-1">
+        Added from {{ item.sourceAttribution.sourceDisplayName }}'s collection
+      </p>
     </div>
 
     <!-- Notes (view mode) — merged from AI summary and user notes -->
@@ -712,6 +738,19 @@ function isAiGenerated(data: Item): boolean {
       </h3>
       <ThoughtsList :thoughts="friendThoughts" @delete="handleDeleteThought" />
     </div>
+
+    <!-- Share error toast -->
+    <div v-if="shareError" class="fixed bottom-4 left-4 right-4 max-w-lg mx-auto bg-red-900/90 border border-red-700 text-red-300 rounded-xl p-3 text-sm z-50">
+      {{ shareError }}
+    </div>
+
+    <!-- Share Modal -->
+    <ShareModal
+      v-model="showShareModal"
+      :item-name="item.name"
+      :is-sharing="isSharing"
+      @select="shareWithFriend"
+    />
 
     <!-- Delete Confirmation Modal -->
     <Teleport to="body">

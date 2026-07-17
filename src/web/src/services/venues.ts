@@ -1,4 +1,5 @@
 import api from './api'
+import type { SourceAttribution } from './items'
 
 export interface ListQueryOptions {
   search?: string
@@ -33,6 +34,7 @@ export interface Venue {
   status: string
   workflowSteps: VenueWorkflowStep[]
   processingError?: string
+  sourceAttribution?: SourceAttribution
   createdAt: string
   updatedAt: string
 }
@@ -114,4 +116,7 @@ export const venuesApi = {
 
   createFromUrl: (url: string) =>
     api.post<Venue>('/venues/from-url', { url }),
+
+  share: (id: string, friendId: string) =>
+    api.post(`/venues/${id}/share`, { friendId }),
 }
