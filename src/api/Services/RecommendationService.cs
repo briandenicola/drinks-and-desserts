@@ -334,7 +334,7 @@ If no items are visible or the photo is not of a menu, return an empty array: []
       ""category"": ""Category"",
       ""confidence"": 0.95,
       ""reason"": ""Why you're recommending this based on user's history"",
-      ""matchedFromMenu"": true
+      ""matchedFromMenu"": false
     }
   ],
   ""reasoning"": ""Overall explanation of recommendation strategy""
@@ -353,6 +353,16 @@ If no items are visible or the photo is not of a menu, return an empty array: []
             var result = JsonSerializer.Deserialize<RecommendationResponse>(StripMarkdownCodeFences(content),
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
                 ?? new RecommendationResponse();
+
+            // Don't trust the model's self-reported "matchedFromMenu" — it has been observed to
+            // echo the `true` shown in the example schema even when no menu was ever provided.
+            // Recompute it from the actual extracted menu items instead.
+            foreach (var rec in result.Recommendations)
+            {
+                rec.MatchedFromMenu = menuItems != null && menuItems.Count > 0 && menuItems.Any(m =>
+                    m.Contains(rec.Name, StringComparison.OrdinalIgnoreCase) ||
+                    rec.Name.Contains(m, StringComparison.OrdinalIgnoreCase));
+            }
 
             activity?.SetTag("recommendations.count", result.Recommendations.Count);
             _logger.LogInformation("Generated {Count} recommendations", result.Recommendations.Count);
