@@ -23,6 +23,8 @@ const {
   isError,
   savedItems,
   savingItems,
+  isSavingThread,
+  savedThreadId,
   hasRecommendations,
 } = storeToRefs(store)
 
@@ -64,15 +66,26 @@ onMounted(() => {
   <div class="p-4 mx-auto pb-24" :class="isDesktop ? 'max-w-6xl' : 'max-w-lg'">
     <div class="flex items-center justify-between mb-2">
       <h1 class="text-2xl font-bold text-white">AI Recommendations</h1>
-      <router-link
-        v-if="!isDesktop"
-        to="/search"
-        class="text-[#96BEE6]/70 hover:text-[#96BEE6] transition-colors"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-      </router-link>
+      <div class="flex items-center gap-4">
+        <router-link
+          to="/recommendations/history"
+          class="text-[#96BEE6]/70 hover:text-[#96BEE6] transition-colors"
+          title="Past recommendations"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </router-link>
+        <router-link
+          v-if="!isDesktop"
+          to="/search"
+          class="text-[#96BEE6]/70 hover:text-[#96BEE6] transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </router-link>
+      </div>
     </div>
     <div class="mb-6">
       <p class="text-[#96BEE6] text-sm">
@@ -206,6 +219,19 @@ onMounted(() => {
         <div v-if="basedOnItems.length > 0" class="text-xs text-[#4a7aa5] mb-4">
           Based on: {{ basedOnItems.join(', ') }}
         </div>
+
+        <button
+          v-if="!savedThreadId"
+          :disabled="isSavingThread"
+          @click="store.saveThread()"
+          class="text-xs bg-[#1e407c] hover:bg-[#2d5596] text-white px-3 py-1.5 rounded transition-colors disabled:opacity-50"
+        >
+          <span v-if="isSavingThread">Saving...</span>
+          <span v-else>Save this recommendation</span>
+        </button>
+        <span v-else class="text-xs bg-green-800/50 text-green-300 px-3 py-1.5 rounded">
+          Saved to history
+        </span>
       </div>
 
       <div

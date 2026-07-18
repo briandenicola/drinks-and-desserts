@@ -336,8 +336,8 @@ static async Task InitializeCosmosDb(WebApplication app)
 
         var database = await client.CreateDatabaseIfNotExistsAsync(dbName);
 
-        string[] containers = ["users", "captures", "items", "venues", "friendships", "friend-invites", "thoughts", "notifications", "oidc-providers", "oidc-auth-states", "external-identities", "settings"];
-        string[] partitionKeys = ["/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey"];
+        string[] containers = ["users", "captures", "items", "venues", "friendships", "friend-invites", "thoughts", "notifications", "oidc-providers", "oidc-auth-states", "external-identities", "settings", "recommendation-threads"];
+        string[] partitionKeys = ["/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey", "/partitionKey"];
 
         for (int i = 0; i < containers.Length; i++)
         {

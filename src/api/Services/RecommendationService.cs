@@ -31,6 +31,7 @@ public class RecommendationService : IRecommendationService
     }
 
     private static readonly TimeSpan AiTimeout = TimeSpan.FromSeconds(90);
+    private const string ThreadsContainerName = "recommendation-threads";
 
     private static string NormalizeItemType(string? type)
     {
@@ -235,6 +236,60 @@ If no items are visible or the photo is not of a menu, return an empty array: []
             _logger.LogError(ex, "Failed to extract menu items from photo");
             return [];
         }
+    }
+
+    public async Task<RecommendationThread> SaveRecommendationThreadAsync(
+        string userId, RecommendationRequest request, RecommendationResponse response, CancellationToken cancellationToken = default)
+    {
+        using var activity = Diagnostics.General.StartActivity("SaveRecommendationThread");
+        activity?.SetTag("user.id", userId);
+
+        var thread = new RecommendationThread
+        {
+            UserId = userId,
+            Request = request,
+            Recommendations = response.Recommendations,
+            Reasoning = response.Reasoning,
+            BasedOnItems = response.BasedOnItems,
+            ExtractedMenuItems = response.ExtractedMenuItems
+        };
+
+        await _cosmosDb.CreateAsync(ThreadsContainerName, thread, thread.PartitionKey);
+
+        _logger.LogInformation("Saved recommendation thread {ThreadId} for user {UserId}", thread.Id, userId);
+        return thread;
+    }
+
+    public async Task<List<RecommendationThread>> GetRecommendationThreadsAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        using var activity = Diagnostics.General.StartActivity("GetRecommendationThreads");
+        activity?.SetTag("user.id", userId);
+
+        var (threads, _) = await _cosmosDb.QueryAsync<RecommendationThread>(
+            ThreadsContainerName, userId, maxItems: 100, orderBy: t => t.CreatedAt, orderDescending: true);
+
+        return threads;
+    }
+
+    public async Task<RecommendationThread?> GetRecommendationThreadAsync(string userId, string id, CancellationToken cancellationToken = default)
+    {
+        using var activity = Diagnostics.General.StartActivity("GetRecommendationThread");
+        activity?.SetTag("user.id", userId);
+        activity?.SetTag("thread.id", id);
+
+        return await _cosmosDb.GetAsync<RecommendationThread>(ThreadsContainerName, id, userId);
+    }
+
+    public async Task DeleteRecommendationThreadAsync(string userId, string id, CancellationToken cancellationToken = default)
+    {
+        using var activity = Diagnostics.General.StartActivity("DeleteRecommendationThread");
+        activity?.SetTag("user.id", userId);
+        activity?.SetTag("thread.id", id);
+
+        var existing = await _cosmosDb.GetAsync<RecommendationThread>(ThreadsContainerName, id, userId);
+        if (existing == null) return;
+
+        await _cosmosDb.DeleteAsync(ThreadsContainerName, id, userId);
     }
 
     private static string StripMarkdownCodeFences(string text)
