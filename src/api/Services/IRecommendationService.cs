@@ -18,4 +18,24 @@ public interface IRecommendationService
     /// Extract menu items from a photo
     /// </summary>
     Task<List<string>> ExtractMenuItemsAsync(string photoUrl, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Save a generated recommendation thread (request + results) so the user can revisit it later
+    /// </summary>
+    Task<RecommendationThread> SaveRecommendationThreadAsync(string userId, RecommendationRequest request, RecommendationResponse response, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// List a user's saved recommendation threads, most recent first
+    /// </summary>
+    Task<List<RecommendationThread>> GetRecommendationThreadsAsync(string userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get a single saved recommendation thread
+    /// </summary>
+    Task<RecommendationThread?> GetRecommendationThreadAsync(string userId, string id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Delete a saved recommendation thread
+    /// </summary>
+    Task DeleteRecommendationThreadAsync(string userId, string id, CancellationToken cancellationToken = default);
 }

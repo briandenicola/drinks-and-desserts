@@ -59,6 +59,36 @@ public class RecommendedItem
     public bool MatchedFromMenu { get; set; }
 }
 
+public class RecommendationThread
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+
+    [JsonPropertyName("userId")]
+    public string UserId { get; set; } = string.Empty;
+
+    [JsonPropertyName("request")]
+    public RecommendationRequest Request { get; set; } = new();
+
+    [JsonPropertyName("recommendations")]
+    public List<RecommendedItem> Recommendations { get; set; } = [];
+
+    [JsonPropertyName("reasoning")]
+    public string? Reasoning { get; set; }
+
+    [JsonPropertyName("basedOnItems")]
+    public List<string> BasedOnItems { get; set; } = [];
+
+    [JsonPropertyName("extractedMenuItems")]
+    public List<string>? ExtractedMenuItems { get; set; }
+
+    [JsonPropertyName("createdAt")]
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [JsonPropertyName("partitionKey")]
+    public string PartitionKey => UserId;
+}
+
 public class UserRatingProfile
 {
     [JsonPropertyName("userId")]

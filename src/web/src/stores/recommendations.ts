@@ -1,7 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { capturesApi } from '../services/captures'
-import { recommendationsApi, type RecommendedItem, type UserRatingProfile } from '../services/recommendations'
+import {
+  recommendationsApi,
+  type RecommendedItem,
+  type UserRatingProfile,
+  type RecommendationRequest,
+} from '../services/recommendations'
 import { itemsApi } from '../services/items'
 
 export const useRecommendationsStore = defineStore('recommendations', () => {
@@ -28,6 +33,11 @@ export const useRecommendationsStore = defineStore('recommendations', () => {
   // Wishlist save state
   const savedItems = ref<Set<number>>(new Set())
   const savingItems = ref<Set<number>>(new Set())
+
+  // Thread save state
+  const isSavingThread = ref(false)
+  const savedThreadId = ref<string | null>(null)
+  const lastRequest = ref<RecommendationRequest | null>(null)
 
   // Computed
   const hasRecommendations = computed(() => recommendations.value.length > 0)
@@ -89,17 +99,21 @@ export const useRecommendationsStore = defineStore('recommendations', () => {
         photoUrl = await uploadMenuPhoto(photoToUpload)
       }
 
-      const { data } = await recommendationsApi.getRecommendations({
+      const requestPayload: RecommendationRequest = {
         preferences: preferences.value || undefined,
         menuPhoto: photoUrl || undefined,
         itemTypes: selectedTypes.value.length > 0 ? selectedTypes.value : undefined,
         limit: 5,
-      })
+      }
 
+      const { data } = await recommendationsApi.getRecommendations(requestPayload)
+
+      lastRequest.value = requestPayload
       recommendations.value = data.recommendations
       reasoning.value = data.reasoning || ''
       basedOnItems.value = data.basedOnItems
       extractedMenuItems.value = data.extractedMenuItems || []
+      savedThreadId.value = null
     } catch (error: unknown) {
       console.error('Failed to get recommendations:', error)
       const apiError = error as { response?: { data?: { error?: string } } }
@@ -130,6 +144,9 @@ export const useRecommendationsStore = defineStore('recommendations', () => {
     isError.value = false
     savedItems.value = new Set()
     savingItems.value = new Set()
+    isSavingThread.value = false
+    savedThreadId.value = null
+    lastRequest.value = null
   }
 
   async function saveToWishlist(rec: RecommendedItem, index: number) {
@@ -153,6 +170,25 @@ export const useRecommendationsStore = defineStore('recommendations', () => {
     }
   }
 
+  async function saveThread() {
+    if (isSavingThread.value || savedThreadId.value || !lastRequest.value || recommendations.value.length === 0) return
+
+    isSavingThread.value = true
+    try {
+      const { data } = await recommendationsApi.saveThread(lastRequest.value, {
+        recommendations: recommendations.value,
+        reasoning: reasoning.value,
+        basedOnItems: basedOnItems.value,
+        extractedMenuItems: extractedMenuItems.value,
+      })
+      savedThreadId.value = data.id
+    } catch (error) {
+      console.error('Failed to save recommendation thread:', error)
+    } finally {
+      isSavingThread.value = false
+    }
+  }
+
   return {
     // State
     profileData,
@@ -169,6 +205,8 @@ export const useRecommendationsStore = defineStore('recommendations', () => {
     isError,
     savedItems,
     savingItems,
+    isSavingThread,
+    savedThreadId,
     // Computed
     hasRecommendations,
     // Actions
@@ -178,5 +216,6 @@ export const useRecommendationsStore = defineStore('recommendations', () => {
     toggleType,
     reset,
     saveToWishlist,
+    saveThread,
   }
 })

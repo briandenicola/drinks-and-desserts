@@ -82,6 +82,17 @@ const routes = [
     component: () => import('../views/RecommendationsView.vue'),
   },
   {
+    path: '/recommendations/history',
+    name: 'RecommendationHistory',
+    component: () => import('../views/RecommendationHistoryView.vue'),
+  },
+  {
+    path: '/recommendations/history/:id',
+    name: 'RecommendationThreadDetail',
+    component: () => import('../views/RecommendationThreadDetailView.vue'),
+    props: true,
+  },
+  {
     path: '/stats',
     name: 'Stats',
     component: () => import('../views/StatsView.vue'),

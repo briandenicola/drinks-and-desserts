@@ -103,9 +103,107 @@ public class RecommendationsController : ControllerBase
             return StatusCode(500, new { error = "Failed to extract menu items" });
         }
     }
+
+    /// <summary>
+    /// Save a generated recommendation thread so it can be revisited later
+    /// </summary>
+    [HttpPost("threads")]
+    public async Task<ActionResult<RecommendationThread>> SaveThread(
+        [FromBody] SaveRecommendationThreadRequest request,
+        CancellationToken cancellationToken)
+    {
+        var userId = GetUserId();
+
+        if (request.Response.Recommendations.Count == 0)
+        {
+            return BadRequest(new { error = "There are no recommendations to save" });
+        }
+
+        try
+        {
+            var thread = await _recommendationService.SaveRecommendationThreadAsync(userId, request.Request, request.Response, cancellationToken);
+            return Ok(thread);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error saving recommendation thread for user {UserId}", userId);
+            return StatusCode(500, new { error = "Failed to save recommendation thread" });
+        }
+    }
+
+    /// <summary>
+    /// List the user's saved recommendation threads, most recent first
+    /// </summary>
+    [HttpGet("threads")]
+    public async Task<ActionResult<List<RecommendationThread>>> GetThreads(CancellationToken cancellationToken)
+    {
+        var userId = GetUserId();
+
+        try
+        {
+            var threads = await _recommendationService.GetRecommendationThreadsAsync(userId, cancellationToken);
+            return Ok(threads);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error listing recommendation threads for user {UserId}", userId);
+            return StatusCode(500, new { error = "Failed to load recommendation history" });
+        }
+    }
+
+    /// <summary>
+    /// Get a single saved recommendation thread
+    /// </summary>
+    [HttpGet("threads/{id}")]
+    public async Task<ActionResult<RecommendationThread>> GetThread(string id, CancellationToken cancellationToken)
+    {
+        var userId = GetUserId();
+
+        try
+        {
+            var thread = await _recommendationService.GetRecommendationThreadAsync(userId, id, cancellationToken);
+            if (thread == null)
+            {
+                return NotFound(new { error = "Recommendation thread not found" });
+            }
+
+            return Ok(thread);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting recommendation thread {ThreadId} for user {UserId}", id, userId);
+            return StatusCode(500, new { error = "Failed to load recommendation thread" });
+        }
+    }
+
+    /// <summary>
+    /// Delete a saved recommendation thread
+    /// </summary>
+    [HttpDelete("threads/{id}")]
+    public async Task<ActionResult> DeleteThread(string id, CancellationToken cancellationToken)
+    {
+        var userId = GetUserId();
+
+        try
+        {
+            await _recommendationService.DeleteRecommendationThreadAsync(userId, id, cancellationToken);
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting recommendation thread {ThreadId} for user {UserId}", id, userId);
+            return StatusCode(500, new { error = "Failed to delete recommendation thread" });
+        }
+    }
 }
 
 public class MenuExtractionRequest
 {
     public string PhotoUrl { get; set; } = string.Empty;
+}
+
+public class SaveRecommendationThreadRequest
+{
+    public RecommendationRequest Request { get; set; } = new();
+    public RecommendationResponse Response { get; set; } = new();
 }

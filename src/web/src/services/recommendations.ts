@@ -25,6 +25,17 @@ export interface RecommendationResponse {
   extractedMenuItems?: string[]
 }
 
+export interface RecommendationThread {
+  id: string
+  userId: string
+  request: RecommendationRequest
+  recommendations: RecommendedItem[]
+  reasoning?: string
+  basedOnItems: string[]
+  extractedMenuItems?: string[]
+  createdAt: string
+}
+
 export interface UserRatingProfile {
   userId: string
   topRatedItems: Array<{
@@ -57,4 +68,13 @@ export const recommendationsApi = {
 
   extractMenuItems: (photoUrl: string) =>
     api.post<string[]>('/recommendations/extract-menu', { photoUrl }),
+
+  saveThread: (request: RecommendationRequest, response: RecommendationResponse) =>
+    api.post<RecommendationThread>('/recommendations/threads', { request, response }),
+
+  getThreads: () => api.get<RecommendationThread[]>('/recommendations/threads'),
+
+  getThread: (id: string) => api.get<RecommendationThread>(`/recommendations/threads/${id}`),
+
+  deleteThread: (id: string) => api.delete(`/recommendations/threads/${id}`),
 }
