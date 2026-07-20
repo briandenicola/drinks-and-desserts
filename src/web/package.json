@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@azure/msal-browser": "^5.15.0",
-    "@tanstack/vue-virtual": "^3.13.31",
+    "@tanstack/vue-virtual": "^3.13.32",
     "@vue-leaflet/vue-leaflet": "^0.10.1",
     "axios": "^1.18.1",
     "echarts": "^6.0.0",
