@@ -9,22 +9,22 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@azure/msal-browser": "^5.15.0",
+    "@azure/msal-browser": "^5.17.1",
     "@tanstack/vue-virtual": "^3.13.32",
     "@vue-leaflet/vue-leaflet": "^0.10.1",
     "axios": "^1.18.1",
     "echarts": "^6.0.0",
     "fuse.js": "^7.5.0",
     "leaflet": "^1.9.4",
-    "pinia": "^3.0.4",
+    "pinia": "^4.0.2",
     "vue": "^3.5.40",
     "vue-echarts": "^8.0.1",
     "vue-router": "^5.2.0"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.3.1",
+    "@tailwindcss/vite": "^4.3.3",
     "@types/leaflet": "^1.9.21",
-    "@types/node": "^26.1.0",
+    "@types/node": "^26.1.1",
     "@vitejs/plugin-vue": "^6.0.7",
     "@vue/tsconfig": "^0.9.0",
     "tailwindcss": "^4.3.2",
