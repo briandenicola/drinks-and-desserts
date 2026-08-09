@@ -216,6 +216,7 @@ builder.Services.AddSingleton<IAgentService, WorkflowAgentService>();
 builder.Services.AddSingleton<INotificationService, NotificationService>();
 builder.Services.AddSingleton<IPushoverService, PushoverService>();
 builder.Services.AddSingleton<IRecommendationService, RecommendationService>();
+builder.Services.AddSingleton<ISearchService, SearchService>();
 builder.Services.AddHttpClient();  // Register IHttpClientFactory
 builder.Services.AddHttpClient<IWishlistUrlService, WishlistUrlService>();
 builder.Services.AddHttpClient<IVenueUrlService, VenueUrlService>();
