@@ -242,9 +242,11 @@ const searchInput = ref<HTMLInputElement | null>(null)
       <div v-if="isMemorySearching || memoryError || displayedMemoryResults.length || memoryResponse" class="mb-4 space-y-2">
         <div class="flex items-center justify-between">
           <p class="text-xs text-[#96BEE6]/70 uppercase tracking-wider">Smart matches</p>
-          <span v-if="memoryResponse?.interpretedQuery.dateRange" class="text-[10px] text-[#4a7aa5]">
-            {{ memoryResponse.interpretedQuery.dateRange.label }}
-          </span>
+          <div class="flex items-center gap-2 text-[10px] text-[#4a7aa5]">
+            <span v-if="memoryResponse?.interpretedQuery.source === 'ai-foundry'">AI interpreted</span>
+            <span v-else-if="memoryResponse">Local fallback</span>
+            <span v-if="memoryResponse?.interpretedQuery.dateRange">{{ memoryResponse.interpretedQuery.dateRange.label }}</span>
+          </div>
         </div>
 
         <div v-if="isMemorySearching" class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-3 text-sm text-[#96BEE6]/70">

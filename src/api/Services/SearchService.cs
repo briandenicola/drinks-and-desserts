@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.RegularExpressions;
 using WhiskeyAndSmokes.Api.Models;
 
@@ -11,57 +10,24 @@ public interface ISearchService
 
 public class SearchService : ISearchService
 {
-    private const int PageSize = 100;
-    private static readonly string[] BeverageTypes =
-    [
-        ItemType.Whiskey, ItemType.Wine, ItemType.Cocktail, ItemType.Vodka, ItemType.Gin,
-        ItemType.Espresso, ItemType.Latte, ItemType.Cappuccino, ItemType.ColdBrew, ItemType.PourOver, ItemType.Coffee
-    ];
-
-    private static readonly Dictionary<string, int> Months = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["january"] = 1, ["jan"] = 1,
-        ["february"] = 2, ["feb"] = 2,
-        ["march"] = 3, ["mar"] = 3,
-        ["april"] = 4, ["apr"] = 4,
-        ["may"] = 5,
-        ["june"] = 6, ["jun"] = 6,
-        ["july"] = 7, ["jul"] = 7,
-        ["august"] = 8, ["aug"] = 8,
-        ["september"] = 9, ["sep"] = 9, ["sept"] = 9,
-        ["october"] = 10, ["oct"] = 10,
-        ["november"] = 11, ["nov"] = 11,
-        ["december"] = 12, ["dec"] = 12
-    };
-
-    private static readonly HashSet<string> StopWords = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "the", "and", "that", "this", "with", "from", "back", "really", "good", "great", "might", "maybe",
-        "had", "have", "was", "were", "but", "cant", "can't", "cannot", "remember", "anything", "about",
-        "at", "in", "on", "it", "its", "for", "my", "me", "a", "an", "of", "to", "i"
-    };
-
-    private readonly ICosmosDbService _cosmosDb;
-    private readonly TimeProvider _timeProvider;
+    private readonly ISearchIntentInterpreter _intentInterpreter;
+    private readonly ISearchCandidateProvider _candidateProvider;
     private readonly ILogger<SearchService> _logger;
 
-    public SearchService(ICosmosDbService cosmosDb, TimeProvider timeProvider, ILogger<SearchService> logger)
+    public SearchService(ISearchIntentInterpreter intentInterpreter, ISearchCandidateProvider candidateProvider, ILogger<SearchService> logger)
     {
-        _cosmosDb = cosmosDb;
-        _timeProvider = timeProvider;
+        _intentInterpreter = intentInterpreter;
+        _candidateProvider = candidateProvider;
         _logger = logger;
     }
 
     public async Task<SearchResponse> SearchAsync(string userId, SearchRequest request)
     {
         var limit = Math.Clamp(request.Limit ?? 20, 1, 50);
-        var interpretation = Interpret(request.Query);
+        var interpretation = await _intentInterpreter.InterpretAsync(request.Query);
 
-        var itemsTask = QueryAllAsync<Item>("items", userId, i => i.Status != ItemStatus.Wishlist);
-        var venuesTask = QueryAllAsync<Venue>("venues", userId, null);
-        await Task.WhenAll(itemsTask, venuesTask);
-
-        var venues = venuesTask.Result;
+        var candidates = await _candidateProvider.GetCandidatesAsync(userId, interpretation);
+        var venues = candidates.Venues;
         var venuesById = venues.Where(v => !string.IsNullOrWhiteSpace(v.Id)).ToDictionary(v => v.Id, StringComparer.OrdinalIgnoreCase);
         var venuesByName = venues
             .Where(v => !string.IsNullOrWhiteSpace(v.Name))
@@ -70,7 +36,7 @@ public class SearchService : ISearchService
 
         var results = new List<SearchResult>();
 
-        foreach (var item in itemsTask.Result)
+        foreach (var item in candidates.Items)
         {
             var linkedVenue = ResolveVenue(item, venuesById, venuesByName);
             var (score, reasons) = ScoreItem(item, linkedVenue, interpretation);
@@ -116,122 +82,6 @@ public class SearchService : ISearchService
             InterpretedQuery = interpretation,
             Results = ordered
         };
-    }
-
-    private SearchInterpretation Interpret(string query)
-    {
-        var normalized = Normalize(query);
-        var interpretation = new SearchInterpretation
-        {
-            DateRange = ExtractDateRange(normalized)
-        };
-
-        foreach (var type in ItemType.All)
-        {
-            if (normalized.Contains(type, StringComparison.OrdinalIgnoreCase) ||
-                normalized.Contains(type.Replace("-", " "), StringComparison.OrdinalIgnoreCase))
-            {
-                interpretation.ItemTypes.Add(type);
-            }
-        }
-
-        if (Regex.IsMatch(normalized, @"\b(drink|cocktail|beverage|pour|coffee)\b", RegexOptions.IgnoreCase))
-        {
-            interpretation.ItemTypes = interpretation.ItemTypes
-                .Concat(BeverageTypes)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
-        }
-
-        foreach (var venueType in VenueType.All)
-        {
-            if (Regex.IsMatch(normalized, $@"\b{Regex.Escape(venueType)}\b", RegexOptions.IgnoreCase))
-            {
-                interpretation.VenueHints.Add(venueType);
-            }
-        }
-
-        if (Regex.IsMatch(normalized, @"\b(good|great|excellent|amazing|best|favorite|favourite|loved|delicious|tasty|memorable)\b", RegexOptions.IgnoreCase))
-        {
-            interpretation.QualityHints.Add("highly rated or positive notes");
-        }
-
-        interpretation.Terms = Regex.Matches(normalized, "[a-z0-9][a-z0-9-]{2,}")
-            .Select(m => m.Value)
-            .Where(t => !StopWords.Contains(t) && !Months.ContainsKey(t))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Take(12)
-            .ToList();
-
-        return interpretation;
-    }
-
-    private SearchDateRange? ExtractDateRange(string normalized)
-    {
-        var now = _timeProvider.GetUtcNow().UtcDateTime;
-
-        if (normalized.Contains("this month", StringComparison.OrdinalIgnoreCase))
-        {
-            return MonthRange(now.Year, now.Month, "this month");
-        }
-
-        if (normalized.Contains("last month", StringComparison.OrdinalIgnoreCase))
-        {
-            var lastMonth = now.AddMonths(-1);
-            return MonthRange(lastMonth.Year, lastMonth.Month, "last month");
-        }
-
-        foreach (var (name, month) in Months)
-        {
-            if (!Regex.IsMatch(normalized, $@"\b{Regex.Escape(name)}\b", RegexOptions.IgnoreCase))
-            {
-                continue;
-            }
-
-            var yearMatch = Regex.Match(normalized, $@"\b{Regex.Escape(name)}\b\s+(?<year>20\d{{2}})", RegexOptions.IgnoreCase);
-            var year = yearMatch.Success ? int.Parse(yearMatch.Groups["year"].Value) : now.Year;
-            if (!yearMatch.Success && month > now.Month)
-            {
-                year--;
-            }
-
-            return MonthRange(year, month, CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(month));
-        }
-
-        return null;
-    }
-
-    private static SearchDateRange MonthRange(int year, int month, string label)
-    {
-        var start = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc);
-        return new SearchDateRange
-        {
-            Start = start,
-            End = start.AddMonths(1).AddTicks(-1),
-            Label = label
-        };
-    }
-
-    private async Task<List<T>> QueryAllAsync<T>(
-        string containerName,
-        string userId,
-        System.Linq.Expressions.Expression<Func<T, bool>>? predicate)
-    {
-        var all = new List<T>();
-        string? token = null;
-        do
-        {
-            var (items, nextToken) = await _cosmosDb.QueryAsync<T>(
-                containerName,
-                userId,
-                token,
-                PageSize,
-                predicate);
-            all.AddRange(items);
-            token = nextToken;
-        } while (token != null);
-
-        return all;
     }
 
     private static Venue? ResolveVenue(Item item, Dictionary<string, Venue> venuesById, Dictionary<string, Venue> venuesByName)

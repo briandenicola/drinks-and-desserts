@@ -30,6 +30,15 @@ public class SearchResponse
 
 public class SearchInterpretation
 {
+    [JsonPropertyName("source")]
+    public string Source { get; set; } = "rules";
+
+    [JsonPropertyName("confidence")]
+    public double Confidence { get; set; } = 0.5;
+
+    [JsonPropertyName("needsSemanticSearch")]
+    public bool NeedsSemanticSearch { get; set; }
+
     [JsonPropertyName("itemTypes")]
     public List<string> ItemTypes { get; set; } = [];
 

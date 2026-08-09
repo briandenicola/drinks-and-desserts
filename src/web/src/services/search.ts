@@ -15,6 +15,9 @@ export interface SearchDateRange {
 }
 
 export interface SearchInterpretation {
+  source: 'ai-foundry' | 'rules' | string
+  confidence: number
+  needsSemanticSearch: boolean
   itemTypes: string[]
   dateRange?: SearchDateRange
   venueHints: string[]

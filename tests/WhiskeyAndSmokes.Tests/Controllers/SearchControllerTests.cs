@@ -82,6 +82,7 @@ public class SearchControllerTests : IClassFixture<CustomWebApplicationFactory>
         var body = await response.Content.ReadFromJsonAsync<SearchResponse>();
 
         body.Should().NotBeNull();
+        body!.InterpretedQuery.Source.Should().Be("rules");
         body!.InterpretedQuery.DateRange.Should().NotBeNull();
         body.InterpretedQuery.ItemTypes.Should().Contain(ItemType.Cocktail);
         body.InterpretedQuery.VenueHints.Should().Contain(VenueType.Restaurant);
