@@ -99,6 +99,11 @@ const sortDirectionOptions = [
   { label: 'Descending', value: 'desc' as const },
 ]
 
+const tabs = [
+  { label: 'Collection', value: 'collection' as const },
+  { label: 'Wishlist', value: 'wishlist' as const },
+]
+
 const groupByOptions = [
   { label: 'None', value: undefined },
   { label: 'Type', value: 'type' },
@@ -438,8 +443,21 @@ function navigateToItem(id: string) {
   <!-- Mobile layout (< 1024px) -->
   <template v-else>
   <div class="p-4 max-w-lg mx-auto">
-    <div class="mb-4">
-      <h2 class="text-xl font-bold text-white">Collections</h2>
+    <!-- Collection / Wishlist tabs -->
+    <div class="flex gap-1 p-1 mb-4 bg-[#041e3e] border border-[#1e407c]/50 rounded-2xl" role="tablist">
+      <button
+        v-for="tab in tabs"
+        :key="tab.value"
+        role="tab"
+        :aria-selected="activeTab === tab.value"
+        @click="switchTab(tab.value)"
+        class="flex-1 px-4 py-2 min-h-[44px] rounded-xl text-sm font-medium transition-colors"
+        :class="activeTab === tab.value
+          ? 'bg-[#1e407c] text-white'
+          : 'text-[#96BEE6] hover:text-white'"
+      >
+        {{ tab.label }}
+      </button>
     </div>
 
     <!-- Search + Action Menu -->
@@ -471,30 +489,6 @@ function navigateToItem(id: string) {
           v-if="showActionMenu"
           class="absolute right-0 top-full mt-1 w-72 max-h-[70vh] overflow-y-auto bg-[#041e3e] border border-[#1e407c]/50 rounded-xl shadow-lg z-20 p-3 space-y-4"
         >
-          <div>
-            <p class="text-[11px] uppercase tracking-wide text-[#4a7aa5] mb-2">Collection & Wishlist</p>
-            <div class="grid grid-cols-2 gap-2">
-              <button
-                @click="switchTab('collection')"
-                class="px-3 py-2 rounded-lg text-sm border transition-colors"
-                :class="activeTab === 'collection'
-                  ? 'bg-[#1e407c] border-[#1e407c] text-white'
-                  : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6]'"
-              >
-                Collection
-              </button>
-              <button
-                @click="switchTab('wishlist')"
-                class="px-3 py-2 rounded-lg text-sm border transition-colors"
-                :class="activeTab === 'wishlist'
-                  ? 'bg-[#1e407c] border-[#1e407c] text-white'
-                  : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6]'"
-              >
-                Wishlist
-              </button>
-            </div>
-          </div>
-
           <div>
             <p class="text-[11px] uppercase tracking-wide text-[#4a7aa5] mb-2">Filter</p>
             <div class="grid grid-cols-2 gap-2">
@@ -752,7 +746,7 @@ function navigateToItem(id: string) {
 
 <style scoped>
 .virtual-list-container {
-  height: calc(100vh - 280px);
-  height: calc(100dvh - 280px);
+  height: calc(100vh - 306px);
+  height: calc(100dvh - 306px);
 }
 </style>
