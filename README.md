@@ -91,6 +91,8 @@ Agent prompts are stored as markdown files in `src/AgentInitiator/Prompts/` and 
 
 When AI Foundry is not configured, the system falls back to keyword-based local extraction.
 
+For a plain-language walkthrough with diagrams, see [AI Agents](docs/ai-agents.md).
+
 ## Recommendation Engine
 
 The app includes an AI-powered recommendation engine that suggests items you're likely to enjoy based on your rating history. Unlike the capture workflow which uses multi-agent orchestration, recommendations use **direct AI inference** for real-time responses:
@@ -116,6 +118,7 @@ For detailed architectural explanation, see [Recommendation Engine Documentation
 | [Local Docker Deployment](docs/local-docker-deployment.md) | Self-hosted deployment with Docker Compose and Portainer |
 | [Azure Deployment](docs/azure-deployment.md) | Terraform stacks, GitHub Actions, OIDC setup, secrets & variables |
 | [OIDC Sign-in Provider Setup](docs/oidc-setup.md) | Microsoft Entra ID and Pocket ID provider configuration |
+| [AI Agents](docs/ai-agents.md) | Plain-language guide to the agents that read your photos: who they are, where they run, and how they work together |
 | [Recommendation Engine](docs/recommendation-engine.md) | Deep dive into recommendation architecture, AI usage, and why not Foundry agents |
 | [Screenshot Guide](docs/screenshot-guide.md) | Auto-capture app screenshots for documentation with Playwright |
 
