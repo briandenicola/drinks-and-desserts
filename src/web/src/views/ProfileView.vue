@@ -80,6 +80,7 @@ const passwordError = ref(false)
 // API Keys
 const apiKeys = ref<ApiKeyResponse[]>([])
 const newKeyName = ref('')
+const newKeyAgentic = ref(false)
 const isCreatingKey = ref(false)
 const newlyCreatedKey = ref<CreateApiKeyResponse | null>(null)
 const keyCopied = ref(false)
@@ -236,10 +237,12 @@ async function createApiKey() {
   isCreatingKey.value = true
   keyMessage.value = ''
   try {
-    const res = await usersApi.createApiKey(newKeyName.value.trim())
+    const capabilities = ['read', ...(newKeyAgentic.value ? ['agentic'] : [])]
+    const res = await usersApi.createApiKey(newKeyName.value.trim(), capabilities)
     newlyCreatedKey.value = res.data
     keyCopied.value = false
     newKeyName.value = ''
+    newKeyAgentic.value = false
     await loadApiKeys()
   } catch (e: unknown) {
     keyMessage.value = getErrorMessage(e, 'Failed to create key')
@@ -639,7 +642,7 @@ async function changePassword() {
       <section class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 space-y-4">
         <h3 class="text-sm font-medium text-[#96BEE6] uppercase tracking-wide">API Keys</h3>
         <p class="text-sm text-[#96BEE6]">
-          Create API keys to integrate with iOS Shortcuts or other tools.
+          Create API keys to integrate with iOS Shortcuts, the MCP server, or other tools.
         </p>
 
         <!-- Newly created key banner -->
@@ -677,6 +680,10 @@ async function changePassword() {
             {{ isCreatingKey ? '...' : 'Create' }}
           </button>
         </div>
+        <label class="flex items-center gap-2 text-xs text-[#96BEE6]">
+          <input type="checkbox" v-model="newKeyAgentic" class="rounded border-[#1e407c]/50" />
+          Grant "agentic" capability (allows the MCP <code class="font-mono">get_recommendations</code> tool, in addition to baseline read-only access)
+        </label>
 
         <div v-if="keyMessage" class="text-sm text-red-400">{{ keyMessage }}</div>
 
@@ -693,6 +700,13 @@ async function changePassword() {
                 <span class="text-sm text-white truncate">{{ key.name }}</span>
                 <span v-if="key.isRevoked" class="text-[10px] px-1.5 py-0.5 rounded bg-red-900/50 text-red-400 border border-red-800">
                   Revoked
+                </span>
+                <span
+                  v-for="cap in key.capabilities"
+                  :key="cap"
+                  class="text-[10px] px-1.5 py-0.5 rounded bg-[#1e407c]/50 text-[#96BEE6] border border-[#1e407c]"
+                >
+                  {{ cap }}
                 </span>
               </div>
               <div class="text-xs text-[#96BEE6]/70 mt-0.5">

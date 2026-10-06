@@ -89,6 +89,7 @@ export interface ApiKeyResponse {
   createdAt: string
   lastUsedAt: string | null
   isRevoked: boolean
+  capabilities: string[]
 }
 
 export interface CreateApiKeyResponse {
@@ -97,6 +98,11 @@ export interface CreateApiKeyResponse {
   key: string
   prefix: string
   createdAt: string
+  capabilities: string[]
+}
+
+export interface McpSettings {
+  enabled: boolean
 }
 
 export interface DashboardStats {
@@ -144,8 +150,8 @@ export const usersApi = {
   // API Keys
   listApiKeys: () => api.get<ApiKeyResponse[]>('/users/me/api-keys'),
 
-  createApiKey: (name: string) =>
-    api.post<CreateApiKeyResponse>('/users/me/api-keys', { name }),
+  createApiKey: (name: string, capabilities?: string[]) =>
+    api.post<CreateApiKeyResponse>('/users/me/api-keys', { name, capabilities }),
 
   revokeApiKey: (keyId: string) =>
     api.delete(`/users/me/api-keys/${keyId}`),
@@ -199,4 +205,10 @@ export const usersApi = {
   getFoundryStatus: () => api.get<FoundryStatus>('/admin/foundry'),
 
   testFoundryConnectivity: () => api.post<FoundryStatus>('/admin/foundry/test'),
+
+  // Admin - MCP server
+  getMcpSettings: () => api.get<McpSettings>('/admin/mcp-settings'),
+
+  updateMcpSettings: (settings: McpSettings) =>
+    api.put<McpSettings>('/admin/mcp-settings', settings),
 }

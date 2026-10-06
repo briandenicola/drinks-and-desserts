@@ -160,6 +160,22 @@ public class ApiKey
 
     [JsonPropertyName("lastUsedAt")]
     public DateTime? LastUsedAt { get; set; }
+
+    /// <summary>
+    /// MCP/external-integration capability scopes for this key. "read" grants the
+    /// baseline read-only MCP tools; "agentic" additionally grants AI-pipeline tools
+    /// (e.g. get_recommendations). Unset/empty defaults to ["read"] for back-compat keys.
+    /// </summary>
+    [JsonPropertyName("capabilities")]
+    public List<string> Capabilities { get; set; } = [ApiKeyCapability.Read];
+}
+
+public static class ApiKeyCapability
+{
+    public const string Read = "read";
+    public const string Agentic = "agentic";
+
+    public static readonly HashSet<string> All = [Read, Agentic];
 }
 
 public class ApiKeyResponse
@@ -181,6 +197,9 @@ public class ApiKeyResponse
 
     [JsonPropertyName("isRevoked")]
     public bool IsRevoked { get; set; }
+
+    [JsonPropertyName("capabilities")]
+    public List<string> Capabilities { get; set; } = [];
 }
 
 public class CreateApiKeyResponse
@@ -199,6 +218,9 @@ public class CreateApiKeyResponse
 
     [JsonPropertyName("createdAt")]
     public DateTime CreatedAt { get; set; }
+
+    [JsonPropertyName("capabilities")]
+    public List<string> Capabilities { get; set; } = [];
 }
 
 public class RefreshToken

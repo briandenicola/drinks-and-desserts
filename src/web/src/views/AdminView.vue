@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { authApi, type OIDCAdminProvider, type OIDCAdminProviderInput, type OIDCProviderType } from '../services/auth'
 import { getErrorMessage } from '../services/errors'
 import { useAuthStore } from '../stores/auth'
-import { usersApi, type AdminAuthSettingsResponse, type AdminAuthSettingsUpdate, type FoundryStatus, type LoggingSettings, type LoggingSettingsResponse, type Prompt, type User, type UserRole } from '../services/users'
+import { usersApi, type AdminAuthSettingsResponse, type AdminAuthSettingsUpdate, type FoundryStatus, type LoggingSettings, type LoggingSettingsResponse, type McpSettings, type Prompt, type User, type UserRole } from '../services/users'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -15,7 +15,7 @@ const loggingData = ref<LoggingSettingsResponse | null>(null)
 const foundryStatus = ref<FoundryStatus | null>(null)
 const isLoading = ref(true)
 const searchQuery = ref('')
-const activeTab = ref<'users' | 'prompts' | 'oidc' | 'settings' | 'foundry' | 'logging'>('users')
+const activeTab = ref<'users' | 'prompts' | 'oidc' | 'settings' | 'foundry' | 'logging' | 'mcp'>('users')
 const showMenu = ref(false)
 
 const roleUpdatingUserId = ref<string | null>(null)
@@ -49,6 +49,11 @@ const loggingMessage = ref('')
 const loggingSaving = ref(false)
 const foundryTesting = ref(false)
 
+const mcpSettings = ref<McpSettings | null>(null)
+const mcpLoading = ref(false)
+const mcpSaving = ref(false)
+const mcpMessage = ref('')
+
 const filteredUsers = computed(() => {
   const q = searchQuery.value.toLowerCase()
   if (!q) return users.value
@@ -65,7 +70,7 @@ onMounted(async () => {
     loggingData.value = loggingRes.data
     foundryStatus.value = foundryRes.data
     resetLoggingForm()
-    await Promise.all([loadOidcProviders(), loadAdminSettings()])
+    await Promise.all([loadOidcProviders(), loadAdminSettings(), loadMcpSettings()])
   } finally {
     isLoading.value = false
   }
@@ -186,6 +191,25 @@ async function saveLoggingSettings() {
   finally { loggingSaving.value = false }
 }
 async function testFoundryConnectivity() { foundryTesting.value = true; try { foundryStatus.value = (await usersApi.testFoundryConnectivity()).data } finally { foundryTesting.value = false } }
+
+async function loadMcpSettings() {
+  mcpLoading.value = true
+  try { mcpSettings.value = (await usersApi.getMcpSettings()).data }
+  finally { mcpLoading.value = false }
+}
+async function toggleMcpEnabled() {
+  if (!mcpSettings.value) return
+  mcpSaving.value = true
+  mcpMessage.value = ''
+  try {
+    mcpSettings.value = (await usersApi.updateMcpSettings({ enabled: !mcpSettings.value.enabled })).data
+    mcpMessage.value = `MCP server ${mcpSettings.value.enabled ? 'enabled' : 'disabled'}`
+  } catch (e: unknown) {
+    mcpMessage.value = getErrorMessage(e, 'Failed to update MCP settings')
+  } finally {
+    mcpSaving.value = false
+  }
+}
 </script>
 <template>
   <div class="p-4 max-w-lg mx-auto">
@@ -196,7 +220,7 @@ async function testFoundryConnectivity() { foundryTesting.value = true; try { fo
         <button @click="showMenu = !showMenu" class="text-[#96BEE6] hover:text-white p-1">☰</button>
         <Transition name="dropdown">
           <div v-if="showMenu" class="absolute right-0 top-8 z-50 w-44 bg-[#041e3e] border border-[#1e407c] rounded-xl shadow-xl overflow-hidden">
-            <button v-for="item in ([{ key: 'users', label: 'Users' }, { key: 'prompts', label: 'AI Prompts' }, { key: 'oidc', label: 'OIDC' }, { key: 'settings', label: 'Settings' }, { key: 'foundry', label: 'Foundry' }, { key: 'logging', label: 'Logging' }] as const)" :key="item.key" @click="selectTab(item.key)" class="w-full text-left px-4 py-3 text-sm transition-colors" :class="activeTab === item.key ? 'bg-[#1e407c]/30 text-white' : 'text-[#96BEE6] hover:bg-[#0a2a52]'">{{ item.label }}</button>
+            <button v-for="item in ([{ key: 'users', label: 'Users' }, { key: 'prompts', label: 'AI Prompts' }, { key: 'oidc', label: 'OIDC' }, { key: 'settings', label: 'Settings' }, { key: 'foundry', label: 'Foundry' }, { key: 'logging', label: 'Logging' }, { key: 'mcp', label: 'MCP Server' }] as const)" :key="item.key" @click="selectTab(item.key)" class="w-full text-left px-4 py-3 text-sm transition-colors" :class="activeTab === item.key ? 'bg-[#1e407c]/30 text-white' : 'text-[#96BEE6] hover:bg-[#0a2a52]'">{{ item.label }}</button>
             <button @click="goToActivity" class="w-full text-left px-4 py-3 text-sm text-[#96BEE6] hover:bg-[#0a2a52] transition-colors border-t border-[#0a2a52]">Activity</button>
           </div>
         </Transition>
@@ -272,6 +296,30 @@ async function testFoundryConnectivity() { foundryTesting.value = true; try { fo
 
     <template v-else-if="activeTab === 'logging'">
       <div v-if="loggingData" class="space-y-4"><div class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4"><p class="text-sm text-[#96BEE6] mb-4">Configure log verbosity per category. Changes take effect immediately without restart.</p><div class="flex items-center justify-between py-3 border-b border-[#0a2a52]"><div><p class="font-medium text-white">Default</p><p class="text-xs text-[#96BEE6]/70">Catch-all for uncategorized loggers</p></div><select v-model="editedDefaultLevel" :class="getLevelColor(editedDefaultLevel)" class="bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-3 py-1.5 text-sm"><option v-for="level in loggingData.availableLevels" :key="level" :value="level">{{ level }}</option></select></div><div v-for="(_, category) in editedLevels" :key="category" class="flex items-center justify-between py-3 border-b border-[#0a2a52] last:border-b-0"><div class="min-w-0 flex-1 mr-3"><p class="text-sm text-white font-mono truncate">{{ category }}</p></div><select v-model="editedLevels[category]" :class="getLevelColor(editedLevels[category])" class="bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-3 py-1.5 text-sm"><option v-for="level in loggingData.availableLevels" :key="level" :value="level">{{ level }}</option></select></div></div><div class="flex items-center justify-between"><p v-if="loggingMessage" class="text-xs" :class="loggingMessage.includes('Failed') ? 'text-red-400' : 'text-green-400'">{{ loggingMessage }}</p><div class="flex gap-2 ml-auto"><button @click="resetLoggingForm" class="text-xs px-4 py-2 rounded-xl bg-[#0a2a52] text-[#96BEE6] hover:bg-[#1e407c] transition-colors">Reset</button><button @click="saveLoggingSettings" :disabled="loggingSaving" class="text-xs px-4 py-2 rounded-xl bg-[#1e407c] text-white hover:bg-[#2a5299] transition-colors disabled:opacity-50">{{ loggingSaving ? 'Saving...' : 'Save Log Levels' }}</button></div></div></div><p v-else class="text-[#96BEE6]/70 text-center py-8">Could not load logging settings.</p>
+    </template>
+
+    <template v-else-if="activeTab === 'mcp'">
+      <div class="space-y-4">
+        <div class="bg-[#041e3e]/50 border border-[#0a2a52] rounded-xl p-3"><p class="text-xs text-[#96BEE6]">Exposes a native, read-only Model Context Protocol (MCP) endpoint at <code class="text-[#96BEE6]/80 bg-[#0a2a52] px-1 rounded">POST /api/mcp</code> for external agentic harnesses (e.g. a Hermes Agent). Default-off. See <code class="text-[#96BEE6]/80 bg-[#0a2a52] px-1 rounded">docs/mcp-server.md</code> for client setup.</p></div>
+        <div v-if="mcpLoading" class="text-[#96BEE6]/70 text-center py-8">Loading MCP settings...</div>
+        <div v-else-if="mcpSettings" class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="font-medium text-white">MCP Server Enabled</p>
+              <p class="text-xs text-[#96BEE6]/70 max-w-xs">When off, <code class="bg-[#0a2a52] px-1 rounded">/api/mcp</code> returns 503 for every request, regardless of API key.</p>
+            </div>
+            <button type="button" @click="toggleMcpEnabled" :disabled="mcpSaving" class="relative w-11 h-6 rounded-full transition-colors disabled:opacity-50" :class="mcpSettings.enabled ? 'bg-[#1e407c]' : 'bg-[#0a2a52]'">
+              <span class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform" :class="mcpSettings.enabled ? 'translate-x-5' : ''" />
+            </button>
+          </div>
+          <div class="text-xs text-[#96BEE6]/70 space-y-1 pt-3 border-t border-[#0a2a52]">
+            <p>Baseline <code class="bg-[#0a2a52] px-1 rounded">read</code> API keys expose: <code class="bg-[#0a2a52] px-1 rounded">search_items</code>, <code class="bg-[#0a2a52] px-1 rounded">get_item</code>, <code class="bg-[#0a2a52] px-1 rounded">list_venues</code>, <code class="bg-[#0a2a52] px-1 rounded">get_venue</code>, <code class="bg-[#0a2a52] px-1 rounded">collection_stats</code>.</p>
+            <p>Keys with the <code class="bg-[#0a2a52] px-1 rounded">agentic</code> capability additionally expose <code class="bg-[#0a2a52] px-1 rounded">get_recommendations</code>. Users create and scope their own keys on their Profile page.</p>
+          </div>
+          <p v-if="mcpMessage" class="text-xs" :class="mcpMessage.includes('Failed') ? 'text-red-400' : 'text-green-400'">{{ mcpMessage }}</p>
+        </div>
+        <p v-else class="text-[#96BEE6]/70 text-center py-8">Could not load MCP settings.</p>
+      </div>
     </template>
 
     <Teleport to="body"><div v-if="resetPasswordUserId" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" @click.self="resetPasswordUserId = null"><div class="bg-[#041e3e] border border-[#1e407c]/50 rounded-2xl p-6 w-full max-w-sm"><h3 class="text-lg font-semibold text-white mb-4">Reset Password</h3><p class="text-sm text-[#96BEE6] mb-3">Enter a new password for {{ users.find(u => u.id === resetPasswordUserId)?.displayName }}</p><input v-model="newPassword" type="password" placeholder="New password (min 8 characters)" class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-3 text-white placeholder-[#4a7aa5] mb-3" @keyup.enter="confirmResetPassword" /><p v-if="resetMessage" class="text-xs mb-3" :class="resetMessage.includes('Failed') ? 'text-red-400' : 'text-green-400'">{{ resetMessage }}</p><div class="flex gap-2 justify-end"><button @click="resetPasswordUserId = null" class="px-4 py-2 text-sm rounded-xl bg-[#0a2a52] text-[#96BEE6] hover:bg-[#1e407c]">Cancel</button><button @click="confirmResetPassword" class="px-4 py-2 text-sm rounded-xl bg-[#1e407c] text-white hover:bg-[#2a5299]">Reset</button></div></div></div></Teleport>

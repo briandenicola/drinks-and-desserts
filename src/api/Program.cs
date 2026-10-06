@@ -127,6 +127,13 @@ builder.Services.AddAuthentication()
 builder.Services.AddAuthentication()
     .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthHandler>("ApiKey", null);
 
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("McpApiKey", policy =>
+    {
+        policy.AddAuthenticationSchemes("ApiKey");
+        policy.RequireAuthenticatedUser();
+    });
+
 // Authorization policies
 builder.Services.AddSingleton<IAuthorizationHandler, CurrentAdminAuthorizationHandler>();
 builder.Services.AddAuthorizationBuilder()
@@ -219,6 +226,19 @@ builder.Services.AddSingleton<IRecommendationService, RecommendationService>();
 builder.Services.AddSingleton<ISearchIntentInterpreter, SearchIntentInterpreter>();
 builder.Services.AddSingleton<ISearchCandidateProvider, CosmosSearchCandidateProvider>();
 builder.Services.AddSingleton<ISearchService, SearchService>();
+builder.Services.AddHttpContextAccessor();
+var mcpSettingsService = new McpSettingsService();
+builder.Services.AddSingleton(mcpSettingsService);
+builder.Services.AddScoped<WhiskeyAndSmokes.Api.Mcp.McpToolContext>();
+builder.Services.AddMcpServer()
+    .WithHttpTransport(options =>
+    {
+        // Stateless mode: each request is independently authenticated via the ApiKey scheme
+        // and bound to the owner via McpToolContext; no server-to-client requests are needed.
+        options.Stateless = true;
+    })
+    .WithTools<WhiskeyAndSmokes.Api.Mcp.McpCollectionTools>()
+    .WithTools<WhiskeyAndSmokes.Api.Mcp.McpRecommendationTools>();
 builder.Services.AddHttpClient();  // Register IHttpClientFactory
 builder.Services.AddHttpClient<IWishlistUrlService, WishlistUrlService>();
 builder.Services.AddHttpClient<IVenueUrlService, VenueUrlService>();
@@ -292,6 +312,7 @@ await promptService.SeedDefaultsAsync();
 // Load persisted log level settings
 var cosmosDb = app.Services.GetRequiredService<ICosmosDbService>();
 await logLevelService.LoadFromStoreAsync(cosmosDb);
+await mcpSettingsService.LoadFromStoreAsync(cosmosDb);
 
 app.Logger.LogInformation("Whiskey & Smokes API starting — log levels loaded from store");
 app.Logger.LogInformation("Storage provider: {Provider} ({Backend})",
@@ -326,6 +347,23 @@ app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+// Native MCP (Model Context Protocol) endpoint — default-off, admin-gated, read/agentic
+// API-key capability model. See docs/mcp-server.md.
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/api/mcp"))
+    {
+        if (!mcpSettingsService.IsEnabled)
+        {
+            context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+            await context.Response.WriteAsJsonAsync(new { message = "MCP server is disabled. Ask an administrator to enable it in Admin settings." });
+            return;
+        }
+    }
+    await next();
+});
+app.MapMcp("/api/mcp").RequireAuthorization("McpApiKey");
 
 app.Run();
 

@@ -133,6 +133,7 @@ public class UsersController : ControllerBase
             CreatedAt = k.CreatedAt,
             LastUsedAt = k.LastUsedAt,
             IsRevoked = k.IsRevoked,
+            Capabilities = k.Capabilities.Count > 0 ? k.Capabilities : [ApiKeyCapability.Read],
         }).ToList();
 
         return Ok(keys);
@@ -154,6 +155,18 @@ public class UsersController : ControllerBase
         if (activeKeys >= 5)
             return BadRequest(new { message = "Maximum of 5 active API keys allowed" });
 
+        var requested = (request.Capabilities ?? [])
+            .Select(c => c.Trim().ToLowerInvariant())
+            .Distinct()
+            .ToList();
+        if (requested.Any(c => !ApiKeyCapability.All.Contains(c)))
+            return BadRequest(new { message = $"Invalid capability. Allowed: {string.Join(", ", ApiKeyCapability.All)}" });
+
+        // "read" is always included — it's the baseline for MCP tool access. "agentic" is additive.
+        var capabilities = new List<string> { ApiKeyCapability.Read };
+        if (requested.Contains(ApiKeyCapability.Agentic))
+            capabilities.Add(ApiKeyCapability.Agentic);
+
         var rawKey = ApiKeyAuthHandler.GenerateKey();
         var keyHash = ApiKeyAuthHandler.HashKey(rawKey);
         var prefix = rawKey[..10] + "...";
@@ -163,14 +176,15 @@ public class UsersController : ControllerBase
             Name = request.Name,
             Prefix = prefix,
             KeyHash = keyHash,
+            Capabilities = capabilities,
         };
 
         user.ApiKeys.Add(apiKey);
         user.UpdatedAt = DateTime.UtcNow;
         await _cosmosDb.UpsertAsync(ContainerName, user, user.PartitionKey);
 
-        _logger.LogInformation("API key created for user {UserId}: keyId={KeyId}, name={Name}",
-            userId, apiKey.Id, request.Name);
+        _logger.LogInformation("API key created for user {UserId}: keyId={KeyId}, name={Name}, capabilities={Capabilities}",
+            userId, apiKey.Id, request.Name, string.Join(",", capabilities));
 
         return Ok(new CreateApiKeyResponse
         {
@@ -179,6 +193,7 @@ public class UsersController : ControllerBase
             Key = rawKey,
             Prefix = prefix,
             CreatedAt = apiKey.CreatedAt,
+            Capabilities = capabilities,
         });
     }
 

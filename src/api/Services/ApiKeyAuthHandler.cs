@@ -67,6 +67,7 @@ public class ApiKeyAuthHandler : AuthenticationHandler<AuthenticationSchemeOptio
             }
         });
 
+        var capabilities = matchedKey.Capabilities.Count > 0 ? matchedKey.Capabilities : [ApiKeyCapability.Read];
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id),
@@ -74,6 +75,7 @@ public class ApiKeyAuthHandler : AuthenticationHandler<AuthenticationSchemeOptio
             new Claim(ClaimTypes.Name, user.DisplayName),
             new Claim(ClaimTypes.Role, user.Role),
             new Claim("auth_method", "api_key"),
+            new Claim("api_key_capabilities", string.Join(",", capabilities)),
         };
 
         var identity = new ClaimsIdentity(claims, Scheme.Name);

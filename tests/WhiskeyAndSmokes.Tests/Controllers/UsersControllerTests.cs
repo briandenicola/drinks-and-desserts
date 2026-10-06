@@ -192,6 +192,68 @@ public class UsersControllerTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task CreateApiKey_DefaultsToReadCapabilityOnly()
+    {
+        var user = CreateTestUser(u => u.ApiKeys = []);
+        _factory.CosmosDb.GetAsync<User>("users", TestUserId, TestUserId).Returns(user);
+        _factory.CosmosDb.UpsertAsync("users", Arg.Any<User>(), Arg.Any<string>())
+            .Returns(callInfo => callInfo.ArgAt<User>(1));
+
+        var request = new CreateApiKeyRequest { Name = "Read Only Key" };
+        var response = await _client.PostAsJsonAsync("/api/users/me/api-keys", request);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<CreateApiKeyResponse>();
+        body.Should().NotBeNull();
+        body!.Capabilities.Should().BeEquivalentTo([ApiKeyCapability.Read]);
+    }
+
+    [Fact]
+    public async Task CreateApiKey_RequestingAgentic_GrantsBothCapabilities()
+    {
+        var user = CreateTestUser(u => u.ApiKeys = []);
+        _factory.CosmosDb.GetAsync<User>("users", TestUserId, TestUserId).Returns(user);
+        _factory.CosmosDb.UpsertAsync("users", Arg.Any<User>(), Arg.Any<string>())
+            .Returns(callInfo => callInfo.ArgAt<User>(1));
+
+        var request = new CreateApiKeyRequest { Name = "Agentic Key", Capabilities = [ApiKeyCapability.Agentic] };
+        var response = await _client.PostAsJsonAsync("/api/users/me/api-keys", request);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<CreateApiKeyResponse>();
+        body.Should().NotBeNull();
+        body!.Capabilities.Should().BeEquivalentTo([ApiKeyCapability.Read, ApiKeyCapability.Agentic]);
+    }
+
+    [Fact]
+    public async Task CreateApiKey_InvalidCapability_Returns400()
+    {
+        var user = CreateTestUser(u => u.ApiKeys = []);
+        _factory.CosmosDb.GetAsync<User>("users", TestUserId, TestUserId).Returns(user);
+
+        var request = new CreateApiKeyRequest { Name = "Bad Key", Capabilities = ["write"] };
+        var response = await _client.PostAsJsonAsync("/api/users/me/api-keys", request);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task ListApiKeys_LegacyKeyWithoutCapabilities_DefaultsToRead()
+    {
+        var user = CreateTestUser(u => u.ApiKeys =
+        [
+            new ApiKey { Id = "legacy-key", Name = "Legacy", Prefix = "ws_legacy...", KeyHash = "hash", Capabilities = [] }
+        ]);
+        _factory.CosmosDb.GetAsync<User>("users", TestUserId, TestUserId).Returns(user);
+
+        var response = await _client.GetAsync("/api/users/me/api-keys");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<List<ApiKeyResponse>>();
+        body.Should().NotBeNull();
+        body!.Single(k => k.Id == "legacy-key").Capabilities.Should().BeEquivalentTo([ApiKeyCapability.Read]);
+    }
+
+    [Fact]
     public async Task RevokeApiKey_ReturnsOk()
     {
         var user = CreateTestUser(u => u.ApiKeys =
