@@ -230,6 +230,7 @@ builder.Services.AddHttpContextAccessor();
 var mcpSettingsService = new McpSettingsService();
 builder.Services.AddSingleton(mcpSettingsService);
 builder.Services.AddScoped<WhiskeyAndSmokes.Api.Mcp.McpToolContext>();
+builder.Services.AddScoped<ILifestoreFeedService, LifestoreFeedService>();
 builder.Services.AddMcpServer()
     .WithHttpTransport(options =>
     {

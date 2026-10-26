@@ -188,6 +188,17 @@ API keys are managed in the Profile tab. Keys are hashed with SHA256 and stored 
 
 Accepted image formats: JPEG, PNG, GIF, WebP, HEIC (max 15MB per file, 50MB total).
 
+### Life store feed
+
+The household life store reads everything with one API key:
+
+```
+GET /api/lifestore/records?limit=200&page=<next>
+Headers: X-API-Key: <your-key>
+```
+
+It answers `{schema, records: [{kind, id, updatedAt, data}], next}`: every item (AI drafts, reviewed and wishlist alike), then every venue, belonging to the key's owner. Pass `next` back as `page` until it is `null`. Photos, capture links, AI processing details and friends' thoughts are not included. `limit` is held to 1–200. A `page` the feed did not give out returns `400`. Spec: `specs/003-life-store-feed/`.
+
 ## Admin Features
 
 Access the admin panel at `/admin` (requires admin role — the first registered user is automatically promoted to admin).
