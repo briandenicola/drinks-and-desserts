@@ -348,6 +348,13 @@ public class UpdatePromptRequest
     public string Content { get; set; } = string.Empty;
 }
 
+public class UpdateApiKeyRequest
+{
+    /// <summary>"read" always; "write" and "agentic" when given.</summary>
+    [JsonPropertyName("capabilities")]
+    public List<string>? Capabilities { get; set; }
+}
+
 public class CreateApiKeyRequest
 {
     [JsonPropertyName("name")]

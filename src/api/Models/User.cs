@@ -162,20 +162,47 @@ public class ApiKey
     public DateTime? LastUsedAt { get; set; }
 
     /// <summary>
-    /// MCP/external-integration capability scopes for this key. "read" grants the
-    /// baseline read-only MCP tools; "agentic" additionally grants AI-pipeline tools
-    /// (e.g. get_recommendations). Unset/empty defaults to ["read"] for back-compat keys.
+    /// What this key may do. "read" is the baseline (read-only MCP tools, the life
+    /// store feed); "write" lets it change data, such as capturing from a Shortcut;
+    /// "agentic" adds AI-pipeline MCP tools (e.g. get_recommendations). Unset/empty
+    /// means ["read"]. Use <see cref="Effective"/>, not this list, to decide access.
     /// </summary>
     [JsonPropertyName("capabilities")]
     public List<string> Capabilities { get; set; } = [ApiKeyCapability.Read];
+
+    /// <summary>
+    /// True once the key's access was chosen with write as its own option. Keys
+    /// made before that could always capture, so they keep write until their
+    /// access is changed on the Profile page.
+    /// </summary>
+    [JsonPropertyName("accessSet")]
+    public bool AccessSet { get; set; }
+
+    /// <summary>What the key may do now, in canonical order.</summary>
+    public List<string> Effective()
+    {
+        var caps = Capabilities.Count > 0 ? Capabilities : [ApiKeyCapability.Read];
+        return AccessSet ? ApiKeyCapability.Canonical(caps) : ApiKeyCapability.Canonical([.. caps, ApiKeyCapability.Write]);
+    }
 }
 
 public static class ApiKeyCapability
 {
     public const string Read = "read";
+    public const string Write = "write";
     public const string Agentic = "agentic";
 
-    public static readonly HashSet<string> All = [Read, Agentic];
+    public static readonly HashSet<string> All = [Read, Write, Agentic];
+
+    /// <summary>"read", then "write" and "agentic" when present.</summary>
+    public static List<string> Canonical(IEnumerable<string> capabilities)
+    {
+        var set = capabilities.Select(c => c.Trim().ToLowerInvariant()).ToHashSet();
+        var canonical = new List<string> { Read };
+        if (set.Contains(Write)) canonical.Add(Write);
+        if (set.Contains(Agentic)) canonical.Add(Agentic);
+        return canonical;
+    }
 }
 
 public class ApiKeyResponse

@@ -29,19 +29,21 @@ The endpoint is authenticated exclusively via the existing **API key** scheme �
 by the [External API](../README.md#external-api) for iOS Shortcuts — sent as an `X-API-Key` header.
 JWT/session cookies are not accepted on `/api/mcp`.
 
-API keys now carry a list of **capabilities** that scope which MCP tools they can use:
+API keys carry a list of **capabilities**. Profile → API Keys offers three:
 
-| Capability | Grants | Default |
+| Access | Capabilities | Grants |
 |---|---|---|
-| `read` | The 5 read-only collection/venue tools | Always included (baseline, cannot be removed) |
-| `agentic` | `get_recommendations` (invokes the AI pipeline) | Opt-in, must be explicitly requested at key creation time |
+| Read only | `read` | The 5 read-only MCP tools and the life store feed |
+| Read + write | `read`, `write` | Also changes data: capturing from an iOS Shortcut (`POST /api/external/capture`) |
+| Read + AI agents | `read`, `agentic` | Also `get_recommendations` over MCP (invokes the AI pipeline) |
 
-Create a capability-scoped key from **Profile → API Keys**:
+Create a key from **Profile → API Keys**:
 
-1. Enter a name for the key.
-2. Optionally check **"Grant 'agentic' capability"** if this key should be able to call
-   `get_recommendations`.
-3. Click **Create**. The raw key is shown once — copy it immediately, it cannot be retrieved again.
+1. Enter a name for the key and pick its access.
+2. Click **Create**. The raw key is shown once — copy it immediately, it cannot be retrieved again.
+
+A key's access can be changed later on the same page, without replacing the key, so the app using
+it keeps working (`PATCH /api/users/me/api-keys/{id}` with `{ "capabilities": [...] }`).
 
 Or via the API:
 
@@ -51,7 +53,8 @@ Body: { "name": "hermes-agent", "capabilities": ["read", "agentic"] }
 ```
 
 `"read"` is always force-included server-side even if omitted from the request body. Keys created
-before this feature shipped default to `["read"]` (read-only) for backward compatibility.
+before write became its own option could always capture, so they keep `write` until their access is
+changed. A key without `write` that tries to capture gets a 403.
 
 All MCP tools are always *discoverable* by any authenticated key — the server does not hide the
 `get_recommendations` tool from keys lacking `agentic`. Instead, invoking it without the `agentic`
@@ -138,7 +141,8 @@ After connecting, list tools to confirm discovery, then try a read-only call suc
 |---|---|
 | `503 Service Unavailable` on every call | MCP is disabled. Enable it at Admin → MCP Server. |
 | `401 Unauthorized` | Missing/invalid `X-API-Key` header, or the key was revoked. Check **Profile → API Keys**. |
-| Tool call for `get_recommendations` returns a capability error | The API key used was created without the `agentic` capability. Create a new key with it enabled — capabilities cannot be edited on an existing key. |
+| Tool call for `get_recommendations` returns a capability error | The key lacks the `agentic` capability. Change its access to Read + AI agents on Profile → API Keys. |
+| A Shortcut's capture gets 403 | The key lacks `write`. Change its access to Read + write on Profile → API Keys. |
 | `404` on `/api/mcp` | You're hitting the wrong host/port, or a reverse proxy isn't forwarding the path. Confirm the API process (not just the static frontend) is reachable at that URL. |
 | Empty results from `search_items`/`list_venues` | The key's owner has no matching data, or the query/type filter is too narrow — try with no arguments first. |
 

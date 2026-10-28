@@ -80,7 +80,7 @@ const passwordError = ref(false)
 // API Keys
 const apiKeys = ref<ApiKeyResponse[]>([])
 const newKeyName = ref('')
-const newKeyAgentic = ref(false)
+const newKeyAccess = ref('read')
 const isCreatingKey = ref(false)
 const newlyCreatedKey = ref<CreateApiKeyResponse | null>(null)
 const keyCopied = ref(false)
@@ -237,12 +237,10 @@ async function createApiKey() {
   isCreatingKey.value = true
   keyMessage.value = ''
   try {
-    const capabilities = ['read', ...(newKeyAgentic.value ? ['agentic'] : [])]
-    const res = await usersApi.createApiKey(newKeyName.value.trim(), capabilities)
+    const res = await usersApi.createApiKey(newKeyName.value.trim(), newKeyAccess.value.split(','))
     newlyCreatedKey.value = res.data
     keyCopied.value = false
     newKeyName.value = ''
-    newKeyAgentic.value = false
     await loadApiKeys()
   } catch (e: unknown) {
     keyMessage.value = getErrorMessage(e, 'Failed to create key')
@@ -258,6 +256,28 @@ async function copyKey() {
     keyCopied.value = true
   } catch {
     keyMessage.value = 'Failed to copy'
+  }
+}
+
+/** The access a key can have. A key with another mix keeps it listed, so the select shows the truth. */
+const KEY_ACCESS = [
+  { value: 'read', label: 'Read only' },
+  { value: 'read,write', label: 'Read + write' },
+  { value: 'read,agentic', label: 'Read + AI agents' },
+]
+function keyAccessOptions(current: string) {
+  return KEY_ACCESS.some((o) => o.value === current) ? KEY_ACCESS : [...KEY_ACCESS, { value: current, label: current.replace(/,/g, ' + ') }]
+}
+
+async function changeKeyAccess(key: ApiKeyResponse, access: string) {
+  const before = key.capabilities
+  key.capabilities = access.split(',')
+  keyMessage.value = ''
+  try {
+    key.capabilities = (await usersApi.updateApiKey(key.id, access.split(','))).data.capabilities
+  } catch {
+    key.capabilities = before
+    keyMessage.value = `Couldn't change the access for ${key.name}. It still has its old access.`
   }
 }
 
@@ -642,7 +662,9 @@ async function changePassword() {
       <section class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 space-y-4">
         <h3 class="text-sm font-medium text-[#96BEE6] uppercase tracking-wide">API Keys</h3>
         <p class="text-sm text-[#96BEE6]">
-          Create API keys to integrate with iOS Shortcuts, the MCP server, or other tools.
+          Create API keys to integrate with iOS Shortcuts, the MCP server, or other tools. Read only can look but not change anything.
+          Read + write can also add, such as capturing from a Shortcut. Read + AI agents can also use the AI tools over MCP.
+          Change a key's access below without replacing it.
         </p>
 
         <!-- Newly created key banner -->
@@ -665,13 +687,21 @@ async function changePassword() {
         </div>
 
         <!-- Create new key -->
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2">
           <input
             v-model="newKeyName"
             placeholder="Key name (e.g. iPhone Shortcut)"
-            class="flex-1 bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
+            aria-label="Key name"
+            class="flex-1 basis-48 min-w-0 bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
             @keyup.enter="createApiKey"
           />
+          <select
+            v-model="newKeyAccess"
+            aria-label="Key access"
+            class="min-w-0 bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#1e407c]"
+          >
+            <option v-for="option in KEY_ACCESS" :key="option.value" :value="option.value">{{ option.label }}</option>
+          </select>
           <button
             @click="createApiKey"
             :disabled="isCreatingKey || !newKeyName.trim()"
@@ -680,10 +710,6 @@ async function changePassword() {
             {{ isCreatingKey ? '...' : 'Create' }}
           </button>
         </div>
-        <label class="flex items-center gap-2 text-xs text-[#96BEE6]">
-          <input type="checkbox" v-model="newKeyAgentic" class="rounded border-[#1e407c]/50" />
-          Grant "agentic" capability (allows the MCP <code class="font-mono">get_recommendations</code> tool, in addition to baseline read-only access)
-        </label>
 
         <div v-if="keyMessage" class="text-sm text-red-400">{{ keyMessage }}</div>
 
@@ -692,21 +718,14 @@ async function changePassword() {
           <div
             v-for="key in apiKeys"
             :key="key.id"
-            class="flex items-center justify-between bg-[#0a2a52] border border-[#1e407c]/50 rounded-lg px-3 py-2.5"
+            class="flex flex-wrap items-center justify-between gap-2 bg-[#0a2a52] border border-[#1e407c]/50 rounded-lg px-3 py-2.5"
             :class="key.isRevoked ? 'opacity-50' : ''"
           >
-            <div class="min-w-0 flex-1">
+            <div class="min-w-0 flex-1 basis-48">
               <div class="flex items-center gap-2">
                 <span class="text-sm text-white truncate">{{ key.name }}</span>
                 <span v-if="key.isRevoked" class="text-[10px] px-1.5 py-0.5 rounded bg-red-900/50 text-red-400 border border-red-800">
                   Revoked
-                </span>
-                <span
-                  v-for="cap in key.capabilities"
-                  :key="cap"
-                  class="text-[10px] px-1.5 py-0.5 rounded bg-[#1e407c]/50 text-[#96BEE6] border border-[#1e407c]"
-                >
-                  {{ cap }}
                 </span>
               </div>
               <div class="text-xs text-[#96BEE6]/70 mt-0.5">
@@ -717,13 +736,17 @@ async function changePassword() {
                 <span v-else class="ml-2">Never used</span>
               </div>
             </div>
-            <button
-              v-if="!key.isRevoked"
-              @click="revokeKey(key.id)"
-              class="shrink-0 ml-3 text-xs text-red-400 hover:text-red-300"
-            >
-              Revoke
-            </button>
+            <div v-if="!key.isRevoked" class="flex items-center gap-3">
+              <select
+                :value="key.capabilities.join(',')"
+                :aria-label="`Access for ${key.name}`"
+                class="min-w-0 bg-[#041e3e] border border-[#1e407c]/50 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-[#1e407c]"
+                @change="changeKeyAccess(key, ($event.target as HTMLSelectElement).value)"
+              >
+                <option v-for="option in keyAccessOptions(key.capabilities.join(','))" :key="option.value" :value="option.value">{{ option.label }}</option>
+              </select>
+              <button @click="revokeKey(key.id)" class="shrink-0 text-xs text-red-400 hover:text-red-300">Revoke</button>
+            </div>
           </div>
         </div>
       </section>
