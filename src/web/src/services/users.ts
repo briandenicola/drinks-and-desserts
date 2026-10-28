@@ -153,6 +153,9 @@ export const usersApi = {
   createApiKey: (name: string, capabilities?: string[]) =>
     api.post<CreateApiKeyResponse>('/users/me/api-keys', { name, capabilities }),
 
+  updateApiKey: (keyId: string, capabilities: string[]) =>
+    api.patch<ApiKeyResponse>(`/users/me/api-keys/${keyId}`, { capabilities }),
+
   revokeApiKey: (keyId: string) =>
     api.delete(`/users/me/api-keys/${keyId}`),
 

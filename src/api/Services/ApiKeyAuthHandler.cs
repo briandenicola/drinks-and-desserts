@@ -67,7 +67,7 @@ public class ApiKeyAuthHandler : AuthenticationHandler<AuthenticationSchemeOptio
             }
         });
 
-        var capabilities = matchedKey.Capabilities.Count > 0 ? matchedKey.Capabilities : [ApiKeyCapability.Read];
+        var capabilities = matchedKey.Effective();
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id),
