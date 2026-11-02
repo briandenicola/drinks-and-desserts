@@ -186,7 +186,7 @@ const searchInput = ref<HTMLInputElement | null>(null)
 
 <template>
   <div class="p-4 max-w-lg mx-auto">
-    <h2 class="text-xl font-bold text-th-text mb-4">Search</h2>
+    <h2 class="text-xl font-bold text-th-heading mb-4">Search</h2>
 
     <!-- Search input -->
     <div class="relative mb-4">
@@ -265,7 +265,7 @@ const searchInput = ref<HTMLInputElement | null>(null)
           v-for="result in displayedMemoryResults"
           :key="`${result.kind}-${result.item?.id ?? result.venue?.id}`"
           @click="navigateToMemoryResult(result)"
-          class="w-full text-left bg-th-inset border border-th-edge/50 rounded-xl p-3 hover:border-th-accent/50 transition-colors"
+          class="w-full text-left bg-th-inset border border-th-edge/50 rounded-xl p-3 hover:border-th-emphasis/50 transition-colors"
         >
           <div class="flex items-start gap-3">
             <img
@@ -287,7 +287,7 @@ const searchInput = ref<HTMLInputElement | null>(null)
                 </span>
                 <span class="text-[10px] text-th-edge">{{ result.kind === 'item' ? 'Collection' : 'Venue' }}</span>
               </div>
-              <h4 class="font-medium text-th-text truncate text-sm">{{ result.item?.name ?? result.venue?.name }}</h4>
+              <h4 class="font-medium text-th-heading truncate text-sm">{{ result.item?.name ?? result.venue?.name }}</h4>
               <p v-if="result.item?.brand" class="text-xs text-th-accent/70 truncate">{{ result.item.brand }}</p>
               <p v-if="result.item?.venue?.name || result.venue?.address" class="text-xs text-th-muted/70 truncate">
                 {{ result.item?.venue?.name ?? result.venue?.address }}
@@ -335,7 +335,7 @@ const searchInput = ref<HTMLInputElement | null>(null)
                   <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-th-card text-th-accent capitalize">{{ result.item.type }}</span>
                   <span class="text-[10px] text-th-edge">Venue</span>
                 </div>
-                <h4 class="font-medium text-th-text truncate text-sm">{{ result.item.name }}</h4>
+                <h4 class="font-medium text-th-heading truncate text-sm">{{ result.item.name }}</h4>
                 <p v-if="result.item.address" class="text-xs text-th-accent/70 truncate">{{ result.item.address }}</p>
                 <div v-if="result.item.labels?.length" class="flex flex-wrap gap-1 mt-1">
                   <span v-for="label in result.item.labels.slice(0, 3)" :key="label" class="text-[10px] px-1.5 py-0.5 rounded-full bg-th-brand/30 text-th-accent/80">{{ label }}</span>
@@ -366,7 +366,7 @@ const searchInput = ref<HTMLInputElement | null>(null)
                 <div class="flex items-center gap-2 mb-0.5">
                   <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-th-card text-th-accent capitalize">{{ result.item.type }}</span>
                 </div>
-                <h4 class="font-medium text-th-text truncate text-sm">{{ result.item.name }}</h4>
+                <h4 class="font-medium text-th-heading truncate text-sm">{{ result.item.name }}</h4>
                 <p v-if="result.item.brand" class="text-xs text-th-accent/70 truncate">{{ result.item.brand }}</p>
                 <p v-if="result.item.venue?.name" class="text-xs text-th-muted/60 truncate">{{ result.item.venue.name }}</p>
               </div>

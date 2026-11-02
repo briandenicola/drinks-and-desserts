@@ -445,7 +445,7 @@ async function changePassword() {
     <div v-if="auth.user" class="space-y-6">
       <!-- Profile Info -->
       <section class="bg-th-inset border border-th-line rounded-xl p-4 space-y-4">
-        <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">Account</h3>
+        <h3 class="text-sm font-medium text-th-emphasis uppercase tracking-wide">Account</h3>
 
         <div>
           <label class="block text-sm text-th-accent mb-1">Email</label>
@@ -564,13 +564,13 @@ async function changePassword() {
       <!-- Appearance -->
       <section class="bg-th-inset border border-th-line rounded-xl p-4 space-y-3">
         <fieldset :aria-busy="themeSaving" class="space-y-3 aria-busy:opacity-60">
-          <legend class="text-sm font-medium text-th-accent uppercase tracking-wide">Theme</legend>
+          <legend class="text-sm font-medium text-th-emphasis uppercase tracking-wide">Theme</legend>
           <p class="text-xs text-th-muted">Saved to your account and used on every device you sign in to.</p>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" role="radiogroup" aria-label="Theme">
             <label
               v-for="opt in THEME_OPTIONS"
               :key="opt.id"
-              class="flex items-center gap-3 min-h-[44px] px-3 py-2 rounded-xl border border-th-edge/50 bg-th-card text-th-text text-sm cursor-pointer transition-colors hover:bg-th-card-hover has-[:checked]:border-th-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-th-accent"
+              class="flex items-center gap-3 min-h-[44px] px-3 py-2 rounded-xl border border-th-edge/50 bg-th-card text-th-text text-sm cursor-pointer transition-colors hover:bg-th-card-hover has-[:checked]:border-th-emphasis has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-th-emphasis"
             >
               <input
                 type="radio"
@@ -583,7 +583,7 @@ async function changePassword() {
               <span :data-theme="opt.id" class="flex shrink-0 h-6 w-10 overflow-hidden rounded-md border border-th-edge" aria-hidden="true">
                 <span class="w-1/2 bg-th-page"></span>
                 <span class="w-1/4 bg-th-brand"></span>
-                <span class="w-1/4 bg-th-accent"></span>
+                <span class="w-1/4 bg-th-emphasis"></span>
               </span>
               <span>{{ opt.label }}</span>
             </label>
@@ -601,7 +601,7 @@ async function changePassword() {
 
       <!-- Password Change -->
       <section class="bg-th-inset border border-th-line rounded-xl p-4 space-y-4">
-        <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">Change Password</h3>
+        <h3 class="text-sm font-medium text-th-emphasis uppercase tracking-wide">Change Password</h3>
 
         <div>
           <label class="block text-sm text-th-accent mb-1">Current Password</label>
@@ -637,7 +637,7 @@ async function changePassword() {
       <!-- Connected Sign-in Providers -->
       <section class="bg-th-inset border border-th-line rounded-xl p-4 space-y-4">
         <div>
-          <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">Connected Sign-in Providers</h3>
+          <h3 class="text-sm font-medium text-th-emphasis uppercase tracking-wide">Connected Sign-in Providers</h3>
           <p class="text-sm text-th-accent/80 mt-1">
             Link Entra ID, Pocket ID, or another external provider after signing in locally. This avoids unsafe automatic account merges.
           </p>
@@ -707,7 +707,7 @@ async function changePassword() {
 
       <!-- API Keys -->
       <section class="bg-th-inset border border-th-line rounded-xl p-4 space-y-4">
-        <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">API Keys</h3>
+        <h3 class="text-sm font-medium text-th-emphasis uppercase tracking-wide">API Keys</h3>
         <p class="text-sm text-th-accent">
           Create API keys to integrate with iOS Shortcuts, the MCP server, or other tools. Read only can look but not change anything.
           Read + write can also add, such as capturing from a Shortcut. Read + AI agents can also use the AI tools over MCP.
@@ -800,7 +800,7 @@ async function changePassword() {
 
       <!-- Push Notifications (Pushover) -->
       <section class="bg-th-inset border border-th-line rounded-xl p-4 space-y-4">
-        <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">Push Notifications</h3>
+        <h3 class="text-sm font-medium text-th-emphasis uppercase tracking-wide">Push Notifications</h3>
         <p class="text-sm text-th-accent">
           Get real-time push notifications via <a href="https://pushover.net" target="_blank" rel="noopener" class="underline hover:text-th-text">Pushover</a> when workflows complete.
         </p>
@@ -872,7 +872,7 @@ async function changePassword() {
 
       <!-- Export Data -->
       <section class="bg-th-inset border border-th-line rounded-xl p-4 space-y-4">
-        <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">Data Export</h3>
+        <h3 class="text-sm font-medium text-th-emphasis uppercase tracking-wide">Data Export</h3>
         <p class="text-sm text-th-accent">
           Download all your data including items, captures, and images as a ZIP file.
         </p>

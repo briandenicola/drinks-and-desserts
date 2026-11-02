@@ -69,7 +69,7 @@ function clearAll() {
 <template>
   <aside class="w-60 shrink-0 bg-th-inset border-r border-th-line p-4 overflow-y-auto">
     <div class="flex items-center justify-between mb-6">
-      <h2 class="text-sm font-semibold text-th-text uppercase tracking-wider">Filters</h2>
+      <h2 class="text-sm font-semibold text-th-heading uppercase tracking-wider">Filters</h2>
       <button
         v-if="hasActiveFilters"
         @click="clearAll"

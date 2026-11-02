@@ -171,7 +171,7 @@ function toggleMode() {
 <template>
   <div class="flex flex-col items-center justify-center min-h-screen px-6">
     <div class="text-center mb-10">
-      <h1 class="text-5xl font-bold text-th-accent mb-2">Drinks &amp; Desserts</h1>
+      <h1 class="text-5xl font-bold text-th-emphasis mb-2">Drinks &amp; Desserts</h1>
       <p class="text-th-accent text-lg">Track your drinks, desserts & cigars</p>
     </div>
 
@@ -217,7 +217,7 @@ function toggleMode() {
         :disabled="isSubmitting || oidcLoading || startingProviderId === provider.id"
         class="w-full flex items-center justify-center gap-3 bg-th-inset hover:bg-th-card-hover disabled:bg-th-card disabled:text-th-muted/60 text-th-accent font-semibold py-4 rounded-xl transition-colors text-lg border border-th-edge/50 mb-3"
       >
-        <span class="inline-flex h-5 w-5 items-center justify-center rounded-full border border-th-accent/70 text-xs">↗</span>
+        <span class="inline-flex h-5 w-5 items-center justify-center rounded-full border border-th-emphasis/70 text-xs">↗</span>
         {{ startingProviderId === provider.id ? 'Redirecting...' : oidcButtonLabel(provider) }}
       </button>
 

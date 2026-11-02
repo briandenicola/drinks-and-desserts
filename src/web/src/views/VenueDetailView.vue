@@ -396,7 +396,7 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
         <div class="lg:col-span-2 space-y-4">
           <div>
             <span class="text-xs px-2 py-0.5 rounded-full bg-th-card text-th-accent capitalize">{{ venue.type }}</span>
-            <h2 class="text-2xl font-bold text-th-text mt-2">{{ venue.name }}</h2>
+            <h2 class="text-2xl font-bold text-th-heading mt-2">{{ venue.name }}</h2>
             <p v-if="venue.sourceAttribution" class="text-xs text-th-muted-strong mt-1">
               Added from {{ venue.sourceAttribution.sourceDisplayName }}'s collection
             </p>
@@ -446,7 +446,7 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
 
           <!-- Friend Thoughts -->
           <div v-if="friendThoughts.length > 0" class="mt-6">
-            <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide mb-3">
+            <h3 class="text-sm font-medium text-th-emphasis uppercase tracking-wide mb-3">
               Friend Thoughts ({{ friendThoughts.length }})
             </h3>
             <ThoughtsList :thoughts="friendThoughts" @delete="handleDeleteThought" />
@@ -457,7 +457,7 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
         <div class="lg:col-span-1 space-y-6 mt-6 lg:mt-0">
           <!-- Linked items -->
           <div v-if="linkedItems.length">
-            <h3 class="text-sm font-medium text-th-accent mb-3">Linked Items</h3>
+            <h3 class="text-sm font-medium text-th-emphasis mb-3">Linked Items</h3>
             <div class="space-y-2">
               <router-link
                 v-for="item in linkedItems"
@@ -473,7 +473,7 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
                   />
                   <div class="flex-1 min-w-0">
                     <span class="text-xs px-2 py-0.5 rounded-full bg-th-card text-th-accent">{{ item.type }}</span>
-                    <h4 class="font-medium text-th-text truncate text-sm">{{ item.name }}</h4>
+                    <h4 class="font-medium text-th-heading truncate text-sm">{{ item.name }}</h4>
                   </div>
                 </div>
               </router-link>
@@ -482,7 +482,7 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
 
           <!-- Photos section (desktop sidebar) -->
           <div v-if="photoUrls.length > 1" class="hidden lg:block">
-            <h3 class="text-sm font-medium text-th-accent mb-3">Photos</h3>
+            <h3 class="text-sm font-medium text-th-emphasis mb-3">Photos</h3>
             <div class="grid grid-cols-2 gap-2">
               <img
                 v-for="url in photoUrls"
@@ -687,7 +687,7 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
             >
               <div
                 class="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0"
-                :class="selectedItemIds.has(itm.id) ? 'border-th-accent bg-th-brand-hover' : 'border-th-edge'"
+                :class="selectedItemIds.has(itm.id) ? 'border-th-emphasis bg-th-brand-hover' : 'border-th-edge'"
               >
                 <svg v-if="selectedItemIds.has(itm.id)" class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />

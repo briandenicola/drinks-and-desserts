@@ -83,7 +83,7 @@ const chartOption = computed(() => {
 
 <template>
   <section class="bg-th-inset border border-th-line rounded-xl p-4 space-y-3">
-    <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">Capture Activity</h3>
+    <h3 class="text-sm font-medium text-th-emphasis uppercase tracking-wide">Capture Activity</h3>
     <div v-if="!activityByDay.some(d => d.count > 0)" class="text-center py-6 text-th-accent/50 text-sm">
       No capture activity yet
     </div>

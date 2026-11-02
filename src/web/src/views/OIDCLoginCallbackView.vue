@@ -129,7 +129,7 @@ function getErrorResponse(error: unknown): { status?: number } | null {
       <div
         class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border"
         :class="{
-          'animate-spin border-th-accent/30 border-t-th-accent': status === 'loading',
+          'animate-spin border-th-emphasis/30 border-t-th-emphasis': status === 'loading',
           'border-th-success text-th-success': status === 'success',
           'border-th-danger text-th-danger': status === 'error',
         }"
@@ -138,7 +138,7 @@ function getErrorResponse(error: unknown): { status?: number } | null {
         <span v-else-if="status === 'error'">!</span>
       </div>
 
-      <h1 class="mb-2 text-2xl font-semibold text-th-text">{{ title }}</h1>
+      <h1 class="mb-2 text-2xl font-semibold text-th-heading">{{ title }}</h1>
       <p class="mb-4 text-sm text-th-accent/80">{{ subtitle }}</p>
 
       <p v-if="message" class="mb-4 text-sm" :class="status === 'error' ? 'text-th-danger-soft' : 'text-th-accent'">

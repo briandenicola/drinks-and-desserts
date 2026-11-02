@@ -10,7 +10,12 @@
  *   card        inputs / inner tiles      card-hover hover surface for card
  *   line        hairline dividers         edge       input / outline borders
  *   brand       filled buttons + active   brand-hover
- *   accent      headings and emphasis     muted      secondary / tertiary text
+ *   accent      labels, nav, body accents  muted      secondary / tertiary text
+ *   emphasis    headings, selected borders, rings, chart accent (same as accent
+ *               except Capitoline, where accent is cream and emphasis is gold)
+ *   chrome      header, sidebar and bottom nav background (same as inset except
+ *               Capitoline, where panels are lighter than the chrome)
+ *   heading     titles that sit on text (same as text except Capitoline gold)
  *   text        primary text
  */
 :root {
@@ -24,6 +29,9 @@
   --th-brand: #1e407c;
   --th-brand-hover: #2a5299;
   --th-accent: #96bee6;
+  --th-emphasis: #96bee6;
+  --th-chrome: #041e3e;
+  --th-heading: #ffffff;
   --th-muted: #4a7aa5;
   --th-muted-strong: #5a8ab5;
   --th-text: #ffffff;
@@ -53,6 +61,9 @@
   --color-th-brand: var(--th-brand);
   --color-th-brand-hover: var(--th-brand-hover);
   --color-th-accent: var(--th-accent);
+  --color-th-emphasis: var(--th-emphasis);
+  --color-th-chrome: var(--th-chrome);
+  --color-th-heading: var(--th-heading);
   --color-th-muted: var(--th-muted);
   --color-th-muted-strong: var(--th-muted-strong);
   --color-th-text: var(--th-text);
@@ -72,6 +83,9 @@
   --th-brand: #7a5f22;
   --th-brand-hover: #93732b;
   --th-accent: #d4b96a;
+  --th-emphasis: #d4b96a;
+  --th-chrome: #1a1a2e;
+  --th-heading: #e8e0d0;
   --th-muted: #8a8068;
   --th-muted-strong: #a09880;
   --th-text: #e8e0d0;
@@ -92,6 +106,9 @@
   --th-brand: #8a6d3b;
   --th-brand-hover: #6b5520;
   --th-accent: #6b5520;
+  --th-emphasis: #6b5520;
+  --th-chrome: #ffffff;
+  --th-heading: #2c2416;
   --th-muted: #6e6350;
   --th-muted-strong: #5c5040;
   --th-text: #2c2416;
@@ -116,6 +133,9 @@
   --th-brand: #5a5650;
   --th-brand-hover: #6e6a62;
   --th-accent: #f0ece4;
+  --th-emphasis: #f0ece4;
+  --th-chrome: #131312;
+  --th-heading: #e8e4dc;
   --th-muted: #8a867e;
   --th-muted-strong: #a8a49c;
   --th-text: #e8e4dc;
@@ -135,6 +155,9 @@
   --th-brand: #843c00;
   --th-brand-hover: #9a4a08;
   --th-accent: #b8984a;
+  --th-emphasis: #b8984a;
+  --th-chrome: #231c14;
+  --th-heading: #ffffff;
   --th-muted: #9a8764;
   --th-muted-strong: #b0a080;
   --th-text: #ffffff;
@@ -146,14 +169,17 @@
 
 [data-theme="capitoline"] {
   --th-page: #0a0808;
-  --th-inset: #120e0e;
-  --th-card: #1a1212;
-  --th-card-hover: #221818;
+  --th-inset: #1a1212;
+  --th-card: #261c1c;
+  --th-card-hover: #2f2323;
   --th-line: rgba(240, 188, 66, 0.18);
   --th-edge: rgba(240, 188, 66, 0.45);
-  --th-brand: #8e1f2f;
-  --th-brand-hover: #a62a3b;
-  --th-accent: #f0bc42;
+  --th-brand: #54421c;
+  --th-brand-hover: #6a5424;
+  --th-accent: #f0e8d8;
+  --th-emphasis: #f0bc42;
+  --th-chrome: #120e0e;
+  --th-heading: #f0bc42;
   --th-muted: #a09c9e;
   --th-muted-strong: #cacacc;
   --th-text: #f0e8d8;
@@ -173,6 +199,9 @@
   --th-brand: #ba0e09;
   --th-brand-hover: #d11a14;
   --th-accent: #ffbf00;
+  --th-emphasis: #ffbf00;
+  --th-chrome: #180e0c;
+  --th-heading: #f5e8d0;
   --th-muted: #a8885c;
   --th-muted-strong: #c8a870;
   --th-text: #f5e8d0;
@@ -192,6 +221,9 @@
   --th-brand: #0d5eaf;
   --th-brand-hover: #1570c8;
   --th-accent: #ffffff;
+  --th-emphasis: #ffffff;
+  --th-chrome: #0a1424;
+  --th-heading: #e8f0ff;
   --th-muted: #6f84b4;
   --th-muted-strong: #8099c8;
   --th-text: #e8f0ff;
@@ -206,4 +238,70 @@ body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   touch-action: manipulation;
+}
+
+/*
+ * Capitoline typography follows Aurearia: Cinzel headings over Inter body text.
+ * Inter is registered under its own family name so the other palettes keep
+ * their existing system-font rendering.
+ */
+@font-face {
+  font-family: 'Inter Capitoline';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url('../node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter Capitoline';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 500;
+  src: url('../node_modules/@fontsource/inter/files/inter-latin-500-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter Capitoline';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 600;
+  src: url('../node_modules/@fontsource/inter/files/inter-latin-600-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Cinzel';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 500;
+  src: url('../node_modules/@fontsource/cinzel/files/cinzel-latin-500-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Cinzel';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 600;
+  src: url('../node_modules/@fontsource/cinzel/files/cinzel-latin-600-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Cinzel';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url('../node_modules/@fontsource/cinzel/files/cinzel-latin-700-normal.woff2') format('woff2');
+}
+
+[data-theme="capitoline"] body {
+  font-family: 'Inter Capitoline', 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Layered so utility colours and weights on individual headings still win */
+@layer base {
+  [data-theme="capitoline"] :is(h1, h2, h3, h4, legend) {
+    font-family: 'Cinzel', Georgia, serif;
+    color: var(--th-heading);
+    letter-spacing: 0.02em;
+  }
 }

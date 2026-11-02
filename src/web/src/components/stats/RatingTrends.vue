@@ -65,7 +65,7 @@ const chartOption = computed(() => {
 
 <template>
   <section class="bg-th-inset border border-th-line rounded-xl p-4 space-y-3">
-    <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">Rating Trends</h3>
+    <h3 class="text-sm font-medium text-th-emphasis uppercase tracking-wide">Rating Trends</h3>
     <div v-if="!ratingTrend.some(m => m.count > 0)" class="text-center py-6 text-th-accent/50 text-sm">
       Not enough rating data yet
     </div>

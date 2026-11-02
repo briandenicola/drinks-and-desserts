@@ -42,10 +42,10 @@ const navItems = [
 
     <!-- Header (mobile only, or desktop with offset) -->
     <header
-      class="bg-th-inset border-b border-th-line px-4 py-3 flex items-center justify-between safe-area-top"
+      class="bg-th-chrome border-b border-th-line px-4 py-3 flex items-center justify-between safe-area-top"
       :class="{ 'lg:ml-64': isDesktop && auth.isAuthenticated }"
     >
-      <h1 class="text-lg font-bold text-th-accent">Drinks &amp; Desserts</h1>
+      <h1 class="text-lg font-bold text-th-emphasis">Drinks &amp; Desserts</h1>
       <div class="flex items-center gap-3">
         <router-link v-if="auth.isAuthenticated" to="/friends" class="p-1 text-th-accent hover:text-th-text">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -109,7 +109,7 @@ const navItems = [
     <PwaInstallPrompt />
 
     <!-- Bottom Navigation (mobile only) -->
-    <nav v-if="auth.isAuthenticated && !isDesktop" class="fixed bottom-0 inset-x-0 bg-th-inset border-t border-th-line safe-area-bottom">
+    <nav v-if="auth.isAuthenticated && !isDesktop" class="fixed bottom-0 inset-x-0 bg-th-chrome border-t border-th-line safe-area-bottom">
       <div class="flex justify-around items-end pt-1 pb-2">
         <template v-for="item in navItems" :key="item.path">
           <!-- Raised Capture FAB -->
@@ -121,7 +121,7 @@ const navItems = [
             <div
               class="w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all"
               :class="route.path === '/capture'
-                ? 'bg-th-accent shadow-th-brand/30'
+                ? 'bg-th-emphasis shadow-th-brand/30'
                 : 'bg-gradient-to-br from-th-brand to-th-brand-hover shadow-th-brand/20 hover:shadow-th-brand/30'"
             >
               <svg xmlns="http://www.w3.org/2000/svg" :class="route.path === '/capture' ? 'text-th-page' : 'text-white'" class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">

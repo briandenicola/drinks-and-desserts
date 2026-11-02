@@ -312,6 +312,36 @@ describe('stylesheet coverage', () => {
     expect(offenders).toEqual([])
   })
 
+  function valueOf(selector: string, token: string) {
+    const escaped = selector.replace(/[[\]"]/g, '\\$&')
+    const block = new RegExp(`${escaped}\\s*\\{([^}]*)\\}`).exec(css)?.[1] ?? ''
+    return new RegExp(`${token}:\\s*([^;]+);`).exec(block)?.[1]
+  }
+
+  it('only Capitoline separates cream labels from gold headings and lifts inputs above panels', () => {
+    for (const { id } of THEME_OPTIONS) {
+      if (id === 'capitoline') continue
+      const sel = `[data-theme="${id}"]`
+      expect(valueOf(sel, '--th-emphasis'), id).toBe(valueOf(sel, '--th-accent'))
+      expect(valueOf(sel, '--th-chrome'), id).toBe(valueOf(sel, '--th-inset'))
+      expect(valueOf(sel, '--th-heading'), id).toBe(valueOf(sel, '--th-text'))
+    }
+    const cap = '[data-theme="capitoline"]'
+    expect(valueOf(cap, '--th-emphasis')).toBe('#f0bc42')
+    expect(valueOf(cap, '--th-heading')).toBe('#f0bc42')
+    expect(valueOf(cap, '--th-accent')).toBe('#f0e8d8')
+    expect(valueOf(cap, '--th-card')).not.toBe(valueOf(cap, '--th-inset'))
+    expect(valueOf(cap, '--th-chrome')).not.toBe(valueOf(cap, '--th-inset'))
+    expect(css).toMatch(/\[data-theme="capitoline"\] body \{[^}]*Inter Capitoline/)
+  })
+
+  it('colours headings with a heading role, not the label or body text colour', () => {
+    const offenders = vueSources()
+      .filter(f => /<(?:h[1-4]|legend)\b[^>]*text-th-(?:accent|text)\b/.test(f.text))
+      .map(f => f.path)
+    expect(offenders).toEqual([])
+  })
+
   it('leaves no hardcoded palette colours in components', () => {
     const offenders = vueSources().filter(f => /\[#[0-9a-f]{6}\]/i.test(f.text)).map(f => f.path)
     expect(offenders).toEqual([])

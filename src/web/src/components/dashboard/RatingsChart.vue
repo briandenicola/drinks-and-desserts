@@ -81,7 +81,7 @@ const chartOption = computed(() => {
 
 <template>
   <section class="bg-th-inset border border-th-line rounded-xl p-4 space-y-3">
-    <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">Ratings Distribution</h3>
+    <h3 class="text-sm font-medium text-th-emphasis uppercase tracking-wide">Ratings Distribution</h3>
     <div v-if="!buckets.length" class="text-center py-6 text-th-accent/50 text-sm">
       No rating data available yet
     </div>

@@ -50,7 +50,7 @@ function onImgError(e: Event) {
 
 <template>
   <section class="bg-th-inset border border-th-line rounded-xl p-4 space-y-3">
-    <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">Recent Activity</h3>
+    <h3 class="text-sm font-medium text-th-emphasis uppercase tracking-wide">Recent Activity</h3>
 
     <div v-if="!activities.length" class="text-center py-6 text-th-accent/50 text-sm">
       No captures yet. Use the mobile app to capture your first item.

@@ -39,7 +39,7 @@ function getField(item: Item, key: string): string {
 <template>
   <div class="bg-th-inset border border-th-line rounded-xl p-4 space-y-4">
     <div class="flex items-center justify-between">
-      <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">
+      <h3 class="text-sm font-medium text-th-emphasis uppercase tracking-wide">
         Compare ({{ items.length }} item{{ items.length !== 1 ? 's' : '' }})
       </h3>
       <button @click="emit('close')" class="text-th-muted hover:text-th-text p-1">

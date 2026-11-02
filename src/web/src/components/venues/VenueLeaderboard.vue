@@ -31,7 +31,7 @@ const sorted = computed(() => {
 <template>
   <section class="bg-th-inset border border-th-line rounded-xl p-4 space-y-3">
     <div class="flex items-center justify-between">
-      <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">Venue Leaderboard</h3>
+      <h3 class="text-sm font-medium text-th-emphasis uppercase tracking-wide">Venue Leaderboard</h3>
       <div class="flex gap-1">
         <button
           @click="emit('sort', 'rating')"

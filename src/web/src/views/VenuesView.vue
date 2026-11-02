@@ -294,7 +294,7 @@ function resetForm() {
 <template>
   <div class="p-4 mx-auto" :class="isDesktop ? 'max-w-6xl' : 'max-w-lg'">
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-xl font-bold text-th-text">Venues</h2>
+      <h2 class="text-xl font-bold text-th-heading">Venues</h2>
       <button
         @click="showAddForm = !showAddForm"
         class="text-th-accent hover:text-th-text transition-colors"
@@ -455,7 +455,7 @@ function resetForm() {
                 <div class="flex items-center gap-2 mb-1">
                   <span class="text-xs px-2 py-0.5 rounded-full bg-th-card text-th-accent capitalize">{{ virtualItems[row.index].venue!.type }}</span>
                 </div>
-                <h3 class="font-medium text-th-text truncate">{{ virtualItems[row.index].venue!.name }}</h3>
+                <h3 class="font-medium text-th-heading truncate">{{ virtualItems[row.index].venue!.name }}</h3>
                 <p v-if="virtualItems[row.index].venue!.address" class="text-sm text-th-accent/70 truncate">{{ virtualItems[row.index].venue!.address }}</p>
                 <div v-if="virtualItems[row.index].venue!.rating" class="mt-1">
                   <StarRating :rating="virtualItems[row.index].venue!.rating!" size="sm" />
@@ -495,7 +495,7 @@ function resetForm() {
         <div v-if="showAddForm" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" @click.self="resetForm()">
           <div class="bg-th-inset border border-th-edge rounded-2xl p-6 w-full max-w-sm shadow-xl space-y-4">
             <div class="flex items-center justify-between">
-              <h3 class="text-lg font-semibold text-th-text">Add Venue</h3>
+              <h3 class="text-lg font-semibold text-th-heading">Add Venue</h3>
               <button @click="resetForm()" class="text-th-muted hover:text-th-text p-1">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />

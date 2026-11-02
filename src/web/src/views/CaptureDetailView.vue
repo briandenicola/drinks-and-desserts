@@ -112,7 +112,7 @@ function statusColor(status: string) {
 function dotColor(status: string) {
   switch (status) {
     case 'complete': return 'bg-th-success'
-    case 'running': return 'bg-th-accent animate-pulse'
+    case 'running': return 'bg-th-emphasis animate-pulse'
     case 'error': return 'bg-th-danger'
     default: return 'bg-th-brand'
   }
@@ -186,7 +186,7 @@ function captureStatusLabel(status: string): string {
 
     <!-- Workflow Steps Timeline -->
     <div v-if="capture.workflowSteps.length" class="mb-6">
-      <h3 class="text-sm font-medium text-th-accent mb-1">
+      <h3 class="text-sm font-medium text-th-emphasis mb-1">
         {{ usedAi ? 'AI Agent Workflow' : 'Processing Workflow' }}
       </h3>
       <p v-if="usedAi" class="text-xs text-th-muted/60 mb-3">
@@ -242,7 +242,7 @@ function captureStatusLabel(status: string): string {
 
     <!-- Resulting Items -->
     <div v-if="items.length" class="mb-4">
-      <h3 class="text-sm font-medium text-th-accent mb-3">Identified Items</h3>
+      <h3 class="text-sm font-medium text-th-emphasis mb-3">Identified Items</h3>
       <div class="space-y-2">
         <router-link
           v-for="item in items"
@@ -264,7 +264,7 @@ function captureStatusLabel(status: string): string {
                 <span class="text-xs px-2 py-0.5 rounded-full bg-th-card text-th-accent">{{ item.type }}</span>
                 <span v-if="item.aiConfidence" class="text-xs text-th-muted/60">{{ Math.round(item.aiConfidence * 100) }}%</span>
               </div>
-              <h4 class="font-medium text-th-text truncate text-sm">{{ item.name }}</h4>
+              <h4 class="font-medium text-th-heading truncate text-sm">{{ item.name }}</h4>
               <p v-if="item.brand" class="text-xs text-th-accent/70 truncate">{{ item.brand }} {{ item.category ? `/ ${item.category}` : '' }}</p>
             </div>
             <span class="text-th-muted/60 text-sm">&rarr;</span>
@@ -275,7 +275,7 @@ function captureStatusLabel(status: string): string {
 
     <!-- Empty state while processing -->
     <div v-else-if="capture.status === 'processing'" class="text-center py-6">
-      <div class="inline-block w-5 h-5 border-2 border-th-edge border-t-th-accent rounded-full animate-spin mb-3"></div>
+      <div class="inline-block w-5 h-5 border-2 border-th-edge border-t-th-emphasis rounded-full animate-spin mb-3"></div>
       <p class="text-th-accent/70 text-sm">Processing your capture...</p>
     </div>
   </div>

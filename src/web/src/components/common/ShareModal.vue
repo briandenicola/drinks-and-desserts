@@ -47,7 +47,7 @@ function close() {
     <div v-if="modelValue" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" @click.self="close">
       <div class="bg-th-inset border border-th-edge/50 rounded-2xl p-6 w-full max-w-sm">
         <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-semibold text-th-text truncate pr-2">Share "{{ itemName }}"</h3>
+          <h3 class="text-lg font-semibold text-th-heading truncate pr-2">Share "{{ itemName }}"</h3>
           <button @click="close" class="text-th-accent hover:text-th-text min-h-[44px] min-w-[44px] flex items-center justify-center shrink-0" title="Close">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />

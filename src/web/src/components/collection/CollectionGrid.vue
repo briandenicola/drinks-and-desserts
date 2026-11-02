@@ -41,8 +41,8 @@ function onScroll(e: Event) {
         v-for="item in items"
         :key="item.id"
         @click="emit('select', item.id)"
-        class="text-left bg-th-inset border rounded-xl p-4 transition-colors hover:border-th-edge/80 focus:outline-none focus:ring-1 focus:ring-th-accent/40"
-        :class="selectedId === item.id ? 'border-th-accent' : 'border-th-line'"
+        class="text-left bg-th-inset border rounded-xl p-4 transition-colors hover:border-th-edge/80 focus:outline-none focus:ring-1 focus:ring-th-emphasis/40"
+        :class="selectedId === item.id ? 'border-th-emphasis' : 'border-th-line'"
       >
         <img
           v-if="item.photoUrls.length"
@@ -61,7 +61,7 @@ function onScroll(e: Event) {
           {{ item.type }}
         </span>
 
-        <h3 class="font-medium text-th-text truncate text-sm">{{ item.name }}</h3>
+        <h3 class="font-medium text-th-heading truncate text-sm">{{ item.name }}</h3>
         <p v-if="item.brand" class="text-xs text-th-accent/70 truncate">{{ item.brand }}</p>
 
         <div v-if="item.userRating" class="mt-2">

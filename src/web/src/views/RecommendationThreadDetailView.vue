@@ -46,7 +46,7 @@ onMounted(loadThread)
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
         </svg>
       </router-link>
-      <h1 class="text-2xl font-bold text-th-text">Saved Recommendation</h1>
+      <h1 class="text-2xl font-bold text-th-heading">Saved Recommendation</h1>
     </div>
 
     <div v-if="isLoading" class="text-center text-th-accent/70 py-8">Loading...</div>
@@ -85,7 +85,7 @@ onMounted(loadThread)
       </div>
 
       <div v-if="thread.extractedMenuItems && thread.extractedMenuItems.length > 0" class="bg-th-card border border-th-edge/50 rounded-xl p-4">
-        <h3 class="text-th-accent text-sm font-medium mb-2">Menu Items Found</h3>
+        <h3 class="text-th-emphasis text-sm font-medium mb-2">Menu Items Found</h3>
         <ul class="space-y-1">
           <li v-for="(item, index) in thread.extractedMenuItems" :key="index" class="text-sm text-th-text/80">
             • {{ item }}
@@ -100,7 +100,7 @@ onMounted(loadThread)
       >
         <div class="flex items-start justify-between mb-2">
           <div class="flex-1">
-            <h3 class="text-th-text font-medium">{{ rec.name }}</h3>
+            <h3 class="text-th-heading font-medium">{{ rec.name }}</h3>
             <p class="text-sm text-th-accent">{{ rec.type }}</p>
             <p v-if="rec.brand" class="text-sm text-th-muted">{{ rec.brand }}</p>
             <p v-if="rec.category" class="text-sm text-th-muted">{{ rec.category }}</p>

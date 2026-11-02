@@ -14,7 +14,7 @@ defineProps<{
   <div class="grid lg:grid-cols-2 gap-6">
     <!-- Top Rated Items -->
     <section class="bg-th-inset border border-th-line rounded-xl p-4 space-y-3">
-      <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">Top Rated</h3>
+      <h3 class="text-sm font-medium text-th-emphasis uppercase tracking-wide">Top Rated</h3>
       <div v-if="!topRated.length" class="text-center py-6 text-th-accent/50 text-sm">No rated items yet</div>
       <div
         v-for="(item, idx) in topRated"
@@ -42,7 +42,7 @@ defineProps<{
 
     <!-- Favorite Venues -->
     <section class="bg-th-inset border border-th-line rounded-xl p-4 space-y-3">
-      <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">Top Venues</h3>
+      <h3 class="text-sm font-medium text-th-emphasis uppercase tracking-wide">Top Venues</h3>
       <div v-if="!topVenues.length" class="text-center py-6 text-th-accent/50 text-sm">No venue data yet</div>
       <div v-for="(v, idx) in topVenues" :key="v.name" class="flex items-center gap-3 p-2 -mx-2">
         <span class="text-lg font-bold text-th-muted/60 w-6 text-center">{{ idx + 1 }}</span>

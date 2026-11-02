@@ -159,7 +159,7 @@ onBeforeUnmount(() => {
         >
           <div class="flex items-center justify-between">
             <button @click="router.push(`/friends/${friend.friendId}`)" class="flex-1 text-left">
-              <h3 class="font-medium text-th-text">{{ friend.friendDisplayName }}</h3>
+              <h3 class="font-medium text-th-heading">{{ friend.friendDisplayName }}</h3>
               <p class="text-xs text-th-muted mt-1">Friends since {{ new Date(friend.createdAt).toLocaleDateString() }}</p>
             </button>
             <button @click="removeFriend(friend)" class="text-th-danger text-sm ml-4 hover:text-th-danger-soft">Remove</button>
@@ -171,13 +171,13 @@ onBeforeUnmount(() => {
     <!-- Requests tab -->
     <template v-else>
       <div v-if="receivedRequests.length > 0" class="space-y-3 mb-6">
-        <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">Received</h3>
+        <h3 class="text-sm font-medium text-th-emphasis uppercase tracking-wide">Received</h3>
         <div
           v-for="req in receivedRequests"
           :key="req.id"
           class="bg-th-inset border border-th-line rounded-xl p-4"
         >
-          <h3 class="font-medium text-th-text mb-1">{{ req.friendDisplayName }}</h3>
+          <h3 class="font-medium text-th-heading mb-1">{{ req.friendDisplayName }}</h3>
           <div class="flex gap-2">
             <button @click="acceptRequest(req)" class="flex-1 bg-th-brand hover:bg-th-brand-hover text-white py-2 rounded-xl text-sm font-medium">
               Accept
@@ -190,13 +190,13 @@ onBeforeUnmount(() => {
       </div>
 
       <div v-if="sentRequests.length > 0" class="space-y-3">
-        <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">Sent</h3>
+        <h3 class="text-sm font-medium text-th-emphasis uppercase tracking-wide">Sent</h3>
         <div
           v-for="req in sentRequests"
           :key="req.id"
           class="bg-th-inset border border-th-line rounded-xl p-4"
         >
-          <h3 class="font-medium text-th-text">{{ req.friendDisplayName }}</h3>
+          <h3 class="font-medium text-th-heading">{{ req.friendDisplayName }}</h3>
           <p class="text-sm text-th-muted">Pending</p>
         </div>
       </div>
@@ -213,7 +213,7 @@ onBeforeUnmount(() => {
         <div v-if="showInviteModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" @click.self="showInviteModal = false">
           <div class="bg-th-inset border border-th-edge rounded-2xl p-6 w-full max-w-sm shadow-xl">
             <div class="flex items-center justify-between mb-4">
-              <h3 class="text-lg font-semibold text-th-text">Invite a Friend</h3>
+              <h3 class="text-lg font-semibold text-th-heading">Invite a Friend</h3>
               <button @click="showInviteModal = false" class="text-th-muted hover:text-th-text p-1">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />

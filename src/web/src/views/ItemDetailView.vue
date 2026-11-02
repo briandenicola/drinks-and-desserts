@@ -574,7 +574,7 @@ async function shareWithFriend(friendId: string) {
 
     <!-- Journal -->
     <div v-if="!isEditing" class="mt-6">
-      <h3 class="text-sm font-medium text-th-accent mb-3">Journal</h3>
+      <h3 class="text-sm font-medium text-th-emphasis mb-3">Journal</h3>
 
       <!-- Existing entries -->
       <div v-if="item.journal?.length" class="space-y-3 mb-4">
@@ -733,7 +733,7 @@ async function shareWithFriend(friendId: string) {
 
     <!-- Friend Thoughts -->
     <div v-if="!isEditing && friendThoughts.length > 0" class="mt-6">
-      <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide mb-3">
+      <h3 class="text-sm font-medium text-th-emphasis uppercase tracking-wide mb-3">
         Friend Thoughts ({{ friendThoughts.length }})
       </h3>
       <ThoughtsList :thoughts="friendThoughts" @delete="handleDeleteThought" />

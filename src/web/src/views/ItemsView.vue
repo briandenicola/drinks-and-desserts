@@ -565,7 +565,7 @@ function navigateToItem(id: string) {
       <button
         v-if="!showAddForm"
         @click="showAddForm = true"
-        class="w-full bg-th-inset border border-dashed border-th-edge/50 rounded-xl p-3 text-th-accent hover:border-th-accent/50 hover:text-th-text/80 transition-colors text-sm"
+        class="w-full bg-th-inset border border-dashed border-th-edge/50 rounded-xl p-3 text-th-accent hover:border-th-emphasis/50 hover:text-th-text/80 transition-colors text-sm"
       >
         + Add to wishlist
       </button>
@@ -691,7 +691,7 @@ function navigateToItem(id: string) {
                   <span class="text-xs px-2 py-0.5 rounded-full bg-th-card text-th-accent">{{ virtualItems[row.index].item!.type }}</span>
                   <span v-if="virtualItems[row.index].item!.status === 'ai-draft'" class="text-xs text-th-accent">AI Draft</span>
                 </div>
-                <h3 class="font-medium text-th-text truncate">{{ virtualItems[row.index].item!.name }}</h3>
+                <h3 class="font-medium text-th-heading truncate">{{ virtualItems[row.index].item!.name }}</h3>
                 <p v-if="virtualItems[row.index].item!.brand" class="text-sm text-th-accent/70 truncate">{{ virtualItems[row.index].item!.brand }}</p>
                 <div v-if="virtualItems[row.index].item!.userRating" class="mt-1">
                   <StarRating :rating="virtualItems[row.index].item!.userRating!" size="sm" />
@@ -714,7 +714,7 @@ function navigateToItem(id: string) {
                   <div class="flex items-center gap-2 mb-1">
                     <span class="text-xs px-2 py-0.5 rounded-full bg-th-card text-th-accent">{{ virtualItems[row.index].item!.type }}</span>
                   </div>
-                  <h3 class="font-medium text-th-text truncate">{{ virtualItems[row.index].item!.name }}</h3>
+                  <h3 class="font-medium text-th-heading truncate">{{ virtualItems[row.index].item!.name }}</h3>
                   <p v-if="virtualItems[row.index].item!.brand" class="text-sm text-th-accent truncate">{{ virtualItems[row.index].item!.brand }}</p>
                   <p v-if="virtualItems[row.index].item!.userNotes" class="text-xs text-th-accent/70 mt-1 line-clamp-2">{{ virtualItems[row.index].item!.userNotes }}</p>
                   <p v-if="virtualItems[row.index].item!.processedBy === 'pending'" class="text-xs text-th-accent mt-1">Processing...</p>

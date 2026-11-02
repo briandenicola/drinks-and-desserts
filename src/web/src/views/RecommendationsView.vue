@@ -65,7 +65,7 @@ onMounted(() => {
 <template>
   <div class="p-4 mx-auto pb-24" :class="isDesktop ? 'max-w-6xl' : 'max-w-lg'">
     <div class="flex items-center justify-between mb-2">
-      <h1 class="text-2xl font-bold text-th-text">AI Recommendations</h1>
+      <h1 class="text-2xl font-bold text-th-heading">AI Recommendations</h1>
       <div class="flex items-center gap-4">
         <router-link
           to="/recommendations/history"
@@ -95,7 +95,7 @@ onMounted(() => {
 
     <!-- User Profile Summary -->
     <div v-if="profileData && profileData.totalRatedItems > 0" class="mb-6 bg-th-card border border-th-edge/50 rounded-xl p-4">
-      <h2 class="text-th-accent text-sm font-medium mb-2">Your Profile</h2>
+      <h2 class="text-th-emphasis text-sm font-medium mb-2">Your Profile</h2>
       <div class="space-y-1 text-sm">
         <p class="text-th-text/80">
           <span class="text-th-muted">Rated items:</span> {{ profileData.totalRatedItems }}
@@ -180,7 +180,7 @@ onMounted(() => {
           :class="[
             'px-3 py-1 rounded-full text-xs border transition-colors',
             selectedTypes.includes(type)
-              ? 'bg-th-brand border-th-accent text-white'
+              ? 'bg-th-brand border-th-emphasis text-white'
               : 'bg-th-card border-th-edge/50 text-th-accent hover:bg-th-brand hover:text-white'
           ]"
         >
@@ -202,7 +202,7 @@ onMounted(() => {
 
     <!-- Extracted Menu Items -->
     <div v-if="extractedMenuItems.length > 0" class="mb-6 bg-th-card border border-th-edge/50 rounded-xl p-4">
-      <h3 class="text-th-accent text-sm font-medium mb-2">Menu Items Found</h3>
+      <h3 class="text-th-emphasis text-sm font-medium mb-2">Menu Items Found</h3>
       <ul class="space-y-1">
         <li v-for="(item, index) in extractedMenuItems" :key="index" class="text-sm text-th-text/80">
           • {{ item }}
@@ -213,7 +213,7 @@ onMounted(() => {
     <!-- Recommendations Results -->
     <div v-if="hasRecommendations" class="space-y-4">
       <div class="bg-th-card border border-th-edge/50 rounded-xl p-4">
-        <h2 class="text-th-accent font-medium mb-2">Recommendations</h2>
+        <h2 class="text-th-emphasis font-medium mb-2">Recommendations</h2>
         <p v-if="reasoning" class="text-sm text-th-text/70 mb-4">{{ reasoning }}</p>
 
         <div v-if="basedOnItems.length > 0" class="text-xs text-th-muted mb-4">
@@ -237,11 +237,11 @@ onMounted(() => {
       <div
         v-for="(rec, index) in recommendations"
         :key="index"
-        class="bg-th-card border border-th-edge/50 rounded-xl p-4 hover:border-th-accent/30 transition-colors"
+        class="bg-th-card border border-th-edge/50 rounded-xl p-4 hover:border-th-emphasis/30 transition-colors"
       >
         <div class="flex items-start justify-between mb-2">
           <div class="flex-1">
-            <h3 class="text-th-text font-medium">{{ rec.name }}</h3>
+            <h3 class="text-th-heading font-medium">{{ rec.name }}</h3>
             <p class="text-sm text-th-accent">{{ rec.type }}</p>
             <p v-if="rec.brand" class="text-sm text-th-muted">{{ rec.brand }}</p>
             <p v-if="rec.category" class="text-sm text-th-muted">{{ rec.category }}</p>

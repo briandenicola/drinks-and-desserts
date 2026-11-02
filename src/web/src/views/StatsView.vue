@@ -158,7 +158,7 @@ function typeTextColor(type: string) {
 
         <!-- Tags -->
         <section v-if="stats.topTags.length" class="bg-th-inset border border-th-line rounded-xl p-4 space-y-3">
-          <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">Top Tags</h3>
+          <h3 class="text-sm font-medium text-th-emphasis uppercase tracking-wide">Top Tags</h3>
           <div class="flex flex-wrap gap-2">
             <span
               v-for="t in stats.topTags"
@@ -195,7 +195,7 @@ function typeTextColor(type: string) {
 
       <!-- Type Breakdown -->
       <section v-if="stats.typeBreakdown.length" class="bg-th-inset border border-th-line rounded-xl p-4 space-y-3">
-        <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">By Type</h3>
+        <h3 class="text-sm font-medium text-th-emphasis uppercase tracking-wide">By Type</h3>
         <div v-for="t in stats.typeBreakdown" :key="t.type" class="space-y-1">
           <div class="flex justify-between text-sm">
             <span class="capitalize" :class="typeTextColor(t.type)">{{ t.type }}</span>
@@ -213,7 +213,7 @@ function typeTextColor(type: string) {
 
       <!-- Average Rating by Type -->
       <section v-if="stats.avgRatingByType.length" class="bg-th-inset border border-th-line rounded-xl p-4 space-y-3">
-        <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">Average Rating</h3>
+        <h3 class="text-sm font-medium text-th-emphasis uppercase tracking-wide">Average Rating</h3>
         <div v-for="t in stats.avgRatingByType" :key="t.type" class="flex items-center justify-between">
           <span class="capitalize text-sm" :class="typeTextColor(t.type)">{{ t.type }}</span>
           <div class="flex items-center gap-2">
@@ -225,7 +225,7 @@ function typeTextColor(type: string) {
 
       <!-- Top Rated -->
       <section v-if="stats.topRated.length" class="bg-th-inset border border-th-line rounded-xl p-4 space-y-3">
-        <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">Top Rated</h3>
+        <h3 class="text-sm font-medium text-th-emphasis uppercase tracking-wide">Top Rated</h3>
         <div
           v-for="(item, idx) in stats.topRated"
           :key="item.id"
@@ -252,7 +252,7 @@ function typeTextColor(type: string) {
 
       <!-- Favorite Venues -->
       <section v-if="stats.topVenues.length" class="bg-th-inset border border-th-line rounded-xl p-4 space-y-3">
-        <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">Favorite Venues</h3>
+        <h3 class="text-sm font-medium text-th-emphasis uppercase tracking-wide">Favorite Venues</h3>
         <div v-for="v in stats.topVenues" :key="v.name" class="flex justify-between items-center">
           <span class="text-sm text-th-text/80 truncate">{{ v.name }}</span>
           <span class="text-xs text-th-accent/70 ml-2 shrink-0">{{ v.count }} visit{{ v.count !== 1 ? 's' : '' }}</span>
@@ -261,7 +261,7 @@ function typeTextColor(type: string) {
 
       <!-- Top Tags -->
       <section v-if="stats.topTags.length" class="bg-th-inset border border-th-line rounded-xl p-4 space-y-3">
-        <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">Top Tags</h3>
+        <h3 class="text-sm font-medium text-th-emphasis uppercase tracking-wide">Top Tags</h3>
         <div class="flex flex-wrap gap-2">
           <span
             v-for="t in stats.topTags"
@@ -275,7 +275,7 @@ function typeTextColor(type: string) {
 
       <!-- Activity by Day -->
       <section class="bg-th-inset border border-th-line rounded-xl p-4 space-y-3">
-        <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">Activity by Day</h3>
+        <h3 class="text-sm font-medium text-th-emphasis uppercase tracking-wide">Activity by Day</h3>
         <div class="flex items-end justify-between gap-1 h-24">
           <div v-for="d in stats.activityByDay" :key="d.day" class="flex-1 flex flex-col items-center gap-1">
             <div
@@ -290,7 +290,7 @@ function typeTextColor(type: string) {
 
       <!-- Monthly Trend -->
       <section v-if="stats.monthlyTrend.some(m => m.count > 0)" class="bg-th-inset border border-th-line rounded-xl p-4 space-y-3">
-        <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">Monthly Trend</h3>
+        <h3 class="text-sm font-medium text-th-emphasis uppercase tracking-wide">Monthly Trend</h3>
         <div class="flex items-end justify-between gap-1 h-24">
           <div v-for="m in stats.monthlyTrend" :key="m.month" class="flex-1 flex flex-col items-center gap-1">
             <span v-if="m.count > 0" class="text-[10px] text-th-accent/70">{{ m.count }}</span>
@@ -306,12 +306,12 @@ function typeTextColor(type: string) {
 
       <!-- Rating Trend -->
       <section v-if="stats.ratingTrend.some(m => m.count > 0)" class="bg-th-inset border border-th-line rounded-xl p-4 space-y-3">
-        <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">Rating Trend</h3>
+        <h3 class="text-sm font-medium text-th-emphasis uppercase tracking-wide">Rating Trend</h3>
         <div class="flex items-end justify-between gap-1 h-24">
           <div v-for="m in stats.ratingTrend" :key="m.month" class="flex-1 flex flex-col items-center gap-1">
             <span v-if="m.count > 0" class="text-[10px] text-th-accent/70">{{ m.avgRating }}</span>
             <div
-              class="w-full bg-th-accent/70 rounded-t transition-all duration-500"
+              class="w-full bg-th-emphasis/70 rounded-t transition-all duration-500"
               :style="{ height: m.count > 0 ? (m.avgRating / 5 * 100) + '%' : '0', minHeight: m.count > 0 ? '4px' : '0' }"
             />
             <span class="text-[10px] text-th-muted/60">{{ m.month.split(' ')[0] }}</span>

@@ -142,7 +142,7 @@ watch(() => [route.params.friendId, route.params.id], load, { immediate: true })
               {{ venueTypeLabel(venue.type).charAt(0) }}
             </div>
             <div class="flex-1 min-w-0">
-              <h3 class="font-medium text-th-text truncate">{{ venue.name }}</h3>
+              <h3 class="font-medium text-th-heading truncate">{{ venue.name }}</h3>
               <p class="text-xs text-th-muted-strong">{{ venueTypeLabel(venue.type) }}</p>
               <p v-if="venue.address" class="text-xs text-th-muted truncate">{{ venue.address }}</p>
             </div>
@@ -160,7 +160,7 @@ watch(() => [route.params.friendId, route.params.id], load, { immediate: true })
           class="w-full h-48 object-cover"
         />
         <div class="p-4 space-y-3">
-          <h2 class="text-xl font-semibold text-th-text">{{ selectedVenue.name }}</h2>
+          <h2 class="text-xl font-semibold text-th-heading">{{ selectedVenue.name }}</h2>
           <span class="text-xs px-2 py-0.5 rounded-full bg-th-card text-th-accent">
             {{ venueTypeLabel(selectedVenue.type) }}
           </span>
@@ -200,7 +200,7 @@ watch(() => [route.params.friendId, route.params.id], load, { immediate: true })
 
       <!-- Thoughts section -->
       <section class="space-y-4">
-        <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">
+        <h3 class="text-sm font-medium text-th-emphasis uppercase tracking-wide">
           Thoughts ({{ thoughts.length }})
         </h3>
 

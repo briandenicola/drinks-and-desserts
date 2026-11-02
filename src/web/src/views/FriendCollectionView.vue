@@ -93,7 +93,7 @@ onMounted(load)
             <div class="flex items-center gap-2 mb-1">
               <span class="text-xs px-2 py-0.5 rounded-full bg-th-card text-th-accent">{{ item.type }}</span>
             </div>
-            <h3 class="font-medium text-th-text truncate">{{ item.name }}</h3>
+            <h3 class="font-medium text-th-heading truncate">{{ item.name }}</h3>
             <p v-if="item.brand" class="text-sm text-th-accent/70 truncate">{{ item.brand }}</p>
             <div v-if="item.userRating" class="mt-1">
               <StarRating :rating="item.userRating" size="sm" />

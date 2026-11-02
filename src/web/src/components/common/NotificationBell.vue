@@ -148,7 +148,7 @@ onUnmounted(() => {
     <div v-if="showDropdown"
       class="absolute right-0 top-8 w-80 max-h-96 overflow-y-auto bg-th-inset border border-th-line rounded-xl shadow-xl z-50">
       <div class="flex items-center justify-between p-3 border-b border-th-line">
-        <h3 class="text-sm font-medium text-th-text">Notifications</h3>
+        <h3 class="text-sm font-medium text-th-heading">Notifications</h3>
         <div class="flex items-center gap-2">
           <button v-if="unreadCount > 0" @click="markAllRead" class="text-xs text-th-accent hover:text-th-text">
             Mark all read
@@ -174,7 +174,7 @@ onUnmounted(() => {
           :class="n.isRead ? 'opacity-60' : ''"
         >
           <div class="flex items-start gap-2">
-            <span v-if="!n.isRead" class="w-2 h-2 bg-th-accent rounded-full mt-1.5 shrink-0"></span>
+            <span v-if="!n.isRead" class="w-2 h-2 bg-th-emphasis rounded-full mt-1.5 shrink-0"></span>
             <div class="flex-1 min-w-0">
               <p class="text-sm text-th-text">{{ n.title }}</p>
               <p v-if="n.detail" class="text-xs text-th-muted-strong truncate mt-0.5">{{ n.detail }}</p>

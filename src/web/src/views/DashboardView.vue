@@ -16,7 +16,7 @@ onMounted(dashboard.loadAll)
 
 <template>
   <div class="p-4 lg:p-6 max-w-6xl mx-auto space-y-6">
-    <h2 class="text-xl font-semibold text-th-text">Dashboard</h2>
+    <h2 class="text-xl font-semibold text-th-heading">Dashboard</h2>
 
     <!-- Loading -->
     <div v-if="dashboard.isLoading" class="text-center py-12 text-th-accent/70">Loading dashboard...</div>

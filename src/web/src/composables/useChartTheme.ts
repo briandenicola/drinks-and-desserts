@@ -23,7 +23,7 @@ const FALLBACK: ChartColors = {
 }
 
 const VARIABLES: Record<keyof ChartColors, string> = {
-  accent: '--th-accent',
+  accent: '--th-emphasis',
   brand: '--th-brand',
   brandHover: '--th-brand-hover',
   muted: '--th-muted',

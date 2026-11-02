@@ -53,10 +53,10 @@ function isActive(path: string): boolean {
 </script>
 
 <template>
-  <aside class="fixed left-0 top-0 bottom-0 w-64 bg-th-inset border-r border-th-line flex flex-col z-30">
+  <aside class="fixed left-0 top-0 bottom-0 w-64 bg-th-chrome border-r border-th-line flex flex-col z-30">
     <!-- Brand -->
     <div class="px-5 py-4 border-b border-th-line">
-      <h1 class="text-lg font-bold text-th-accent">Drinks &amp; Desserts</h1>
+      <h1 class="text-lg font-bold text-th-emphasis">Drinks &amp; Desserts</h1>
     </div>
 
     <!-- Navigation -->

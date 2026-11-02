@@ -47,7 +47,7 @@ onMounted(() => {
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h2 class="text-xl font-semibold text-th-text">You are now friends with {{ friendName }}</h2>
+        <h2 class="text-xl font-semibold text-th-heading">You are now friends with {{ friendName }}</h2>
         <p class="text-th-muted-strong">You can now view each other's collections and share thoughts.</p>
         <button
           @click="router.push('/friends')"
@@ -60,7 +60,7 @@ onMounted(() => {
 
     <template v-else>
       <div class="text-center space-y-6">
-        <h2 class="text-xl font-semibold text-th-text">Friend Invite</h2>
+        <h2 class="text-xl font-semibold text-th-heading">Friend Invite</h2>
         <div class="bg-th-inset border border-th-line rounded-xl p-6 space-y-4">
           <p class="text-th-accent">You've been invited to connect as friends.</p>
           <div class="bg-th-card rounded-lg p-3">

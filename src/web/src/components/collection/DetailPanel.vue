@@ -54,7 +54,7 @@ function formatDate(iso: string): string {
         >
           <!-- Header -->
           <div class="flex items-center justify-between p-4 border-b border-th-line shrink-0">
-            <h2 class="text-sm font-semibold text-th-text truncate">Details</h2>
+            <h2 class="text-sm font-semibold text-th-heading truncate">Details</h2>
             <div class="flex items-center gap-2">
               <button
                 @click="emit('navigate', item!.id)"
@@ -88,7 +88,7 @@ function formatDate(iso: string): string {
                   :key="i"
                   @click="activePhoto = i"
                   class="w-12 h-12 rounded-md overflow-hidden border-2 transition-colors"
-                  :class="activePhoto === i ? 'border-th-accent' : 'border-th-line'"
+                  :class="activePhoto === i ? 'border-th-emphasis' : 'border-th-line'"
                 >
                   <img :src="url" class="w-full h-full object-cover" />
                 </button>
@@ -106,7 +106,7 @@ function formatDate(iso: string): string {
                 <span class="inline-block text-xs px-2 py-0.5 rounded-full bg-th-card text-th-accent mb-2">
                   {{ item.type }}
                 </span>
-                <h3 class="text-lg font-semibold text-th-text">{{ item.name }}</h3>
+                <h3 class="text-lg font-semibold text-th-heading">{{ item.name }}</h3>
                 <p v-if="item.brand" class="text-sm text-th-accent/70">{{ item.brand }}</p>
               </div>
 

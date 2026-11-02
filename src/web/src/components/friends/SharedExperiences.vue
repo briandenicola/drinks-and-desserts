@@ -31,14 +31,14 @@ const sharedTypes = computed(() => {
 
 <template>
   <section class="bg-th-inset border border-th-line rounded-xl p-4 space-y-3">
-    <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">Shared Experiences</h3>
+    <h3 class="text-sm font-medium text-th-emphasis uppercase tracking-wide">Shared Experiences</h3>
 
     <div v-if="!sharedVenues.length && !sharedTypes.length" class="text-center py-6 text-th-accent/50 text-sm">
       No shared experiences found yet
     </div>
 
     <div v-if="sharedVenues.length" class="space-y-2">
-      <h4 class="text-xs text-th-accent/70">Shared Venues</h4>
+      <h4 class="text-xs text-th-emphasis/70">Shared Venues</h4>
       <div v-for="venue in sharedVenues" :key="venue" class="flex items-center gap-2 text-sm text-th-text/80">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-th-accent/50 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -49,7 +49,7 @@ const sharedTypes = computed(() => {
     </div>
 
     <div v-if="sharedTypes.length" class="space-y-2">
-      <h4 class="text-xs text-th-accent/70">Shared Categories</h4>
+      <h4 class="text-xs text-th-emphasis/70">Shared Categories</h4>
       <div class="flex flex-wrap gap-2">
         <span
           v-for="t in sharedTypes"

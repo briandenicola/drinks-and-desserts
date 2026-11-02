@@ -115,7 +115,7 @@ onMounted(load)
             <span v-if="item.category" class="text-xs text-th-muted-strong">{{ item.category }}</span>
           </div>
 
-          <h2 class="text-xl font-semibold text-th-text">{{ item.name }}</h2>
+          <h2 class="text-xl font-semibold text-th-heading">{{ item.name }}</h2>
           <p v-if="item.brand" class="text-th-accent">{{ item.brand }}</p>
 
           <div v-if="item.userRating">
@@ -152,7 +152,7 @@ onMounted(load)
 
       <!-- Thoughts section -->
       <section class="space-y-4">
-        <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">
+        <h3 class="text-sm font-medium text-th-emphasis uppercase tracking-wide">
           Thoughts ({{ thoughts.length }})
         </h3>
 

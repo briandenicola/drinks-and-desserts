@@ -56,7 +56,7 @@ onMounted(loadThreads)
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
         </svg>
       </router-link>
-      <h1 class="text-2xl font-bold text-th-text">Recommendation History</h1>
+      <h1 class="text-2xl font-bold text-th-heading">Recommendation History</h1>
     </div>
 
     <div v-if="isLoading" class="text-center text-th-accent/70 py-8">Loading...</div>
@@ -69,7 +69,7 @@ onMounted(loadThreads)
       <div
         v-for="thread in threads"
         :key="thread.id"
-        class="bg-th-card border border-th-edge/50 rounded-xl p-4 hover:border-th-accent/30 transition-colors"
+        class="bg-th-card border border-th-edge/50 rounded-xl p-4 hover:border-th-emphasis/30 transition-colors"
       >
         <div class="flex items-start justify-between gap-3">
           <router-link :to="`/recommendations/history/${thread.id}`" class="flex-1 min-w-0">
