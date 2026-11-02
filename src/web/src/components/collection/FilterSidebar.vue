@@ -67,13 +67,13 @@ function clearAll() {
 </script>
 
 <template>
-  <aside class="w-60 shrink-0 bg-[#041e3e] border-r border-[#0a2a52] p-4 overflow-y-auto">
+  <aside class="w-60 shrink-0 bg-th-inset border-r border-th-line p-4 overflow-y-auto">
     <div class="flex items-center justify-between mb-6">
-      <h2 class="text-sm font-semibold text-white uppercase tracking-wider">Filters</h2>
+      <h2 class="text-sm font-semibold text-th-text uppercase tracking-wider">Filters</h2>
       <button
         v-if="hasActiveFilters"
         @click="clearAll"
-        class="text-xs text-[#96BEE6] hover:text-white transition-colors"
+        class="text-xs text-th-accent hover:text-th-text transition-colors"
       >
         Clear All
       </button>
@@ -81,10 +81,10 @@ function clearAll() {
 
     <!-- Category -->
     <div class="mb-5">
-      <label class="block text-xs font-medium text-[#96BEE6]/80 mb-2">Category</label>
+      <label class="block text-xs font-medium text-th-accent/80 mb-2">Category</label>
       <select
         v-model="category"
-        class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#1e407c] appearance-none"
+        class="w-full bg-th-card border border-th-edge/50 rounded-lg px-3 py-2 text-sm text-th-text focus:outline-none focus:border-th-edge appearance-none"
       >
         <option v-for="opt in categoryOptions" :key="opt.value" :value="opt.value">
           {{ opt.label }}
@@ -94,10 +94,10 @@ function clearAll() {
 
     <!-- Min Rating -->
     <div class="mb-5">
-      <label class="block text-xs font-medium text-[#96BEE6]/80 mb-2">Minimum Rating</label>
+      <label class="block text-xs font-medium text-th-accent/80 mb-2">Minimum Rating</label>
       <select
         v-model.number="minRating"
-        class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#1e407c] appearance-none"
+        class="w-full bg-th-card border border-th-edge/50 rounded-lg px-3 py-2 text-sm text-th-text focus:outline-none focus:border-th-edge appearance-none"
       >
         <option v-for="opt in ratingOptions" :key="opt.value" :value="opt.value">
           {{ opt.label }}
@@ -107,11 +107,11 @@ function clearAll() {
 
     <!-- Labels / Tags -->
     <div class="mb-5">
-      <label class="block text-xs font-medium text-[#96BEE6]/80 mb-2">Labels</label>
+      <label class="block text-xs font-medium text-th-accent/80 mb-2">Labels</label>
       <input
         v-model="labels"
         placeholder="Search tags..."
-        class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-lg px-3 py-2 text-sm text-white placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
+        class="w-full bg-th-card border border-th-edge/50 rounded-lg px-3 py-2 text-sm text-th-text placeholder-th-muted focus:outline-none focus:border-th-edge"
       />
     </div>
   </aside>

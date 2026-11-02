@@ -11,6 +11,22 @@
 
     <!-- PWA / iOS -->
     <meta name="theme-color" content="#0c0a09" />
+    <script>
+      // Apply the signed-in account's saved theme before first paint. Mirrors
+      // the keys in services/auth.ts; the auth store takes over once it loads.
+      (function () {
+        try {
+          if (!localStorage.getItem('whiskey_and_smokes_token')) return
+          var user = JSON.parse(localStorage.getItem('whiskey_and_smokes_user') || 'null')
+          var theme = user && user.preferences && user.preferences.theme
+          var colors = { dark: '#0f0f1a', light: '#f5f0e8', 'british-museum': '#0c0c0b', louvre: '#1a1510', capitoline: '#0a0808', byzantine: '#100a08', 'modern-greek': '#060d18' }
+          if (typeof theme === 'string' && Object.prototype.hasOwnProperty.call(colors, theme)) {
+            document.documentElement.setAttribute('data-theme', theme)
+            document.querySelector('meta[name="theme-color"]').setAttribute('content', colors[theme])
+          }
+        } catch (e) { /* fall back to the default appearance */ }
+      })()
+    </script>
     <link rel="apple-touch-icon" href="/pwa-192x192.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />

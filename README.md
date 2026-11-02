@@ -21,6 +21,7 @@ Track your drinks, coffee, desserts, and venues. Snap a photo, let AI do the res
 - **Photo management** on items (add, remove photos after capture)
 - **External API** for iOS Shortcuts and other integrations (API key auth)
 - **PWA support** — installable on iOS/Android with offline-capable service worker and refresh tokens
+- **Profile** — **Theme** selection with Dark, Light, British Museum, Louvre, Capitoline, Byzantine, and Modern Greek palettes derived from Aurealia. Theme selection auto-saves to signed-in account and syncs across devices. Accounts without a theme preference retain the original blue appearance. Charts and surfaces follow the chosen theme
 
 ## Architecture
 

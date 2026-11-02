@@ -55,19 +55,19 @@ onUnmounted(() => document.removeEventListener('click', closeOnClickOutside))
       ref="inputRef"
       :value="modelValue"
       :placeholder="placeholder"
-      :class="inputClass || 'w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-3 text-white placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]'"
+      :class="inputClass || 'w-full bg-th-card border border-th-edge/50 rounded-xl px-4 py-3 text-th-text placeholder-th-muted focus:outline-none focus:border-th-edge'"
       @input="onInput"
       @focus="onFocus"
     />
     <div
       v-if="showDropdown && filtered.length"
-      class="absolute left-0 right-0 top-full mt-1 bg-[#041e3e] border border-[#1e407c]/50 rounded-xl overflow-hidden shadow-lg z-20 max-h-48 overflow-y-auto"
+      class="absolute left-0 right-0 top-full mt-1 bg-th-inset border border-th-edge/50 rounded-xl overflow-hidden shadow-lg z-20 max-h-48 overflow-y-auto"
     >
       <button
         v-for="item in filtered"
         :key="item"
         @mousedown.prevent="select(item)"
-        class="w-full text-left px-4 py-2.5 text-sm text-white/80 hover:bg-[#0a2a52] transition-colors truncate"
+        class="w-full text-left px-4 py-2.5 text-sm text-th-text/80 hover:bg-th-card-hover transition-colors truncate"
       >
         {{ item }}
       </button>

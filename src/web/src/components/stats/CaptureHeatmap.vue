@@ -9,7 +9,7 @@ import { useChartTheme } from '../../composables/useChartTheme'
 
 use([HeatmapChart, CalendarComponent, TooltipComponent, VisualMapComponent, SVGRenderer])
 
-const { theme } = useChartTheme()
+const { theme, colors } = useChartTheme()
 
 const props = defineProps<{
   activityByDay: { day: string; count: number }[]
@@ -55,7 +55,7 @@ const chartOption = computed(() => {
       max: maxVal,
       show: false,
       inRange: {
-        color: ['#0a2a52', '#1e407c', '#2a5299', '#96BEE6'],
+        color: [colors.line, colors.brand, colors.brandHover, colors.accent],
       },
     },
     calendar: {
@@ -63,12 +63,12 @@ const chartOption = computed(() => {
       cellSize: [14, 14],
       itemStyle: {
         borderWidth: 2,
-        borderColor: '#001E44',
+        borderColor: colors.page,
       },
-      dayLabel: { color: '#4a7aa5' },
-      monthLabel: { color: '#4a7aa5' },
+      dayLabel: { color: colors.muted },
+      monthLabel: { color: colors.muted },
       yearLabel: { show: false },
-      splitLine: { lineStyle: { color: '#0a2a52' } },
+      splitLine: { lineStyle: { color: colors.line } },
     },
     series: [
       {
@@ -82,9 +82,9 @@ const chartOption = computed(() => {
 </script>
 
 <template>
-  <section class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 space-y-3">
-    <h3 class="text-sm font-medium text-[#96BEE6] uppercase tracking-wide">Capture Activity</h3>
-    <div v-if="!activityByDay.some(d => d.count > 0)" class="text-center py-6 text-[#96BEE6]/50 text-sm">
+  <section class="bg-th-inset border border-th-line rounded-xl p-4 space-y-3">
+    <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">Capture Activity</h3>
+    <div v-if="!activityByDay.some(d => d.count > 0)" class="text-center py-6 text-th-accent/50 text-sm">
       No capture activity yet
     </div>
     <v-chart v-else :option="chartOption" style="height: 200px" autoresize />

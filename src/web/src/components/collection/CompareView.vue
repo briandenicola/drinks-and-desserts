@@ -37,19 +37,19 @@ function getField(item: Item, key: string): string {
 </script>
 
 <template>
-  <div class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 space-y-4">
+  <div class="bg-th-inset border border-th-line rounded-xl p-4 space-y-4">
     <div class="flex items-center justify-between">
-      <h3 class="text-sm font-medium text-[#96BEE6] uppercase tracking-wide">
+      <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">
         Compare ({{ items.length }} item{{ items.length !== 1 ? 's' : '' }})
       </h3>
-      <button @click="emit('close')" class="text-[#4a7aa5] hover:text-white p-1">
+      <button @click="emit('close')" class="text-th-muted hover:text-th-text p-1">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
     </div>
 
-    <div v-if="items.length < 2" class="text-center text-[#96BEE6]/50 text-sm py-6">
+    <div v-if="items.length < 2" class="text-center text-th-accent/50 text-sm py-6">
       Select at least 2 items to compare
     </div>
 
@@ -57,7 +57,7 @@ function getField(item: Item, key: string): string {
       <table class="w-full text-sm">
         <thead>
           <tr>
-            <th class="text-left text-[#4a7aa5] text-xs font-normal pb-3 pr-4 w-24"></th>
+            <th class="text-left text-th-muted text-xs font-normal pb-3 pr-4 w-24"></th>
             <th
               v-for="item in visibleItems"
               :key="item.id"
@@ -74,23 +74,23 @@ function getField(item: Item, key: string): string {
                   class="w-16 h-16 object-cover rounded-lg mx-auto mb-1"
                   loading="lazy"
                 />
-                <div v-else class="w-16 h-16 bg-[#0a2a52] rounded-lg mx-auto mb-1 flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-[#4a7aa5]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <div v-else class="w-16 h-16 bg-th-card rounded-lg mx-auto mb-1 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-th-muted/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 </div>
-                <span class="text-xs text-white truncate block max-w-[120px]">{{ item.name }}</span>
+                <span class="text-xs text-th-text truncate block max-w-[120px]">{{ item.name }}</span>
               </button>
             </th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="field in fields" :key="field.key" class="border-t border-[#0a2a52]">
-            <td class="text-[#4a7aa5] text-xs py-2.5 pr-4 align-top">{{ field.label }}</td>
+          <tr v-for="field in fields" :key="field.key" class="border-t border-th-line">
+            <td class="text-th-muted text-xs py-2.5 pr-4 align-top">{{ field.label }}</td>
             <td
               v-for="item in visibleItems"
               :key="item.id"
-              class="text-center text-white/80 py-2.5 px-2 align-top"
+              class="text-center text-th-text/80 py-2.5 px-2 align-top"
             >
               <StarRating v-if="field.key === 'rating' && item.userRating" :rating="item.userRating" size="sm" />
               <span v-else class="text-xs capitalize">{{ getField(item, field.key) }}</span>

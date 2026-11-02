@@ -25,20 +25,20 @@ const cards = [
     <div
       v-for="card in cards"
       :key="card.key"
-      class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 text-center"
+      class="bg-th-inset border border-th-line rounded-xl p-4 text-center"
     >
-      <div class="text-2xl font-bold text-[#96BEE6]">{{ summary[card.key] }}</div>
-      <div class="text-xs text-[#96BEE6]/70 mt-1">{{ card.label }}</div>
+      <div class="text-2xl font-bold text-th-accent">{{ summary[card.key] }}</div>
+      <div class="text-xs text-th-accent/70 mt-1">{{ card.label }}</div>
     </div>
 
     <!-- Rating cards -->
-    <div v-if="summary.avgDrinkRating > 0" class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 text-center">
-      <div class="text-2xl font-bold text-[#96BEE6]">{{ summary.avgDrinkRating }}</div>
-      <div class="text-xs text-[#96BEE6]/70 mt-1">Avg Drink Rating</div>
+    <div v-if="summary.avgDrinkRating > 0" class="bg-th-inset border border-th-line rounded-xl p-4 text-center">
+      <div class="text-2xl font-bold text-th-accent">{{ summary.avgDrinkRating }}</div>
+      <div class="text-xs text-th-accent/70 mt-1">Avg Drink Rating</div>
     </div>
-    <div v-if="summary.avgDessertRating > 0" class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 text-center">
-      <div class="text-2xl font-bold text-[#96BEE6]">{{ summary.avgDessertRating }}</div>
-      <div class="text-xs text-[#96BEE6]/70 mt-1">Avg Dessert Rating</div>
+    <div v-if="summary.avgDessertRating > 0" class="bg-th-inset border border-th-line rounded-xl p-4 text-center">
+      <div class="text-2xl font-bold text-th-accent">{{ summary.avgDessertRating }}</div>
+      <div class="text-xs text-th-accent/70 mt-1">Avg Dessert Rating</div>
     </div>
   </div>
 </template>

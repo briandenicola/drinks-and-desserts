@@ -10,7 +10,7 @@ import type { RatingBucket } from '../../services/users'
 
 use([BarChart, GridComponent, TooltipComponent, LegendComponent, SVGRenderer])
 
-const { theme } = useChartTheme()
+const { theme, colors } = useChartTheme()
 
 const props = defineProps<{
   buckets: RatingBucket[]
@@ -63,7 +63,7 @@ const chartOption = computed(() => {
         type: 'bar',
         stack: 'total',
         data: drinkData,
-        itemStyle: { color: '#96BEE6' },
+        itemStyle: { color: colors.accent },
         barMaxWidth: 24,
       },
       {
@@ -80,9 +80,9 @@ const chartOption = computed(() => {
 </script>
 
 <template>
-  <section class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 space-y-3">
-    <h3 class="text-sm font-medium text-[#96BEE6] uppercase tracking-wide">Ratings Distribution</h3>
-    <div v-if="!buckets.length" class="text-center py-6 text-[#96BEE6]/50 text-sm">
+  <section class="bg-th-inset border border-th-line rounded-xl p-4 space-y-3">
+    <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">Ratings Distribution</h3>
+    <div v-if="!buckets.length" class="text-center py-6 text-th-accent/50 text-sm">
       No rating data available yet
     </div>
     <v-chart v-else :option="chartOption" style="height: 280px" autoresize />

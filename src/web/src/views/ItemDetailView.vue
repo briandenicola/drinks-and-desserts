@@ -395,28 +395,28 @@ async function shareWithFriend(friendId: string) {
 </script>
 
 <template>
-  <div v-if="!item" class="p-4 text-[#96BEE6]/70 text-center py-12">Loading...</div>
+  <div v-if="!item" class="p-4 text-th-accent/70 text-center py-12">Loading...</div>
 
   <div v-else class="p-4 max-w-lg mx-auto">
     <!-- Top bar: Back + actions -->
     <div class="flex items-center justify-between mb-4">
-      <button @click="router.back()" class="text-[#96BEE6] hover:text-white hover:opacity-80 text-sm min-h-[44px] min-w-[44px] px-2 py-2 transition-opacity">
+      <button @click="router.back()" class="text-th-accent hover:text-th-text hover:opacity-80 text-sm min-h-[44px] min-w-[44px] px-2 py-2 transition-opacity">
         ← Back
       </button>
       <div class="flex items-center gap-3">
         <!-- View mode: Share + Edit + Delete icons -->
         <template v-if="!isEditing">
-          <button @click="showShareModal = true" class="text-[#96BEE6] hover:text-white p-2.5 min-h-[44px] min-w-[44px]" title="Share">
+          <button @click="showShareModal = true" class="text-th-accent hover:text-th-text p-2.5 min-h-[44px] min-w-[44px]" title="Share">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342a3.001 3.001 0 100 2.684m0-2.684a3 3 0 110 2.684m0-2.684l6.632-3.316m-6.632 6l6.632 3.316m0-9.316a3 3 0 105.368-2.684 3 3 0 00-5.368 2.684zm0 6.632a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
             </svg>
           </button>
-          <button @click="startEditing" class="text-[#96BEE6] hover:text-[#96BEE6] p-2.5 min-h-[44px] min-w-[44px]" title="Edit">
+          <button @click="startEditing" class="text-th-accent hover:text-th-accent p-2.5 min-h-[44px] min-w-[44px]" title="Edit">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
           </button>
-          <button @click="showDeleteConfirm = true" class="text-red-400 hover:text-red-300 p-2.5 min-h-[44px] min-w-[44px]" title="Delete">
+          <button @click="showDeleteConfirm = true" class="text-th-danger hover:text-th-danger-soft p-2.5 min-h-[44px] min-w-[44px]" title="Delete">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
@@ -424,12 +424,12 @@ async function shareWithFriend(friendId: string) {
         </template>
         <!-- Edit mode: Save + Cancel icons -->
         <template v-else>
-          <button @click="save" :disabled="isSaving" class="text-green-400 hover:text-green-300 disabled:text-[#4a7aa5]/60 p-2.5 min-h-[44px] min-w-[44px]" title="Save">
+          <button @click="save" :disabled="isSaving" class="text-th-success hover:text-th-success-soft disabled:text-th-muted/60 p-2.5 min-h-[44px] min-w-[44px]" title="Save">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </button>
-          <button @click="isEditing = false" class="text-[#96BEE6] hover:text-white p-2.5 min-h-[44px] min-w-[44px]" title="Cancel">
+          <button @click="isEditing = false" class="text-th-accent hover:text-th-text p-2.5 min-h-[44px] min-w-[44px]" title="Cancel">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -445,7 +445,7 @@ async function shareWithFriend(friendId: string) {
           v-for="(url, i) in item.photoUrls"
           :key="i"
           :src="url"
-          class="h-48 object-cover rounded-xl cursor-pointer hover:ring-2 hover:ring-[#1e407c] transition-all"
+          class="h-48 object-cover rounded-xl cursor-pointer hover:ring-2 hover:ring-th-edge transition-all"
           @click="openLightbox(url)"
         />
       </div>
@@ -453,7 +453,7 @@ async function shareWithFriend(friendId: string) {
 
     <!-- Photos (edit mode) -->
     <div v-if="isEditing" class="mb-4">
-      <label class="block text-sm text-[#96BEE6] mb-2">Photos</label>
+      <label class="block text-sm text-th-accent mb-2">Photos</label>
       <div class="flex gap-2 overflow-x-auto pb-2">
         <!-- Existing photos with delete toggle -->
         <div
@@ -469,7 +469,7 @@ async function shareWithFriend(friendId: string) {
           <button
             v-if="!pendingPhotoDeletes.has(url)"
             @click="markPhotoForDelete(url)"
-            class="absolute top-1 right-1 bg-black/70 text-red-400 hover:text-red-300 rounded-full w-11 h-11 flex items-center justify-center text-xs"
+            class="absolute top-1 right-1 bg-black/70 text-th-danger hover:text-th-danger-soft rounded-full w-11 h-11 flex items-center justify-center text-xs"
             title="Remove photo"
           >×</button>
           <button
@@ -487,21 +487,21 @@ async function shareWithFriend(friendId: string) {
         >
           <img
             :src="pending.previewUrl"
-            class="h-32 w-32 object-cover rounded-xl border-2 border-[#1e407c]"
+            class="h-32 w-32 object-cover rounded-xl border-2 border-th-edge"
           />
           <button
             @click="removePendingPhoto(i)"
-            class="absolute top-1 right-1 bg-black/70 text-red-400 hover:text-red-300 rounded-full w-11 h-11 flex items-center justify-center text-xs"
+            class="absolute top-1 right-1 bg-black/70 text-th-danger hover:text-th-danger-soft rounded-full w-11 h-11 flex items-center justify-center text-xs"
             title="Remove"
           >×</button>
-          <span class="absolute bottom-1 left-1 text-[10px] bg-[#1e407c]/80 text-white px-1.5 py-0.5 rounded">New</span>
+          <span class="absolute bottom-1 left-1 text-[10px] bg-th-brand/80 text-th-text px-1.5 py-0.5 rounded">New</span>
         </div>
 
         <!-- Add photo button -->
         <button
           @click="triggerPhotoUpload"
           :disabled="isUploadingPhoto"
-          class="h-32 w-32 flex-shrink-0 flex flex-col items-center justify-center border-2 border-dashed border-[#1e407c]/50 rounded-xl text-[#96BEE6]/70 hover:text-[#96BEE6] hover:border-[#1e407c] transition-colors"
+          class="h-32 w-32 flex-shrink-0 flex flex-col items-center justify-center border-2 border-dashed border-th-edge/50 rounded-xl text-th-accent/70 hover:text-th-accent hover:border-th-edge transition-colors"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -521,51 +521,51 @@ async function shareWithFriend(friendId: string) {
 
     <!-- Header -->
     <div class="mb-4">
-      <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6]">{{ item.type }}</span>
-      <span v-if="item.status === 'ai-draft'" class="text-xs text-[#96BEE6] ml-2">AI Draft — tap edit to review</span>
+      <span class="text-xs px-2 py-0.5 rounded-full bg-th-card text-th-accent">{{ item.type }}</span>
+      <span v-if="item.status === 'ai-draft'" class="text-xs text-th-accent ml-2">AI Draft — tap edit to review</span>
       <h2 class="text-2xl font-bold mt-2">{{ item.name }}</h2>
-      <p v-if="item.brand" class="text-[#96BEE6]">{{ item.brand }}</p>
-      <p v-if="item.sourceAttribution" class="text-xs text-[#5a8ab5] mt-1">
+      <p v-if="item.brand" class="text-th-accent">{{ item.brand }}</p>
+      <p v-if="item.sourceAttribution" class="text-xs text-th-muted-strong mt-1">
         Added from {{ item.sourceAttribution.sourceDisplayName }}'s collection
       </p>
     </div>
 
     <!-- Notes (view mode) — merged from AI summary and user notes -->
-    <div v-if="!isEditing && (item.userNotes || item.aiSummary)" class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 mb-4">
+    <div v-if="!isEditing && (item.userNotes || item.aiSummary)" class="bg-th-inset border border-th-line rounded-xl p-4 mb-4">
       <div class="flex items-center gap-2 mb-1">
-        <p class="text-xs text-[#96BEE6]/70 uppercase tracking-wide">Notes</p>
-        <span v-if="isAiGenerated(item) && !item.userNotes && item.aiSummary" class="text-xs text-[#96BEE6]">AI Generated</span>
+        <p class="text-xs text-th-accent/70 uppercase tracking-wide">Notes</p>
+        <span v-if="isAiGenerated(item) && !item.userNotes && item.aiSummary" class="text-xs text-th-accent">AI Generated</span>
       </div>
-      <p class="text-sm text-white/80 whitespace-pre-line">{{ item.userNotes || item.aiSummary }}</p>
-      <p v-if="item.aiConfidence" class="text-xs text-[#4a7aa5]/60 mt-2">
+      <p class="text-sm text-th-text/80 whitespace-pre-line">{{ item.userNotes || item.aiSummary }}</p>
+      <p v-if="item.aiConfidence" class="text-xs text-th-muted/60 mt-2">
         Confidence: {{ Math.round(item.aiConfidence * 100) }}%
       </p>
     </div>
 
     <!-- Details Bar (venue, rating, history) -->
-    <div class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 mb-4 space-y-3">
+    <div class="bg-th-inset border border-th-line rounded-xl p-4 mb-4 space-y-3">
       <!-- Rating -->
       <div v-if="!isEditing && item.userRating" class="flex items-center gap-2">
-        <span class="text-xs text-[#96BEE6]/70 uppercase tracking-wide w-16">Rating</span>
+        <span class="text-xs text-th-accent/70 uppercase tracking-wide w-16">Rating</span>
         <StarRating :rating="item.userRating" size="md" />
-        <span class="text-xs text-[#96BEE6]/70">{{ item.userRating }}</span>
+        <span class="text-xs text-th-accent/70">{{ item.userRating }}</span>
       </div>
 
       <!-- Venue -->
       <div v-if="item.venue" class="flex items-start gap-2">
-        <span class="text-xs text-[#96BEE6]/70 uppercase tracking-wide w-16 pt-0.5">Location</span>
+        <span class="text-xs text-th-accent/70 uppercase tracking-wide w-16 pt-0.5">Location</span>
         <div>
-          <p class="text-sm text-white/80">{{ item.venue.name }}</p>
-          <p v-if="item.venue.address" class="text-xs text-[#96BEE6]/70">{{ item.venue.address }}</p>
+          <p class="text-sm text-th-text/80">{{ item.venue.name }}</p>
+          <p v-if="item.venue.address" class="text-xs text-th-accent/70">{{ item.venue.address }}</p>
         </div>
       </div>
 
       <!-- History Link -->
       <div v-if="item.captureId" class="flex items-center gap-2">
-        <span class="text-xs text-[#96BEE6]/70 uppercase tracking-wide w-16">Source</span>
+        <span class="text-xs text-th-accent/70 uppercase tracking-wide w-16">Source</span>
         <router-link
           :to="`/history/${item.captureId}`"
-          class="text-sm text-[#96BEE6] hover:text-[#96BEE6] transition-colors"
+          class="text-sm text-th-accent hover:text-th-accent transition-colors"
         >
           View processing history →
         </router-link>
@@ -574,23 +574,23 @@ async function shareWithFriend(friendId: string) {
 
     <!-- Journal -->
     <div v-if="!isEditing" class="mt-6">
-      <h3 class="text-sm font-medium text-[#96BEE6] mb-3">Journal</h3>
+      <h3 class="text-sm font-medium text-th-accent mb-3">Journal</h3>
 
       <!-- Existing entries -->
       <div v-if="item.journal?.length" class="space-y-3 mb-4">
         <div
           v-for="(entry, i) in item.journal"
           :key="i"
-          class="border-l-2 border-[#1e407c]/50 pl-3"
+          class="border-l-2 border-th-edge/50 pl-3"
         >
-          <p class="text-sm text-white/80">{{ entry.text }}</p>
-          <p class="text-xs text-[#4a7aa5]/60 mt-1">
+          <p class="text-sm text-th-text/80">{{ entry.text }}</p>
+          <p class="text-xs text-th-muted/60 mt-1">
             {{ formatDate(entry.date) }}
-            <span v-if="entry.source === 'capture'" class="text-[#4a7aa5]/40 ml-1">· Quick note</span>
+            <span v-if="entry.source === 'capture'" class="text-th-muted/40 ml-1">· Quick note</span>
           </p>
         </div>
       </div>
-      <p v-else class="text-xs text-[#4a7aa5]/60 mb-4">No journal entries yet.</p>
+      <p v-else class="text-xs text-th-muted/60 mb-4">No journal entries yet.</p>
 
       <!-- Add new entry -->
       <div class="flex gap-2">
@@ -598,14 +598,14 @@ async function shareWithFriend(friendId: string) {
           v-model="newJournalEntry"
           rows="2"
           placeholder="Add a thought..."
-          class="flex-1 bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2 text-sm text-white placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c] resize-none"
+          class="flex-1 bg-th-card border border-th-edge/50 rounded-xl px-4 py-2 text-sm text-th-text placeholder-th-muted focus:outline-none focus:border-th-edge resize-none"
           @keydown.meta.enter.prevent="addJournalEntry"
           @keydown.ctrl.enter.prevent="addJournalEntry"
         />
         <button
           @click="addJournalEntry"
           :disabled="!newJournalEntry.trim() || isAddingNote"
-          class="self-end px-4 py-2 bg-[#0a2a52] hover:bg-[#1e407c] disabled:opacity-30 text-[#96BEE6] rounded-xl text-sm font-medium"
+          class="self-end px-4 py-2 bg-th-card hover:bg-th-brand hover:text-white disabled:opacity-30 text-th-accent rounded-xl text-sm font-medium"
         >{{ isAddingNote ? '...' : 'Add' }}</button>
       </div>
     </div>
@@ -614,7 +614,7 @@ async function shareWithFriend(friendId: string) {
     <div v-else class="space-y-4">
       <!-- Name -->
       <div>
-        <label class="block text-sm text-[#96BEE6] mb-1">Name</label>
+        <label class="block text-sm text-th-accent mb-1">Name</label>
         <AutocompleteInput
           v-model="editName"
           :suggestions="nameSuggestions"
@@ -624,7 +624,7 @@ async function shareWithFriend(friendId: string) {
 
       <!-- Type -->
       <div>
-        <label class="block text-sm text-[#96BEE6] mb-2">Type</label>
+        <label class="block text-sm text-th-accent mb-2">Type</label>
         <div class="flex flex-wrap gap-2">
           <button
             v-for="opt in typeOptions"
@@ -632,8 +632,8 @@ async function shareWithFriend(friendId: string) {
             @click="editType = opt.value"
             class="px-3 py-1.5 rounded-full text-xs border transition-colors"
             :class="editType === opt.value
-              ? 'bg-[#1e407c] border-[#1e407c] text-white'
-              : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6]'"
+              ? 'bg-th-brand border-th-edge text-white'
+              : 'bg-th-card border-th-edge/50 text-th-accent'"
           >
             {{ opt.label }}
           </button>
@@ -642,7 +642,7 @@ async function shareWithFriend(friendId: string) {
 
       <!-- Brand -->
       <div>
-        <label class="block text-sm text-[#96BEE6] mb-1">Brand</label>
+        <label class="block text-sm text-th-accent mb-1">Brand</label>
         <AutocompleteInput
           v-model="editBrand"
           :suggestions="brandSuggestions"
@@ -652,18 +652,18 @@ async function shareWithFriend(friendId: string) {
 
       <!-- Notes -->
       <div>
-        <label class="block text-sm text-[#96BEE6] mb-1">Notes</label>
+        <label class="block text-sm text-th-accent mb-1">Notes</label>
         <textarea
           v-model="editNotes"
           rows="3"
           placeholder="Tasting notes, impressions, details..."
-          class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-3 text-white text-sm placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c] resize-none"
+          class="w-full bg-th-card border border-th-edge/50 rounded-xl px-4 py-3 text-th-text text-sm placeholder-th-muted focus:outline-none focus:border-th-edge resize-none"
         />
       </div>
 
       <!-- Location -->
       <div>
-        <label class="block text-sm text-[#96BEE6] mb-1">Location</label>
+        <label class="block text-sm text-th-accent mb-1">Location</label>
         <AutocompleteInput
           :modelValue="editVenueName"
           @update:modelValue="editVenueName = $event"
@@ -675,20 +675,20 @@ async function shareWithFriend(friendId: string) {
           v-model="editVenueAddress"
           type="text"
           placeholder="Address (optional)"
-          class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-3 text-white placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c] mt-2"
+          class="w-full bg-th-card border border-th-edge/50 rounded-xl px-4 py-3 text-th-text placeholder-th-muted focus:outline-none focus:border-th-edge mt-2"
         />
       </div>
 
       <!-- Star rating -->
       <div>
-        <label class="block text-sm text-[#96BEE6] mb-2">Rating</label>
+        <label class="block text-sm text-th-accent mb-2">Rating</label>
         <div class="flex items-center gap-3">
           <StarRating :rating="editRating" size="lg" interactive @update:rating="editRating = $event" />
-          <span class="text-sm text-[#96BEE6]/70">{{ editRating > 0 ? editRating : '' }}</span>
+          <span class="text-sm text-th-accent/70">{{ editRating > 0 ? editRating : '' }}</span>
           <button
             v-if="editRating > 0"
             @click="editRating = 0"
-            class="text-xs text-[#96BEE6]/70 hover:text-red-400 px-2 py-1 rounded-lg hover:bg-[#0a2a52]/50 transition-colors"
+            class="text-xs text-th-accent/70 hover:text-th-danger px-2 py-1 rounded-lg hover:bg-th-card-hover/50 transition-colors"
             title="Clear rating"
           >Clear</button>
         </div>
@@ -696,15 +696,15 @@ async function shareWithFriend(friendId: string) {
 
       <!-- Tags -->
       <div>
-        <label class="block text-sm text-[#96BEE6] mb-2">Tags</label>
+        <label class="block text-sm text-th-accent mb-2">Tags</label>
         <div class="flex flex-wrap gap-2 mb-2">
           <span
             v-for="tag in editTags"
             :key="tag"
-            class="inline-flex items-center gap-1 text-sm bg-[#0a2a52] text-white/80 px-3 py-1 rounded-full"
+            class="inline-flex items-center gap-1 text-sm bg-th-card text-th-text/80 px-3 py-1 rounded-full"
           >
             {{ tag }}
-            <button @click="removeTag(tag)" class="text-[#96BEE6]/70 hover:text-red-400 ml-1">×</button>
+            <button @click="removeTag(tag)" class="text-th-accent/70 hover:text-th-danger ml-1">×</button>
           </span>
         </div>
         <div class="flex gap-2">
@@ -712,13 +712,13 @@ async function shareWithFriend(friendId: string) {
             v-model="newTag"
             :suggestions="tagSuggestions.filter(t => !editTags.includes(t))"
             placeholder="Add a tag..."
-            input-class="flex-1 bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2 text-sm text-white placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
+            input-class="flex-1 bg-th-card border border-th-edge/50 rounded-xl px-4 py-2 text-sm text-th-text placeholder-th-muted focus:outline-none focus:border-th-edge"
             @keydown.enter.prevent="addTag"
           />
           <button
             @click="addTag"
             :disabled="!newTag.trim()"
-            class="px-4 bg-[#0a2a52] hover:bg-[#1e407c] disabled:opacity-30 text-[#96BEE6] rounded-xl text-sm font-medium"
+            class="px-4 bg-th-card hover:bg-th-brand hover:text-white disabled:opacity-30 text-th-accent rounded-xl text-sm font-medium"
           >+ Add</button>
         </div>
       </div>
@@ -726,21 +726,21 @@ async function shareWithFriend(friendId: string) {
 
     <!-- Tags (read-only, outside edit mode) -->
     <div v-if="!isEditing && item.tags.length" class="mt-4 flex gap-2 flex-wrap">
-      <span v-for="tag in item.tags" :key="tag" class="text-xs bg-[#0a2a52] text-[#96BEE6] px-2 py-1 rounded-full">
+      <span v-for="tag in item.tags" :key="tag" class="text-xs bg-th-card text-th-accent px-2 py-1 rounded-full">
         {{ tag }}
       </span>
     </div>
 
     <!-- Friend Thoughts -->
     <div v-if="!isEditing && friendThoughts.length > 0" class="mt-6">
-      <h3 class="text-sm font-medium text-[#96BEE6] uppercase tracking-wide mb-3">
+      <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide mb-3">
         Friend Thoughts ({{ friendThoughts.length }})
       </h3>
       <ThoughtsList :thoughts="friendThoughts" @delete="handleDeleteThought" />
     </div>
 
     <!-- Share error toast -->
-    <div v-if="shareError" class="fixed bottom-4 left-4 right-4 max-w-lg mx-auto bg-red-900/90 border border-red-700 text-red-300 rounded-xl p-3 text-sm z-50">
+    <div v-if="shareError" class="fixed bottom-4 left-4 right-4 max-w-lg mx-auto bg-th-inset border border-th-danger/50 text-th-danger-soft rounded-xl p-3 text-sm z-50">
       {{ shareError }}
     </div>
 
@@ -755,13 +755,13 @@ async function shareWithFriend(friendId: string) {
     <!-- Delete Confirmation Modal -->
     <Teleport to="body">
       <div v-if="showDeleteConfirm" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" @click.self="showDeleteConfirm = false">
-        <div class="bg-[#041e3e] border border-[#1e407c]/50 rounded-2xl p-6 w-full max-w-sm">
-          <h3 class="text-lg font-semibold text-red-400 mb-4">Delete Item</h3>
-          <p class="text-sm text-white/80 mb-4">
+        <div class="bg-th-inset border border-th-edge/50 rounded-2xl p-6 w-full max-w-sm">
+          <h3 class="text-lg font-semibold text-th-danger mb-4">Delete Item</h3>
+          <p class="text-sm text-th-text/80 mb-4">
             Are you sure you want to delete <strong>{{ item.name }}</strong>? This action cannot be undone.
           </p>
           <div class="flex gap-2 justify-end">
-            <button @click="showDeleteConfirm = false" class="px-4 py-2 text-sm rounded-xl bg-[#0a2a52] text-[#96BEE6] hover:bg-[#1e407c]">Cancel</button>
+            <button @click="showDeleteConfirm = false" class="px-4 py-2 text-sm rounded-xl bg-th-card text-th-accent hover:bg-th-brand hover:text-white">Cancel</button>
             <button @click="deleteItem" class="px-4 py-2 text-sm rounded-xl bg-red-700 text-white hover:bg-red-600">Delete</button>
           </div>
         </div>
@@ -786,15 +786,15 @@ async function shareWithFriend(friendId: string) {
         <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-black/50 rounded-full px-4 py-2 z-10">
           <button
             @click="lightboxScale = Math.max(lightboxScale - 0.25, 0.5)"
-            class="text-white/70 hover:text-white text-lg w-8 h-8 flex items-center justify-center"
+            class="text-th-text/70 hover:text-th-text text-lg w-8 h-8 flex items-center justify-center"
           >-</button>
           <button
             @click="resetLightboxZoom"
-            class="text-xs text-white/70 hover:text-white px-2"
+            class="text-xs text-th-text/70 hover:text-th-text px-2"
           >{{ Math.round(lightboxScale * 100) }}%</button>
           <button
             @click="lightboxScale = Math.min(lightboxScale + 0.25, 5)"
-            class="text-white/70 hover:text-white text-lg w-8 h-8 flex items-center justify-center"
+            class="text-th-text/70 hover:text-th-text text-lg w-8 h-8 flex items-center justify-center"
           >+</button>
         </div>
 
@@ -827,7 +827,7 @@ async function shareWithFriend(friendId: string) {
         />
 
         <!-- Photo counter -->
-        <div v-if="item.photoUrls.length > 1" class="absolute top-4 left-1/2 -translate-x-1/2 text-xs text-white/50">
+        <div v-if="item.photoUrls.length > 1" class="absolute top-4 left-1/2 -translate-x-1/2 text-xs text-th-text/50">
           {{ item.photoUrls.indexOf(lightboxUrl!) + 1 }} / {{ item.photoUrls.length }}
         </div>
       </div>

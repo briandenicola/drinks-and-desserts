@@ -21,6 +21,7 @@ export interface User {
     pushoverUserKey?: string
     pushoverEnabled?: boolean
     pushoverSound?: boolean
+    theme?: string | null
   }
   createdAt: string
   updatedAt: string

@@ -29,38 +29,38 @@ const sorted = computed(() => {
 </script>
 
 <template>
-  <section class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 space-y-3">
+  <section class="bg-th-inset border border-th-line rounded-xl p-4 space-y-3">
     <div class="flex items-center justify-between">
-      <h3 class="text-sm font-medium text-[#96BEE6] uppercase tracking-wide">Venue Leaderboard</h3>
+      <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">Venue Leaderboard</h3>
       <div class="flex gap-1">
         <button
           @click="emit('sort', 'rating')"
           class="text-[10px] px-2 py-1 rounded-full transition-colors"
-          :class="sortBy === 'rating' ? 'bg-[#1e407c] text-white' : 'text-[#96BEE6]/70 hover:text-[#96BEE6]'"
+          :class="sortBy === 'rating' ? 'bg-th-brand text-white' : 'text-th-accent/70 hover:text-th-accent'"
         >Rating</button>
         <button
           @click="emit('sort', 'items')"
           class="text-[10px] px-2 py-1 rounded-full transition-colors"
-          :class="sortBy === 'items' ? 'bg-[#1e407c] text-white' : 'text-[#96BEE6]/70 hover:text-[#96BEE6]'"
+          :class="sortBy === 'items' ? 'bg-th-brand text-white' : 'text-th-accent/70 hover:text-th-accent'"
         >Items</button>
       </div>
     </div>
 
-    <div v-if="!sorted.length" class="text-center py-6 text-[#96BEE6]/50 text-sm">No venues yet</div>
+    <div v-if="!sorted.length" class="text-center py-6 text-th-accent/50 text-sm">No venues yet</div>
 
     <div
       v-for="(venue, idx) in sorted.slice(0, 10)"
       :key="venue.id"
       @click="emit('select', venue.id)"
-      class="flex items-center gap-3 p-2 -mx-2 rounded-lg cursor-pointer hover:bg-[#0a2a52]/50 transition-colors"
+      class="flex items-center gap-3 p-2 -mx-2 rounded-lg cursor-pointer hover:bg-th-card-hover/50 transition-colors"
     >
-      <span class="text-lg font-bold text-[#4a7aa5]/60 w-6 text-center">{{ idx + 1 }}</span>
+      <span class="text-lg font-bold text-th-muted/60 w-6 text-center">{{ idx + 1 }}</span>
       <div class="flex-1 min-w-0">
-        <div class="text-sm text-white truncate">{{ venue.name }}</div>
-        <div class="text-xs text-[#96BEE6]/70 capitalize">{{ venue.type }}</div>
+        <div class="text-sm text-th-text truncate">{{ venue.name }}</div>
+        <div class="text-xs text-th-accent/70 capitalize">{{ venue.type }}</div>
       </div>
       <div class="flex items-center gap-2 shrink-0">
-        <span v-if="venue.itemCount" class="text-xs text-[#96BEE6]/50">{{ venue.itemCount }} item{{ venue.itemCount !== 1 ? 's' : '' }}</span>
+        <span v-if="venue.itemCount" class="text-xs text-th-accent/50">{{ venue.itemCount }} item{{ venue.itemCount !== 1 ? 's' : '' }}</span>
         <StarRating v-if="venue.rating" :rating="venue.rating" size="sm" />
       </div>
     </div>

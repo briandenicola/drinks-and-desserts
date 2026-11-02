@@ -123,40 +123,40 @@ function getErrorResponse(error: unknown): { status?: number } | null {
 
 <template>
   <div class="flex min-h-screen items-center justify-center px-6">
-    <div class="w-full max-w-sm rounded-2xl border border-[#0a2a52] bg-[#041e3e] p-6 text-center shadow-xl">
+    <div class="w-full max-w-sm rounded-2xl border border-th-line bg-th-inset p-6 text-center shadow-xl">
       <div
         class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border"
         :class="{
-          'animate-spin border-[#96BEE6]/30 border-t-[#96BEE6]': status === 'loading',
-          'border-green-500 text-green-400': status === 'success',
-          'border-red-500 text-red-400': status === 'error',
+          'animate-spin border-th-accent/30 border-t-th-accent': status === 'loading',
+          'border-th-success text-th-success': status === 'success',
+          'border-th-danger text-th-danger': status === 'error',
         }"
       >
         <span v-if="status === 'success'">✓</span>
         <span v-else-if="status === 'error'">!</span>
       </div>
 
-      <h1 class="mb-2 text-2xl font-semibold text-white">{{ title }}</h1>
-      <p class="mb-4 text-sm text-[#96BEE6]/80">{{ subtitle }}</p>
+      <h1 class="mb-2 text-2xl font-semibold text-th-text">{{ title }}</h1>
+      <p class="mb-4 text-sm text-th-accent/80">{{ subtitle }}</p>
 
-      <div v-if="identity" class="mb-4 rounded-xl border border-[#1e407c]/50 bg-[#0a2a52] p-3 text-left text-sm">
+      <div v-if="identity" class="mb-4 rounded-xl border border-th-edge/50 bg-th-card p-3 text-left text-sm">
         <div class="flex justify-between gap-3">
-          <span class="text-[#96BEE6]/70">Provider</span>
-          <strong class="text-right text-white">{{ identity.providerDisplayName }}</strong>
+          <span class="text-th-accent/70">Provider</span>
+          <strong class="text-right text-th-text">{{ identity.providerDisplayName }}</strong>
         </div>
         <div v-if="identity.email" class="mt-2 flex justify-between gap-3">
-          <span class="text-[#96BEE6]/70">Email</span>
-          <strong class="text-right text-white break-all">{{ identity.email }}</strong>
+          <span class="text-th-accent/70">Email</span>
+          <strong class="text-right text-th-text break-all">{{ identity.email }}</strong>
         </div>
       </div>
 
-      <p v-if="message" class="mb-4 text-sm" :class="status === 'error' ? 'text-red-300' : 'text-[#96BEE6]'">
+      <p v-if="message" class="mb-4 text-sm" :class="status === 'error' ? 'text-th-danger-soft' : 'text-th-accent'">
         {{ message }}
       </p>
 
       <router-link
         to="/profile"
-        class="block w-full rounded-xl bg-[#1e407c] py-3 font-medium text-white transition-colors hover:bg-[#2a5299]"
+        class="block w-full rounded-xl bg-th-brand py-3 font-medium text-white transition-colors hover:bg-th-brand-hover"
       >
         Back to Profile
       </router-link>

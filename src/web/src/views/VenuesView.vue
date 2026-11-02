@@ -294,10 +294,10 @@ function resetForm() {
 <template>
   <div class="p-4 mx-auto" :class="isDesktop ? 'max-w-6xl' : 'max-w-lg'">
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-xl font-bold text-white">Venues</h2>
+      <h2 class="text-xl font-bold text-th-text">Venues</h2>
       <button
         @click="showAddForm = !showAddForm"
-        class="text-[#96BEE6] hover:text-white transition-colors"
+        class="text-th-accent hover:text-th-text transition-colors"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
@@ -310,9 +310,9 @@ function resetForm() {
         <input
           v-model="searchQuery"
           placeholder="Search venues..."
-          class="w-full bg-[#041e3e] border border-[#1e407c]/50 rounded-xl pl-10 pr-3 py-2.5 text-sm text-white placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
+          class="w-full bg-th-inset border border-th-edge/50 rounded-xl pl-10 pr-3 py-2.5 text-sm text-th-text placeholder-th-muted focus:outline-none focus:border-th-edge"
         />
-        <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#4a7aa5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-th-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
       </div>
@@ -320,7 +320,7 @@ function resetForm() {
       <div class="relative action-menu-dropdown shrink-0">
         <button
           @click="showActionMenu = !showActionMenu"
-          class="h-[44px] w-[44px] bg-[#041e3e] border border-[#1e407c]/50 rounded-xl text-[#96BEE6] hover:border-[#1e407c] transition-colors flex items-center justify-center"
+          class="h-[44px] w-[44px] bg-th-inset border border-th-edge/50 rounded-xl text-th-accent hover:border-th-edge transition-colors flex items-center justify-center"
           aria-label="Open actions menu"
           title="Actions"
         >
@@ -331,10 +331,10 @@ function resetForm() {
 
         <div
           v-if="showActionMenu"
-          class="absolute right-0 top-full mt-1 w-72 max-h-[70vh] overflow-y-auto bg-[#041e3e] border border-[#1e407c]/50 rounded-xl shadow-lg z-20 p-3 space-y-4"
+          class="absolute right-0 top-full mt-1 w-72 max-h-[70vh] overflow-y-auto bg-th-inset border border-th-edge/50 rounded-xl shadow-lg z-20 p-3 space-y-4"
         >
           <div>
-            <p class="text-[11px] uppercase tracking-wide text-[#4a7aa5] mb-2">Filter</p>
+            <p class="text-[11px] uppercase tracking-wide text-th-muted mb-2">Filter</p>
             <div class="grid grid-cols-2 gap-2">
               <button
                 v-for="opt in venueTypeFilters"
@@ -342,8 +342,8 @@ function resetForm() {
                 @click="setFilter(opt.value)"
                 class="px-3 py-2 rounded-lg text-xs border text-left transition-colors"
                 :class="activeFilter === opt.value
-                  ? 'bg-[#1e407c] border-[#1e407c] text-white'
-                  : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6]'"
+                  ? 'bg-th-brand border-th-edge text-white'
+                  : 'bg-th-card border-th-edge/50 text-th-accent'"
               >
                 {{ opt.label }}
               </button>
@@ -351,7 +351,7 @@ function resetForm() {
           </div>
 
           <div>
-            <p class="text-[11px] uppercase tracking-wide text-[#4a7aa5] mb-2">Sort</p>
+            <p class="text-[11px] uppercase tracking-wide text-th-muted mb-2">Sort</p>
             <div class="grid grid-cols-2 gap-2">
               <button
                 v-for="opt in sortOptions"
@@ -359,8 +359,8 @@ function resetForm() {
                 @click="setSort(opt.value)"
                 class="px-3 py-2 rounded-lg text-xs border text-left transition-colors"
                 :class="activeSort === opt.value
-                  ? 'bg-[#1e407c] border-[#1e407c] text-white'
-                  : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6]'"
+                  ? 'bg-th-brand border-th-edge text-white'
+                  : 'bg-th-card border-th-edge/50 text-th-accent'"
               >
                 {{ opt.label }}
               </button>
@@ -368,7 +368,7 @@ function resetForm() {
           </div>
 
           <div>
-            <p class="text-[11px] uppercase tracking-wide text-[#4a7aa5] mb-2">Sort Direction</p>
+            <p class="text-[11px] uppercase tracking-wide text-th-muted mb-2">Sort Direction</p>
             <div class="grid grid-cols-2 gap-2">
               <button
                 v-for="opt in sortDirectionOptions"
@@ -376,8 +376,8 @@ function resetForm() {
                 @click="setSortDirection(opt.value)"
                 class="px-3 py-2 rounded-lg text-xs border text-left transition-colors"
                 :class="activeSortDirection === opt.value
-                  ? 'bg-[#1e407c] border-[#1e407c] text-white'
-                  : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6]'"
+                  ? 'bg-th-brand border-th-edge text-white'
+                  : 'bg-th-card border-th-edge/50 text-th-accent'"
               >
                 {{ opt.label }}
               </button>
@@ -385,7 +385,7 @@ function resetForm() {
           </div>
 
           <div>
-            <p class="text-[11px] uppercase tracking-wide text-[#4a7aa5] mb-2">Group By</p>
+            <p class="text-[11px] uppercase tracking-wide text-th-muted mb-2">Group By</p>
             <div class="grid grid-cols-2 gap-2">
               <button
                 v-for="opt in groupByOptions"
@@ -393,8 +393,8 @@ function resetForm() {
                 @click="setGroupBy(opt.value)"
                 class="px-3 py-2 rounded-lg text-xs border text-left transition-colors"
                 :class="activeGroupBy === opt.value
-                  ? 'bg-[#1e407c] border-[#1e407c] text-white'
-                  : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6]'"
+                  ? 'bg-th-brand border-th-edge text-white'
+                  : 'bg-th-card border-th-edge/50 text-th-accent'"
               >
                 {{ opt.label }}
               </button>
@@ -405,12 +405,12 @@ function resetForm() {
     </div>
 
     <!-- Loading -->
-    <div v-if="venuesStore.isLoading && !virtualItems.length" class="text-[#96BEE6]/70 text-center py-12">
+    <div v-if="venuesStore.isLoading && !virtualItems.length" class="text-th-accent/70 text-center py-12">
       Loading...
     </div>
 
     <!-- Empty -->
-    <div v-else-if="!virtualItems.length" class="text-[#96BEE6]/70 text-center py-12">
+    <div v-else-if="!virtualItems.length" class="text-th-accent/70 text-center py-12">
       <p v-if="normalizedSearch">No results for "{{ searchQuery.trim() }}".</p>
       <p v-else>No venues yet. Add your favorite spots.</p>
     </div>
@@ -435,7 +435,7 @@ function resetForm() {
           <router-link
             v-if="virtualItems[row.index].venue"
             :to="`/venues/${virtualItems[row.index].venue!.id}`"
-            class="block bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 hover:border-[#1e407c]/50 transition-colors"
+            class="block bg-th-inset border border-th-line rounded-xl p-4 hover:border-th-edge/50 transition-colors"
           >
             <div class="flex items-start gap-3">
               <img
@@ -444,8 +444,8 @@ function resetForm() {
                 class="w-16 h-16 object-cover rounded-lg shrink-0"
                 loading="lazy"
               />
-              <div v-else class="w-16 h-16 bg-[#0a2a52] rounded-lg shrink-0 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-[#4a7aa5]/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <div v-else class="w-16 h-16 bg-th-card rounded-lg shrink-0 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-th-muted/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
@@ -453,10 +453,10 @@ function resetForm() {
 
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 mb-1">
-                  <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6] capitalize">{{ virtualItems[row.index].venue!.type }}</span>
+                  <span class="text-xs px-2 py-0.5 rounded-full bg-th-card text-th-accent capitalize">{{ virtualItems[row.index].venue!.type }}</span>
                 </div>
-                <h3 class="font-medium text-white truncate">{{ virtualItems[row.index].venue!.name }}</h3>
-                <p v-if="virtualItems[row.index].venue!.address" class="text-sm text-[#96BEE6]/70 truncate">{{ virtualItems[row.index].venue!.address }}</p>
+                <h3 class="font-medium text-th-text truncate">{{ virtualItems[row.index].venue!.name }}</h3>
+                <p v-if="virtualItems[row.index].venue!.address" class="text-sm text-th-accent/70 truncate">{{ virtualItems[row.index].venue!.address }}</p>
                 <div v-if="virtualItems[row.index].venue!.rating" class="mt-1">
                   <StarRating :rating="virtualItems[row.index].venue!.rating!" size="sm" />
                 </div>
@@ -464,11 +464,11 @@ function resetForm() {
                   <span
                     v-for="label in virtualItems[row.index].venue!.labels!.slice(0, 3)"
                     :key="label"
-                    class="text-[10px] px-1.5 py-0.5 rounded-full bg-[#1e407c]/30 text-[#96BEE6]/80"
+                    class="text-[10px] px-1.5 py-0.5 rounded-full bg-th-brand/30 text-th-accent/80"
                   >
                     {{ label }}
                   </span>
-                  <span v-if="virtualItems[row.index].venue!.labels!.length > 3" class="text-[10px] text-[#4a7aa5]/60">
+                  <span v-if="virtualItems[row.index].venue!.labels!.length > 3" class="text-[10px] text-th-muted/60">
                     +{{ virtualItems[row.index].venue!.labels!.length - 3 }}
                   </span>
                 </div>
@@ -493,10 +493,10 @@ function resetForm() {
     <Teleport to="body">
       <Transition name="fade">
         <div v-if="showAddForm" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" @click.self="resetForm()">
-          <div class="bg-[#041e3e] border border-[#1e407c] rounded-2xl p-6 w-full max-w-sm shadow-xl space-y-4">
+          <div class="bg-th-inset border border-th-edge rounded-2xl p-6 w-full max-w-sm shadow-xl space-y-4">
             <div class="flex items-center justify-between">
-              <h3 class="text-lg font-semibold text-white">Add Venue</h3>
-              <button @click="resetForm()" class="text-[#4a7aa5] hover:text-white p-1">
+              <h3 class="text-lg font-semibold text-th-text">Add Venue</h3>
+              <button @click="resetForm()" class="text-th-muted hover:text-th-text p-1">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -504,12 +504,12 @@ function resetForm() {
             </div>
 
             <!-- Mode toggle -->
-            <div class="flex rounded-lg bg-[#0a2a52] p-0.5">
+            <div class="flex rounded-lg bg-th-card p-0.5">
               <button
                 @click="addMode = 'manual'"
                 :class="[
                   'flex-1 py-1.5 text-xs font-medium rounded-md transition-colors',
-                  addMode === 'manual' ? 'bg-[#1e407c] text-white' : 'text-[#96BEE6] hover:text-white/80'
+                  addMode === 'manual' ? 'bg-th-brand text-white' : 'text-th-accent hover:text-th-text/80'
                 ]"
               >
                 Manual
@@ -518,7 +518,7 @@ function resetForm() {
                 @click="addMode = 'url'"
                 :class="[
                   'flex-1 py-1.5 text-xs font-medium rounded-md transition-colors',
-                  addMode === 'url' ? 'bg-[#1e407c] text-white' : 'text-[#96BEE6] hover:text-white/80'
+                  addMode === 'url' ? 'bg-th-brand text-white' : 'text-th-accent hover:text-th-text/80'
                 ]"
               >
                 From URL
@@ -530,12 +530,12 @@ function resetForm() {
               <input
                 v-model="newName"
                 placeholder="Name (required)"
-                class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-white text-sm placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
+                class="w-full bg-th-card border border-th-edge/50 rounded-xl px-4 py-2.5 text-th-text text-sm placeholder-th-muted focus:outline-none focus:border-th-edge"
               />
 
               <select
                 v-model="newType"
-                class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#1e407c] appearance-none"
+                class="w-full bg-th-card border border-th-edge/50 rounded-xl px-4 py-2.5 text-th-text text-sm focus:outline-none focus:border-th-edge appearance-none"
               >
                 <option v-for="opt in venueTypeOptions" :key="opt.value" :value="opt.value">
                   {{ opt.label }}
@@ -545,19 +545,19 @@ function resetForm() {
               <input
                 v-model="newAddress"
                 placeholder="Address (optional)"
-                class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-white text-sm placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
+                class="w-full bg-th-card border border-th-edge/50 rounded-xl px-4 py-2.5 text-th-text text-sm placeholder-th-muted focus:outline-none focus:border-th-edge"
               />
 
               <input
                 v-model="newWebsite"
                 placeholder="Website (optional)"
-                class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-white text-sm placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
+                class="w-full bg-th-card border border-th-edge/50 rounded-xl px-4 py-2.5 text-th-text text-sm placeholder-th-muted focus:outline-none focus:border-th-edge"
               />
 
               <button
                 @click="addVenue"
                 :disabled="isAdding || !newName.trim()"
-                class="w-full bg-[#1e407c] hover:bg-[#2a5299] disabled:bg-[#0a2a52] disabled:text-[#4a7aa5]/60 text-white py-3 rounded-xl font-medium transition-colors"
+                class="w-full bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-white py-3 rounded-xl font-medium transition-colors"
               >
                 {{ isAdding ? 'Adding...' : 'Add Venue' }}
               </button>
@@ -565,18 +565,18 @@ function resetForm() {
 
             <!-- URL form -->
             <template v-else>
-              <p class="text-xs text-[#5a8ab5]">Paste an Apple Maps, Google Maps, or venue website URL</p>
+              <p class="text-xs text-th-muted-strong">Paste an Apple Maps, Google Maps, or venue website URL</p>
               <input
                 v-model="newUrl"
                 placeholder="https://maps.apple.com/..."
-                class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-white text-sm placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
+                class="w-full bg-th-card border border-th-edge/50 rounded-xl px-4 py-2.5 text-th-text text-sm placeholder-th-muted focus:outline-none focus:border-th-edge"
               />
-              <p v-if="urlError" class="text-xs text-red-400">{{ urlError }}</p>
+              <p v-if="urlError" class="text-xs text-th-danger">{{ urlError }}</p>
 
               <button
                 @click="addVenueFromUrl"
                 :disabled="isAdding || !newUrl.trim()"
-                class="w-full bg-[#1e407c] hover:bg-[#2a5299] disabled:bg-[#0a2a52] disabled:text-[#4a7aa5]/60 text-white py-3 rounded-xl font-medium transition-colors"
+                class="w-full bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-white py-3 rounded-xl font-medium transition-colors"
               >
                 {{ isAdding ? 'Extracting...' : 'Extract Venue' }}
               </button>

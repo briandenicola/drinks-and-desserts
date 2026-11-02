@@ -134,7 +134,7 @@ onUnmounted(() => {
 
 <template>
   <div class="notification-bell-container relative">
-    <button @click.stop="toggleDropdown" class="relative p-1 text-[#96BEE6] hover:text-white transition-colors">
+    <button @click.stop="toggleDropdown" class="relative p-1 text-th-accent hover:text-th-text transition-colors">
       <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
         <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
       </svg>
@@ -146,22 +146,22 @@ onUnmounted(() => {
 
     <!-- Dropdown -->
     <div v-if="showDropdown"
-      class="absolute right-0 top-8 w-80 max-h-96 overflow-y-auto bg-[#041e3e] border border-[#0a2a52] rounded-xl shadow-xl z-50">
-      <div class="flex items-center justify-between p-3 border-b border-[#0a2a52]">
-        <h3 class="text-sm font-medium text-white">Notifications</h3>
+      class="absolute right-0 top-8 w-80 max-h-96 overflow-y-auto bg-th-inset border border-th-line rounded-xl shadow-xl z-50">
+      <div class="flex items-center justify-between p-3 border-b border-th-line">
+        <h3 class="text-sm font-medium text-th-text">Notifications</h3>
         <div class="flex items-center gap-2">
-          <button v-if="unreadCount > 0" @click="markAllRead" class="text-xs text-[#96BEE6] hover:text-white">
+          <button v-if="unreadCount > 0" @click="markAllRead" class="text-xs text-th-accent hover:text-th-text">
             Mark all read
           </button>
-          <button v-if="notifications.length > 0" @click="clearNotifications" class="text-xs text-[#96BEE6] hover:text-white">
+          <button v-if="notifications.length > 0" @click="clearNotifications" class="text-xs text-th-accent hover:text-th-text">
             Clear all
           </button>
         </div>
       </div>
 
-      <div v-if="isLoading" class="p-4 text-center text-[#5a8ab5] text-sm">Loading...</div>
+      <div v-if="isLoading" class="p-4 text-center text-th-muted-strong text-sm">Loading...</div>
 
-      <div v-else-if="notifications.length === 0" class="p-4 text-center text-[#5a8ab5] text-sm">
+      <div v-else-if="notifications.length === 0" class="p-4 text-center text-th-muted-strong text-sm">
         No notifications yet
       </div>
 
@@ -170,15 +170,15 @@ onUnmounted(() => {
           v-for="n in notifications"
           :key="n.id"
           @click="handleNotificationClick(n)"
-          class="w-full text-left p-3 border-b border-[#0a2a52]/50 hover:bg-[#0a2a52]/50 transition-colors"
+          class="w-full text-left p-3 border-b border-th-line/50 hover:bg-th-card-hover/50 transition-colors"
           :class="n.isRead ? 'opacity-60' : ''"
         >
           <div class="flex items-start gap-2">
-            <span v-if="!n.isRead" class="w-2 h-2 bg-[#96BEE6] rounded-full mt-1.5 shrink-0"></span>
+            <span v-if="!n.isRead" class="w-2 h-2 bg-th-accent rounded-full mt-1.5 shrink-0"></span>
             <div class="flex-1 min-w-0">
-              <p class="text-sm text-white">{{ n.title }}</p>
-              <p v-if="n.detail" class="text-xs text-[#5a8ab5] truncate mt-0.5">{{ n.detail }}</p>
-              <p class="text-xs text-[#4a7aa5] mt-1">{{ new Date(n.createdAt).toLocaleDateString() }}</p>
+              <p class="text-sm text-th-text">{{ n.title }}</p>
+              <p v-if="n.detail" class="text-xs text-th-muted-strong truncate mt-0.5">{{ n.detail }}</p>
+              <p class="text-xs text-th-muted mt-1">{{ new Date(n.createdAt).toLocaleDateString() }}</p>
             </div>
           </div>
         </button>

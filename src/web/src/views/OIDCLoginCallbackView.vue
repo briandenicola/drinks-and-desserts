@@ -125,23 +125,23 @@ function getErrorResponse(error: unknown): { status?: number } | null {
 
 <template>
   <div class="flex min-h-screen items-center justify-center px-6">
-    <div class="w-full max-w-sm rounded-2xl border border-[#0a2a52] bg-[#041e3e] p-6 text-center shadow-xl">
+    <div class="w-full max-w-sm rounded-2xl border border-th-line bg-th-inset p-6 text-center shadow-xl">
       <div
         class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border"
         :class="{
-          'animate-spin border-[#96BEE6]/30 border-t-[#96BEE6]': status === 'loading',
-          'border-green-500 text-green-400': status === 'success',
-          'border-red-500 text-red-400': status === 'error',
+          'animate-spin border-th-accent/30 border-t-th-accent': status === 'loading',
+          'border-th-success text-th-success': status === 'success',
+          'border-th-danger text-th-danger': status === 'error',
         }"
       >
         <span v-if="status === 'success'">✓</span>
         <span v-else-if="status === 'error'">!</span>
       </div>
 
-      <h1 class="mb-2 text-2xl font-semibold text-white">{{ title }}</h1>
-      <p class="mb-4 text-sm text-[#96BEE6]/80">{{ subtitle }}</p>
+      <h1 class="mb-2 text-2xl font-semibold text-th-text">{{ title }}</h1>
+      <p class="mb-4 text-sm text-th-accent/80">{{ subtitle }}</p>
 
-      <p v-if="message" class="mb-4 text-sm" :class="status === 'error' ? 'text-red-300' : 'text-[#96BEE6]'">
+      <p v-if="message" class="mb-4 text-sm" :class="status === 'error' ? 'text-th-danger-soft' : 'text-th-accent'">
         {{ message }}
       </p>
 
@@ -149,14 +149,14 @@ function getErrorResponse(error: unknown): { status?: number } | null {
         v-if="status === 'success'"
         type="button"
         @click="continueToApp"
-        class="w-full rounded-xl bg-[#1e407c] py-3 font-medium text-white transition-colors hover:bg-[#2a5299]"
+        class="w-full rounded-xl bg-th-brand py-3 font-medium text-white transition-colors hover:bg-th-brand-hover"
       >
         Continue to Collection
       </button>
       <router-link
         v-else-if="status === 'error'"
         to="/login"
-        class="block w-full rounded-xl border border-[#1e407c]/50 bg-[#0a2a52] py-3 font-medium text-[#96BEE6] transition-colors hover:bg-[#1e407c]"
+        class="block w-full rounded-xl border border-th-edge/50 bg-th-card py-3 font-medium text-th-accent transition-colors hover:bg-th-brand hover:text-white"
       >
         Back to Sign In
       </router-link>

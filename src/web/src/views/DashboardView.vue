@@ -16,18 +16,18 @@ onMounted(dashboard.loadAll)
 
 <template>
   <div class="p-4 lg:p-6 max-w-6xl mx-auto space-y-6">
-    <h2 class="text-xl font-semibold text-white">Dashboard</h2>
+    <h2 class="text-xl font-semibold text-th-text">Dashboard</h2>
 
     <!-- Loading -->
-    <div v-if="dashboard.isLoading" class="text-center py-12 text-[#96BEE6]/70">Loading dashboard...</div>
+    <div v-if="dashboard.isLoading" class="text-center py-12 text-th-accent/70">Loading dashboard...</div>
 
     <!-- Error -->
-    <div v-else-if="dashboard.error" class="text-center py-12 text-red-400">{{ dashboard.error }}</div>
+    <div v-else-if="dashboard.error" class="text-center py-12 text-th-danger">{{ dashboard.error }}</div>
 
     <!-- Content -->
     <template v-else-if="dashboard.summary">
       <!-- Empty state -->
-      <div v-if="dashboard.summary.totalItems === 0 && dashboard.summary.wishlistSize === 0" class="text-center py-12 text-[#96BEE6]/70">
+      <div v-if="dashboard.summary.totalItems === 0 && dashboard.summary.wishlistSize === 0" class="text-center py-12 text-th-accent/70">
         <p class="text-lg mb-2">Welcome to Drinks &amp; Desserts</p>
         <p class="text-sm">Use the mobile app to capture your first item and start building your collection.</p>
       </div>

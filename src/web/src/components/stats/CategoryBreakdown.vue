@@ -9,7 +9,7 @@ import { useChartTheme } from '../../composables/useChartTheme'
 
 use([PieChart, TooltipComponent, LegendComponent, SVGRenderer])
 
-const { theme } = useChartTheme()
+const { theme, colors } = useChartTheme()
 
 const props = defineProps<{
   typeBreakdown: { type: string; count: number }[]
@@ -44,10 +44,10 @@ const chartOption = computed(() => {
         type: 'pie',
         radius: ['40%', '70%'],
         avoidLabelOverlap: true,
-        itemStyle: { borderRadius: 4, borderColor: '#041e3e', borderWidth: 2 },
+        itemStyle: { borderRadius: 4, borderColor: colors.inset, borderWidth: 2 },
         label: { show: false },
         emphasis: {
-          label: { show: true, fontSize: 14, color: '#96BEE6' },
+          label: { show: true, fontSize: 14, color: colors.accent },
         },
         data,
       },
@@ -61,9 +61,9 @@ function capitalize(s: string) {
 </script>
 
 <template>
-  <section class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 space-y-3">
-    <h3 class="text-sm font-medium text-[#96BEE6] uppercase tracking-wide">Category Breakdown</h3>
-    <div v-if="!typeBreakdown.length" class="text-center py-6 text-[#96BEE6]/50 text-sm">
+  <section class="bg-th-inset border border-th-line rounded-xl p-4 space-y-3">
+    <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">Category Breakdown</h3>
+    <div v-if="!typeBreakdown.length" class="text-center py-6 text-th-accent/50 text-sm">
       No data available yet
     </div>
     <v-chart v-else :option="chartOption" style="height: 300px" autoresize />

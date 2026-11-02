@@ -41,53 +41,53 @@ onMounted(loadThread)
 <template>
   <div class="p-4 mx-auto pb-24" :class="isDesktop ? 'max-w-6xl' : 'max-w-lg'">
     <div class="flex items-center gap-3 mb-6">
-      <router-link to="/recommendations/history" class="text-[#96BEE6]/70 hover:text-[#96BEE6] transition-colors">
+      <router-link to="/recommendations/history" class="text-th-accent/70 hover:text-th-accent transition-colors">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
         </svg>
       </router-link>
-      <h1 class="text-2xl font-bold text-white">Saved Recommendation</h1>
+      <h1 class="text-2xl font-bold text-th-text">Saved Recommendation</h1>
     </div>
 
-    <div v-if="isLoading" class="text-center text-[#96BEE6]/70 py-8">Loading...</div>
+    <div v-if="isLoading" class="text-center text-th-accent/70 py-8">Loading...</div>
 
-    <div v-else-if="notFound" class="bg-red-900/30 border border-red-700/50 text-red-300 rounded-xl p-4 text-sm">
+    <div v-else-if="notFound" class="bg-th-danger/15 border border-th-danger/40 text-th-danger-soft rounded-xl p-4 text-sm">
       This recommendation thread could not be found.
     </div>
 
     <div v-else-if="thread" class="space-y-4">
-      <div class="bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl p-4">
-        <p class="text-xs text-[#4a7aa5] mb-3">{{ formatDate(thread.createdAt) }}</p>
+      <div class="bg-th-card border border-th-edge/50 rounded-xl p-4">
+        <p class="text-xs text-th-muted mb-3">{{ formatDate(thread.createdAt) }}</p>
 
         <div v-if="thread.request.preferences" class="mb-3">
-          <p class="text-[#96BEE6] text-sm font-medium mb-1">Preferences</p>
-          <p class="text-sm text-white/70">{{ thread.request.preferences }}</p>
+          <p class="text-th-accent text-sm font-medium mb-1">Preferences</p>
+          <p class="text-sm text-th-text/70">{{ thread.request.preferences }}</p>
         </div>
 
         <div v-if="thread.request.itemTypes && thread.request.itemTypes.length > 0" class="mb-3">
-          <p class="text-[#96BEE6] text-sm font-medium mb-1">Focused on</p>
+          <p class="text-th-accent text-sm font-medium mb-1">Focused on</p>
           <div class="flex flex-wrap gap-2">
             <span
               v-for="type in thread.request.itemTypes"
               :key="type"
-              class="px-2 py-1 rounded-full text-xs bg-[#1e407c] text-white"
+              class="px-2 py-1 rounded-full text-xs bg-th-brand text-white"
             >
               {{ type }}
             </span>
           </div>
         </div>
 
-        <p v-if="thread.reasoning" class="text-sm text-white/70 mb-3">{{ thread.reasoning }}</p>
+        <p v-if="thread.reasoning" class="text-sm text-th-text/70 mb-3">{{ thread.reasoning }}</p>
 
-        <div v-if="thread.basedOnItems.length > 0" class="text-xs text-[#4a7aa5]">
+        <div v-if="thread.basedOnItems.length > 0" class="text-xs text-th-muted">
           Based on: {{ thread.basedOnItems.join(', ') }}
         </div>
       </div>
 
-      <div v-if="thread.extractedMenuItems && thread.extractedMenuItems.length > 0" class="bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl p-4">
-        <h3 class="text-[#96BEE6] text-sm font-medium mb-2">Menu Items Found</h3>
+      <div v-if="thread.extractedMenuItems && thread.extractedMenuItems.length > 0" class="bg-th-card border border-th-edge/50 rounded-xl p-4">
+        <h3 class="text-th-accent text-sm font-medium mb-2">Menu Items Found</h3>
         <ul class="space-y-1">
-          <li v-for="(item, index) in thread.extractedMenuItems" :key="index" class="text-sm text-white/80">
+          <li v-for="(item, index) in thread.extractedMenuItems" :key="index" class="text-sm text-th-text/80">
             • {{ item }}
           </li>
         </ul>
@@ -96,25 +96,25 @@ onMounted(loadThread)
       <div
         v-for="(rec, index) in thread.recommendations"
         :key="index"
-        class="bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl p-4"
+        class="bg-th-card border border-th-edge/50 rounded-xl p-4"
       >
         <div class="flex items-start justify-between mb-2">
           <div class="flex-1">
-            <h3 class="text-white font-medium">{{ rec.name }}</h3>
-            <p class="text-sm text-[#96BEE6]">{{ rec.type }}</p>
-            <p v-if="rec.brand" class="text-sm text-[#4a7aa5]">{{ rec.brand }}</p>
-            <p v-if="rec.category" class="text-sm text-[#4a7aa5]">{{ rec.category }}</p>
+            <h3 class="text-th-text font-medium">{{ rec.name }}</h3>
+            <p class="text-sm text-th-accent">{{ rec.type }}</p>
+            <p v-if="rec.brand" class="text-sm text-th-muted">{{ rec.brand }}</p>
+            <p v-if="rec.category" class="text-sm text-th-muted">{{ rec.category }}</p>
           </div>
           <div class="flex flex-col items-end gap-1">
-            <span class="text-xs bg-[#1e407c] text-white px-2 py-1 rounded">
+            <span class="text-xs bg-th-brand text-white px-2 py-1 rounded">
               {{ (rec.confidence * 100).toFixed(0) }}% match
             </span>
-            <span v-if="rec.matchedFromMenu" class="text-xs bg-green-900/50 text-green-300 px-2 py-1 rounded">
+            <span v-if="rec.matchedFromMenu" class="text-xs bg-th-success/15 text-th-success-soft px-2 py-1 rounded">
               On menu
             </span>
           </div>
         </div>
-        <p class="text-sm text-white/70 mt-2">{{ rec.reason }}</p>
+        <p class="text-sm text-th-text/70 mt-2">{{ rec.reason }}</p>
       </div>
     </div>
   </div>

@@ -83,18 +83,18 @@ async function submit() {
   <div class="p-4 max-w-lg mx-auto">
 
     <!-- Success toast -->
-    <div v-if="showSuccess" class="bg-green-900/50 border border-green-700 text-green-300 px-4 py-3 rounded-xl mb-4 text-sm flex items-center justify-between">
+    <div v-if="showSuccess" class="bg-th-success/15 border border-th-success/40 text-th-success-soft px-4 py-3 rounded-xl mb-4 text-sm flex items-center justify-between">
       <span>Captured successfully. Processing your entry.</span>
       <router-link
         v-if="lastCaptureId"
         :to="`/history/${lastCaptureId}`"
-        class="text-[#96BEE6] hover:text-[#96BEE6] font-medium ml-3 whitespace-nowrap"
+        class="text-th-accent hover:text-th-accent font-medium ml-3 whitespace-nowrap"
       >View progress</router-link>
     </div>
 
     <!-- Photo Capture -->
     <div class="mb-6">
-      <label class="block text-sm text-[#96BEE6] mb-2">Photos</label>
+      <label class="block text-sm text-th-accent mb-2">Photos</label>
 
       <!-- Photo previews -->
       <div v-if="previews.length" class="flex gap-2 mb-3 overflow-x-auto pb-2">
@@ -109,20 +109,20 @@ async function submit() {
 
       <!-- Camera / Gallery buttons -->
       <div class="flex gap-3">
-        <label class="flex-1 bg-[#0a2a52] hover:bg-[#1e407c] border border-[#1e407c]/50 rounded-xl py-4 flex flex-col items-center cursor-pointer transition-colors">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mb-1 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <label class="group flex-1 bg-th-card hover:bg-th-brand border border-th-edge/50 rounded-xl py-4 flex flex-col items-center cursor-pointer transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mb-1 text-th-text/80 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
             <circle cx="12" cy="13" r="3" />
           </svg>
-          <span class="text-xs text-[#96BEE6]">Camera</span>
+          <span class="text-xs text-th-accent group-hover:text-white">Camera</span>
           <input type="file" accept="image/*" capture="environment" multiple @change="addFromInput" class="hidden" />
         </label>
 
-        <label class="flex-1 bg-[#0a2a52] hover:bg-[#1e407c] border border-[#1e407c]/50 rounded-xl py-4 flex flex-col items-center cursor-pointer transition-colors">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mb-1 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <label class="group flex-1 bg-th-card hover:bg-th-brand border border-th-edge/50 rounded-xl py-4 flex flex-col items-center cursor-pointer transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mb-1 text-th-text/80 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <span class="text-xs text-[#96BEE6]">Gallery</span>
+          <span class="text-xs text-th-accent group-hover:text-white">Gallery</span>
           <input type="file" accept="image/*" multiple @change="addFromInput" class="hidden" />
         </label>
       </div>
@@ -130,27 +130,27 @@ async function submit() {
 
     <!-- Quick Note -->
     <div class="mb-6">
-      <label class="block text-sm text-[#96BEE6] mb-2">Quick Note <span class="text-[#4a7aa5]/60">(optional)</span></label>
+      <label class="block text-sm text-th-accent mb-2">Quick Note <span class="text-th-muted/60">(optional)</span></label>
       <textarea
         v-model="userNote"
         placeholder="Amazing old fashioned here, also tried a Lagavulin 16..."
         rows="5"
-        class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-3 text-white placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c] resize-none"
+        class="w-full bg-th-card border border-th-edge/50 rounded-xl px-4 py-3 text-th-text placeholder-th-muted focus:outline-none focus:border-th-edge resize-none"
       />
     </div>
 
     <!-- Location indicator -->
     <div class="mb-6 flex items-center gap-2 text-sm">
-      <span v-if="isLocating" class="text-[#96BEE6]/70">Getting location...</span>
-      <span v-else-if="location" class="text-green-500">Location captured</span>
-      <span v-else class="text-[#4a7aa5]/60">Location unavailable</span>
+      <span v-if="isLocating" class="text-th-accent/70">Getting location...</span>
+      <span v-else-if="location" class="text-th-success">Location captured</span>
+      <span v-else class="text-th-muted/60">Location unavailable</span>
     </div>
 
     <!-- Submit -->
     <button
       @click="submit"
       :disabled="isSubmitting || (photos.length === 0 && !userNote.trim())"
-      class="w-full bg-[#1e407c] hover:bg-[#2a5299] disabled:bg-[#1e407c] disabled:text-[#96BEE6]/70 text-white font-semibold py-4 rounded-xl transition-colors text-lg"
+      class="w-full bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-white font-semibold py-4 rounded-xl transition-colors text-lg"
     >
       {{ isSubmitting ? 'Uploading...' : 'Capture' }}
     </button>

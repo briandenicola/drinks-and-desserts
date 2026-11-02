@@ -39,20 +39,20 @@ function dismiss() {
 <template>
   <Transition name="slide-up">
     <div v-if="show" class="fixed bottom-20 inset-x-0 z-50 flex justify-center px-4">
-      <div class="bg-[#041e3e] border border-[#1e407c] rounded-xl shadow-lg max-w-sm w-full p-4">
+      <div class="bg-th-inset border border-th-edge rounded-xl shadow-lg max-w-sm w-full p-4">
         <div class="flex items-start gap-3">
           <div class="flex-shrink-0 mt-0.5">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-[#96BEE6]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-th-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
           </div>
           <div class="flex-1">
-            <p class="text-sm text-white font-medium mb-1">Install Drinks & Desserts</p>
-            <p class="text-xs text-[#5a8ab5] leading-relaxed">
+            <p class="text-sm text-th-text font-medium mb-1">Install Drinks & Desserts</p>
+            <p class="text-xs text-th-muted-strong leading-relaxed">
               {{ instruction }} for the best experience.
             </p>
           </div>
-          <button @click="dismiss" class="flex-shrink-0 text-[#4a7aa5] hover:text-white p-1">
+          <button @click="dismiss" class="flex-shrink-0 text-th-muted hover:text-th-text p-1">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>

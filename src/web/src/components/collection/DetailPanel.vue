@@ -50,21 +50,21 @@ function formatDate(iso: string): string {
 
         <!-- Modal -->
         <div
-          class="relative w-full max-w-2xl max-h-[85vh] bg-[#041e3e] border border-[#0a2a52] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+          class="relative w-full max-w-2xl max-h-[85vh] bg-th-inset border border-th-line rounded-2xl shadow-2xl overflow-hidden flex flex-col"
         >
           <!-- Header -->
-          <div class="flex items-center justify-between p-4 border-b border-[#0a2a52] shrink-0">
-            <h2 class="text-sm font-semibold text-white truncate">Details</h2>
+          <div class="flex items-center justify-between p-4 border-b border-th-line shrink-0">
+            <h2 class="text-sm font-semibold text-th-text truncate">Details</h2>
             <div class="flex items-center gap-2">
               <button
                 @click="emit('navigate', item!.id)"
-                class="text-xs text-[#96BEE6] hover:text-white transition-colors"
+                class="text-xs text-th-accent hover:text-th-text transition-colors"
               >
                 Full Page
               </button>
               <button
                 @click="emit('close')"
-                class="w-8 h-8 flex items-center justify-center rounded-lg text-[#96BEE6] hover:bg-[#0a2a52] hover:text-white transition-colors"
+                class="w-8 h-8 flex items-center justify-center rounded-lg text-th-accent hover:bg-th-card-hover hover:text-th-text transition-colors"
                 aria-label="Close detail panel"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -88,14 +88,14 @@ function formatDate(iso: string): string {
                   :key="i"
                   @click="activePhoto = i"
                   class="w-12 h-12 rounded-md overflow-hidden border-2 transition-colors"
-                  :class="activePhoto === i ? 'border-[#96BEE6]' : 'border-[#0a2a52]'"
+                  :class="activePhoto === i ? 'border-th-accent' : 'border-th-line'"
                 >
                   <img :src="url" class="w-full h-full object-cover" />
                 </button>
               </div>
             </div>
             <div v-else class="p-4">
-              <div class="w-full h-56 bg-[#0a2a52] rounded-lg flex items-center justify-center text-[#96BEE6]/70 uppercase">
+              <div class="w-full h-56 bg-th-card rounded-lg flex items-center justify-center text-th-accent/70 uppercase">
                 {{ item.type }}
               </div>
             </div>
@@ -103,35 +103,35 @@ function formatDate(iso: string): string {
             <!-- Info -->
             <div class="px-4 pb-4 space-y-4">
               <div>
-                <span class="inline-block text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6] mb-2">
+                <span class="inline-block text-xs px-2 py-0.5 rounded-full bg-th-card text-th-accent mb-2">
                   {{ item.type }}
                 </span>
-                <h3 class="text-lg font-semibold text-white">{{ item.name }}</h3>
-                <p v-if="item.brand" class="text-sm text-[#96BEE6]/70">{{ item.brand }}</p>
+                <h3 class="text-lg font-semibold text-th-text">{{ item.name }}</h3>
+                <p v-if="item.brand" class="text-sm text-th-accent/70">{{ item.brand }}</p>
               </div>
 
               <div v-if="item.userRating">
-                <label class="block text-xs text-[#96BEE6]/60 mb-1">Rating</label>
+                <label class="block text-xs text-th-accent/60 mb-1">Rating</label>
                 <StarRating :rating="item.userRating" size="md" />
               </div>
 
               <div v-if="item.userNotes">
-                <label class="block text-xs text-[#96BEE6]/60 mb-1">Notes</label>
-                <p class="text-sm text-white/90 whitespace-pre-wrap">{{ item.userNotes }}</p>
+                <label class="block text-xs text-th-accent/60 mb-1">Notes</label>
+                <p class="text-sm text-th-text/90 whitespace-pre-wrap">{{ item.userNotes }}</p>
               </div>
 
               <div v-if="item.aiSummary">
-                <label class="block text-xs text-[#96BEE6]/60 mb-1">AI Summary</label>
-                <p class="text-sm text-white/80">{{ item.aiSummary }}</p>
+                <label class="block text-xs text-th-accent/60 mb-1">AI Summary</label>
+                <p class="text-sm text-th-text/80">{{ item.aiSummary }}</p>
               </div>
 
               <div v-if="item.tags.length">
-                <label class="block text-xs text-[#96BEE6]/60 mb-1">Tags</label>
+                <label class="block text-xs text-th-accent/60 mb-1">Tags</label>
                 <div class="flex flex-wrap gap-1">
                   <span
                     v-for="tag in item.tags"
                     :key="tag"
-                    class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6]"
+                    class="text-xs px-2 py-0.5 rounded-full bg-th-card text-th-accent"
                   >
                     {{ tag }}
                   </span>
@@ -139,12 +139,12 @@ function formatDate(iso: string): string {
               </div>
 
               <div v-if="item.venue">
-                <label class="block text-xs text-[#96BEE6]/60 mb-1">Venue</label>
-                <p class="text-sm text-white/90">{{ item.venue.name }}</p>
-                <p v-if="item.venue.address" class="text-xs text-[#96BEE6]/50">{{ item.venue.address }}</p>
+                <label class="block text-xs text-th-accent/60 mb-1">Venue</label>
+                <p class="text-sm text-th-text/90">{{ item.venue.name }}</p>
+                <p v-if="item.venue.address" class="text-xs text-th-accent/50">{{ item.venue.address }}</p>
               </div>
 
-              <div class="flex gap-4 text-xs text-[#4a7aa5]/60 pt-2 border-t border-[#0a2a52]">
+              <div class="flex gap-4 text-xs text-th-muted/60 pt-2 border-t border-th-line">
                 <span>Added {{ formatDate(item.createdAt) }}</span>
                 <span>Updated {{ formatDate(item.updatedAt) }}</span>
               </div>

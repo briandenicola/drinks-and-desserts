@@ -42,16 +42,16 @@ onMounted(() => {
   <div class="p-4 max-w-lg mx-auto flex flex-col items-center justify-center min-h-[60vh]">
     <template v-if="success">
       <div class="text-center space-y-4">
-        <div class="w-16 h-16 bg-[#1e407c] rounded-full flex items-center justify-center mx-auto">
+        <div class="w-16 h-16 bg-th-brand rounded-full flex items-center justify-center mx-auto">
           <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h2 class="text-xl font-semibold text-white">You are now friends with {{ friendName }}</h2>
-        <p class="text-[#5a8ab5]">You can now view each other's collections and share thoughts.</p>
+        <h2 class="text-xl font-semibold text-th-text">You are now friends with {{ friendName }}</h2>
+        <p class="text-th-muted-strong">You can now view each other's collections and share thoughts.</p>
         <button
           @click="router.push('/friends')"
-          class="bg-[#1e407c] hover:bg-[#2a5299] text-white px-6 py-3 rounded-xl font-medium transition-colors"
+          class="bg-th-brand hover:bg-th-brand-hover text-white px-6 py-3 rounded-xl font-medium transition-colors"
         >
           View Friends
         </button>
@@ -60,22 +60,22 @@ onMounted(() => {
 
     <template v-else>
       <div class="text-center space-y-6">
-        <h2 class="text-xl font-semibold text-white">Friend Invite</h2>
-        <div class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-6 space-y-4">
-          <p class="text-[#96BEE6]">You've been invited to connect as friends.</p>
-          <div class="bg-[#0a2a52] rounded-lg p-3">
-            <p class="text-xs text-[#5a8ab5] mb-1">Invite Code</p>
-            <p class="text-lg font-mono font-bold text-[#96BEE6] tracking-widest">{{ code }}</p>
+        <h2 class="text-xl font-semibold text-th-text">Friend Invite</h2>
+        <div class="bg-th-inset border border-th-line rounded-xl p-6 space-y-4">
+          <p class="text-th-accent">You've been invited to connect as friends.</p>
+          <div class="bg-th-card rounded-lg p-3">
+            <p class="text-xs text-th-muted-strong mb-1">Invite Code</p>
+            <p class="text-lg font-mono font-bold text-th-accent tracking-widest">{{ code }}</p>
           </div>
 
-          <div v-if="error" class="bg-red-900/30 border border-red-700 text-red-300 rounded-xl p-3 text-sm">
+          <div v-if="error" class="bg-th-danger/15 border border-th-danger/40 text-th-danger-soft rounded-xl p-3 text-sm">
             {{ error }}
           </div>
 
           <button
             @click="join"
             :disabled="isJoining"
-            class="w-full bg-[#1e407c] hover:bg-[#2a5299] disabled:bg-[#0a2a52] text-white py-3 rounded-xl font-medium transition-colors"
+            class="w-full bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-white py-3 rounded-xl font-medium transition-colors"
           >
             {{ isJoining ? 'Joining...' : 'Accept Invite' }}
           </button>

@@ -444,7 +444,7 @@ function navigateToItem(id: string) {
   <template v-else>
   <div class="p-4 max-w-lg mx-auto">
     <!-- Collection / Wishlist tabs -->
-    <div class="flex gap-1 p-1 mb-4 bg-[#041e3e] border border-[#1e407c]/50 rounded-2xl" role="tablist">
+    <div class="flex gap-1 p-1 mb-4 bg-th-inset border border-th-edge/50 rounded-2xl" role="tablist">
       <button
         v-for="tab in tabs"
         :key="tab.value"
@@ -453,8 +453,8 @@ function navigateToItem(id: string) {
         @click="switchTab(tab.value)"
         class="flex-1 px-4 py-2 min-h-[44px] rounded-xl text-sm font-medium transition-colors"
         :class="activeTab === tab.value
-          ? 'bg-[#1e407c] text-white'
-          : 'text-[#96BEE6] hover:text-white'"
+          ? 'bg-th-brand text-white'
+          : 'text-th-accent hover:text-th-text'"
       >
         {{ tab.label }}
       </button>
@@ -466,9 +466,9 @@ function navigateToItem(id: string) {
         <input
           v-model="searchQuery"
           :placeholder="activeTab === 'wishlist' ? 'Search wishlist...' : 'Search collection...'"
-          class="w-full bg-[#041e3e] border border-[#1e407c]/50 rounded-xl pl-10 pr-3 py-2.5 text-sm text-white placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
+          class="w-full bg-th-inset border border-th-edge/50 rounded-xl pl-10 pr-3 py-2.5 text-sm text-th-text placeholder-th-muted focus:outline-none focus:border-th-edge"
         />
-        <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#4a7aa5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-th-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
       </div>
@@ -476,7 +476,7 @@ function navigateToItem(id: string) {
       <div class="relative action-menu-dropdown shrink-0">
         <button
           @click="showActionMenu = !showActionMenu"
-          class="h-[44px] w-[44px] bg-[#041e3e] border border-[#1e407c]/50 rounded-xl text-[#96BEE6] hover:border-[#1e407c] transition-colors flex items-center justify-center"
+          class="h-[44px] w-[44px] bg-th-inset border border-th-edge/50 rounded-xl text-th-accent hover:border-th-edge transition-colors flex items-center justify-center"
           aria-label="Open actions menu"
           title="Actions"
         >
@@ -487,10 +487,10 @@ function navigateToItem(id: string) {
 
         <div
           v-if="showActionMenu"
-          class="absolute right-0 top-full mt-1 w-72 max-h-[70vh] overflow-y-auto bg-[#041e3e] border border-[#1e407c]/50 rounded-xl shadow-lg z-20 p-3 space-y-4"
+          class="absolute right-0 top-full mt-1 w-72 max-h-[70vh] overflow-y-auto bg-th-inset border border-th-edge/50 rounded-xl shadow-lg z-20 p-3 space-y-4"
         >
           <div>
-            <p class="text-[11px] uppercase tracking-wide text-[#4a7aa5] mb-2">Filter</p>
+            <p class="text-[11px] uppercase tracking-wide text-th-muted mb-2">Filter</p>
             <div class="grid grid-cols-2 gap-2">
               <button
                 v-for="opt in typeFilters"
@@ -498,8 +498,8 @@ function navigateToItem(id: string) {
                 @click="setFilter(opt.value)"
                 class="px-3 py-2 rounded-lg text-xs border text-left transition-colors"
                 :class="activeFilter === opt.value
-                  ? 'bg-[#1e407c] border-[#1e407c] text-white'
-                  : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6]'"
+                  ? 'bg-th-brand border-th-edge text-white'
+                  : 'bg-th-card border-th-edge/50 text-th-accent'"
               >
                 {{ opt.label }}
               </button>
@@ -507,7 +507,7 @@ function navigateToItem(id: string) {
           </div>
 
           <div>
-            <p class="text-[11px] uppercase tracking-wide text-[#4a7aa5] mb-2">Sort</p>
+            <p class="text-[11px] uppercase tracking-wide text-th-muted mb-2">Sort</p>
             <div class="grid grid-cols-2 gap-2">
               <button
                 v-for="opt in sortOptions"
@@ -515,8 +515,8 @@ function navigateToItem(id: string) {
                 @click="setSort(opt.value)"
                 class="px-3 py-2 rounded-lg text-xs border text-left transition-colors"
                 :class="activeSort === opt.value
-                  ? 'bg-[#1e407c] border-[#1e407c] text-white'
-                  : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6]'"
+                  ? 'bg-th-brand border-th-edge text-white'
+                  : 'bg-th-card border-th-edge/50 text-th-accent'"
               >
                 {{ opt.label }}
               </button>
@@ -524,7 +524,7 @@ function navigateToItem(id: string) {
           </div>
 
           <div>
-            <p class="text-[11px] uppercase tracking-wide text-[#4a7aa5] mb-2">Sort Direction</p>
+            <p class="text-[11px] uppercase tracking-wide text-th-muted mb-2">Sort Direction</p>
             <div class="grid grid-cols-2 gap-2">
               <button
                 v-for="opt in sortDirectionOptions"
@@ -532,8 +532,8 @@ function navigateToItem(id: string) {
                 @click="setSortDirection(opt.value)"
                 class="px-3 py-2 rounded-lg text-xs border text-left transition-colors"
                 :class="activeSortDirection === opt.value
-                  ? 'bg-[#1e407c] border-[#1e407c] text-white'
-                  : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6]'"
+                  ? 'bg-th-brand border-th-edge text-white'
+                  : 'bg-th-card border-th-edge/50 text-th-accent'"
               >
                 {{ opt.label }}
               </button>
@@ -541,7 +541,7 @@ function navigateToItem(id: string) {
           </div>
 
           <div>
-            <p class="text-[11px] uppercase tracking-wide text-[#4a7aa5] mb-2">Group By</p>
+            <p class="text-[11px] uppercase tracking-wide text-th-muted mb-2">Group By</p>
             <div class="grid grid-cols-2 gap-2">
               <button
                 v-for="opt in groupByOptions"
@@ -549,8 +549,8 @@ function navigateToItem(id: string) {
                 @click="setGroupBy(opt.value)"
                 class="px-3 py-2 rounded-lg text-xs border text-left transition-colors"
                 :class="activeGroupBy === opt.value
-                  ? 'bg-[#1e407c] border-[#1e407c] text-white'
-                  : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6]'"
+                  ? 'bg-th-brand border-th-edge text-white'
+                  : 'bg-th-card border-th-edge/50 text-th-accent'"
               >
                 {{ opt.label }}
               </button>
@@ -565,46 +565,46 @@ function navigateToItem(id: string) {
       <button
         v-if="!showAddForm"
         @click="showAddForm = true"
-        class="w-full bg-[#041e3e] border border-dashed border-[#1e407c]/50 rounded-xl p-3 text-[#96BEE6] hover:border-[#96BEE6]/50 hover:text-white/80 transition-colors text-sm"
+        class="w-full bg-th-inset border border-dashed border-th-edge/50 rounded-xl p-3 text-th-accent hover:border-th-accent/50 hover:text-th-text/80 transition-colors text-sm"
       >
         + Add to wishlist
       </button>
 
-      <div v-else class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 space-y-3">
+      <div v-else class="bg-th-inset border border-th-line rounded-xl p-4 space-y-3">
         <!-- URL extraction -->
         <div class="space-y-2">
           <div class="flex gap-2">
             <input
               v-model="newUrl"
               placeholder="Paste a product URL to auto-fill..."
-              class="flex-1 bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-white text-sm placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
+              class="flex-1 bg-th-card border border-th-edge/50 rounded-xl px-4 py-2.5 text-th-text text-sm placeholder-th-muted focus:outline-none focus:border-th-edge"
             />
             <button
               @click="addWishlistFromUrl"
               :disabled="isExtractingUrl || !newUrl.trim()"
-              class="shrink-0 px-4 py-2.5 bg-[#1e407c] hover:bg-[#2a5299] disabled:bg-[#1e407c] disabled:text-[#96BEE6]/70 text-white rounded-xl text-sm font-medium min-h-[44px]"
+              class="shrink-0 px-4 py-2.5 bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-white rounded-xl text-sm font-medium min-h-[44px]"
             >
               {{ isExtractingUrl ? 'Extracting...' : 'Extract' }}
             </button>
           </div>
-          <p v-if="urlError" class="text-xs text-red-400">{{ urlError }}</p>
+          <p v-if="urlError" class="text-xs text-th-danger">{{ urlError }}</p>
         </div>
 
-        <div class="flex items-center gap-3 text-[#4a7aa5]/60 text-xs">
-          <div class="flex-1 border-t border-[#0a2a52]"></div>
+        <div class="flex items-center gap-3 text-th-muted/60 text-xs">
+          <div class="flex-1 border-t border-th-line"></div>
           <span>or add manually</span>
-          <div class="flex-1 border-t border-[#0a2a52]"></div>
+          <div class="flex-1 border-t border-th-line"></div>
         </div>
 
         <input
           v-model="newName"
           placeholder="Name (required)"
-          class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-white text-sm placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
+          class="w-full bg-th-card border border-th-edge/50 rounded-xl px-4 py-2.5 text-th-text text-sm placeholder-th-muted focus:outline-none focus:border-th-edge"
         />
 
         <select
           v-model="newType"
-          class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#1e407c] appearance-none"
+          class="w-full bg-th-card border border-th-edge/50 rounded-xl px-4 py-2.5 text-th-text text-sm focus:outline-none focus:border-th-edge appearance-none"
         >
           <option v-for="opt in typeOptions" :key="opt.value" :value="opt.value">
             {{ opt.label }}
@@ -614,26 +614,26 @@ function navigateToItem(id: string) {
         <input
           v-model="newBrand"
           placeholder="Brand (optional)"
-          class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-white text-sm placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
+          class="w-full bg-th-card border border-th-edge/50 rounded-xl px-4 py-2.5 text-th-text text-sm placeholder-th-muted focus:outline-none focus:border-th-edge"
         />
 
         <input
           v-model="newNotes"
           placeholder="Notes (optional)"
-          class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-white text-sm placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
+          class="w-full bg-th-card border border-th-edge/50 rounded-xl px-4 py-2.5 text-th-text text-sm placeholder-th-muted focus:outline-none focus:border-th-edge"
         />
 
         <div class="flex gap-2">
           <button
             @click="addWishlistItem"
             :disabled="isAdding || !newName.trim()"
-            class="flex-1 bg-[#1e407c] hover:bg-[#2a5299] disabled:bg-[#1e407c] disabled:text-[#96BEE6]/70 text-white py-2.5 rounded-xl text-sm font-medium"
+            class="flex-1 bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-white py-2.5 rounded-xl text-sm font-medium"
           >
             {{ isAdding ? 'Adding...' : 'Add' }}
           </button>
           <button
             @click="showAddForm = false"
-            class="px-4 py-2.5 bg-[#0a2a52] text-[#96BEE6] rounded-xl text-sm hover:bg-[#1e407c]"
+            class="px-4 py-2.5 bg-th-card text-th-accent rounded-xl text-sm hover:bg-th-brand hover:text-white"
           >
             Cancel
           </button>
@@ -642,12 +642,12 @@ function navigateToItem(id: string) {
     </div>
 
     <!-- Loading state -->
-    <div v-if="isLoadingList && !virtualItems.length" class="text-[#96BEE6]/70 text-center py-12">
+    <div v-if="isLoadingList && !virtualItems.length" class="text-th-accent/70 text-center py-12">
       Loading...
     </div>
 
     <!-- Empty states -->
-    <div v-else-if="!virtualItems.length" class="text-[#96BEE6]/70 text-center py-12">
+    <div v-else-if="!virtualItems.length" class="text-th-accent/70 text-center py-12">
       <p v-if="normalizedSearch">No results for "{{ searchQuery.trim() }}".</p>
       <p v-else-if="activeTab === 'wishlist'">No wishlist items yet. Add something you want to try.</p>
       <p v-else>No items yet. Capture something first!</p>
@@ -673,7 +673,7 @@ function navigateToItem(id: string) {
           <router-link
             v-if="activeTab === 'collection'"
             :to="`/items/${virtualItems[row.index].item!.id}`"
-            class="block bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 hover:border-[#1e407c]/50 transition-colors"
+            class="block bg-th-inset border border-th-line rounded-xl p-4 hover:border-th-edge/50 transition-colors"
           >
             <div class="flex items-start gap-3">
               <img
@@ -682,17 +682,17 @@ function navigateToItem(id: string) {
                 class="w-16 h-16 object-cover rounded-lg shrink-0"
                 loading="lazy"
               />
-              <div v-else class="w-16 h-16 bg-[#0a2a52] rounded-lg shrink-0 flex items-center justify-center text-xs text-[#96BEE6]/70 uppercase">
+              <div v-else class="w-16 h-16 bg-th-card rounded-lg shrink-0 flex items-center justify-center text-xs text-th-accent/70 uppercase">
                 {{ virtualItems[row.index].item!.type }}
               </div>
 
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 mb-1">
-                  <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6]">{{ virtualItems[row.index].item!.type }}</span>
-                  <span v-if="virtualItems[row.index].item!.status === 'ai-draft'" class="text-xs text-[#96BEE6]">AI Draft</span>
+                  <span class="text-xs px-2 py-0.5 rounded-full bg-th-card text-th-accent">{{ virtualItems[row.index].item!.type }}</span>
+                  <span v-if="virtualItems[row.index].item!.status === 'ai-draft'" class="text-xs text-th-accent">AI Draft</span>
                 </div>
-                <h3 class="font-medium text-white truncate">{{ virtualItems[row.index].item!.name }}</h3>
-                <p v-if="virtualItems[row.index].item!.brand" class="text-sm text-[#96BEE6]/70 truncate">{{ virtualItems[row.index].item!.brand }}</p>
+                <h3 class="font-medium text-th-text truncate">{{ virtualItems[row.index].item!.name }}</h3>
+                <p v-if="virtualItems[row.index].item!.brand" class="text-sm text-th-accent/70 truncate">{{ virtualItems[row.index].item!.brand }}</p>
                 <div v-if="virtualItems[row.index].item!.userRating" class="mt-1">
                   <StarRating :rating="virtualItems[row.index].item!.userRating!" size="sm" />
                 </div>
@@ -703,21 +703,21 @@ function navigateToItem(id: string) {
           <!-- Wishlist item -->
           <div
             v-else-if="activeTab === 'wishlist'"
-            class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4"
+            class="bg-th-inset border border-th-line rounded-xl p-4"
           >
             <router-link :to="`/items/${virtualItems[row.index].item!.id}`" class="block">
               <div class="flex items-start gap-3">
-                <div class="w-10 h-10 bg-[#0a2a52] rounded-lg shrink-0 flex items-center justify-center text-xs text-[#96BEE6]/70 uppercase">
+                <div class="w-10 h-10 bg-th-card rounded-lg shrink-0 flex items-center justify-center text-xs text-th-accent/70 uppercase">
                   {{ virtualItems[row.index].item!.type.slice(0, 1) }}
                 </div>
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 mb-1">
-                    <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6]">{{ virtualItems[row.index].item!.type }}</span>
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-th-card text-th-accent">{{ virtualItems[row.index].item!.type }}</span>
                   </div>
-                  <h3 class="font-medium text-white truncate">{{ virtualItems[row.index].item!.name }}</h3>
-                  <p v-if="virtualItems[row.index].item!.brand" class="text-sm text-[#96BEE6] truncate">{{ virtualItems[row.index].item!.brand }}</p>
-                  <p v-if="virtualItems[row.index].item!.userNotes" class="text-xs text-[#96BEE6]/70 mt-1 line-clamp-2">{{ virtualItems[row.index].item!.userNotes }}</p>
-                  <p v-if="virtualItems[row.index].item!.processedBy === 'pending'" class="text-xs text-[#96BEE6] mt-1">Processing...</p>
+                  <h3 class="font-medium text-th-text truncate">{{ virtualItems[row.index].item!.name }}</h3>
+                  <p v-if="virtualItems[row.index].item!.brand" class="text-sm text-th-accent truncate">{{ virtualItems[row.index].item!.brand }}</p>
+                  <p v-if="virtualItems[row.index].item!.userNotes" class="text-xs text-th-accent/70 mt-1 line-clamp-2">{{ virtualItems[row.index].item!.userNotes }}</p>
+                  <p v-if="virtualItems[row.index].item!.processedBy === 'pending'" class="text-xs text-th-accent mt-1">Processing...</p>
                 </div>
               </div>
             </router-link>
@@ -725,13 +725,13 @@ function navigateToItem(id: string) {
             <div class="flex gap-2 mt-3">
               <button
                 @click="convertItem(virtualItems[row.index].item!.id)"
-                class="flex-1 bg-[#1e407c] hover:bg-[#2a5299] text-white py-2 min-h-[44px] rounded-xl text-sm font-medium transition-colors"
+                class="flex-1 bg-th-brand hover:bg-th-brand-hover text-white py-2 min-h-[44px] rounded-xl text-sm font-medium transition-colors"
               >
                 Add to Collection
               </button>
               <button
                 @click="deleteItem(virtualItems[row.index].item!.id)"
-                class="px-4 py-2 min-h-[44px] bg-[#0a2a52] text-red-400 hover:bg-[#1e407c] rounded-xl text-sm transition-colors"
+                class="px-4 py-2 min-h-[44px] bg-th-card text-th-danger hover:bg-th-brand hover:text-white rounded-xl text-sm transition-colors"
               >
                 Remove
               </button>

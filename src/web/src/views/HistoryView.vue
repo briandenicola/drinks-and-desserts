@@ -59,10 +59,10 @@ async function loadAll(reset = false) {
 
 function captureStatusColor(status: string) {
   switch (status) {
-    case 'completed': return 'text-green-400'
-    case 'processing': return 'text-[#96BEE6]'
-    case 'failed': return 'text-red-400'
-    default: return 'text-[#96BEE6]'
+    case 'completed': return 'text-th-success'
+    case 'processing': return 'text-th-accent'
+    case 'failed': return 'text-th-danger'
+    default: return 'text-th-accent'
   }
 }
 
@@ -77,10 +77,10 @@ function captureStatusLabel(status: string) {
 
 function venueStatusColor(status: string) {
   switch (status) {
-    case 'completed': return 'text-green-400'
-    case 'processing': return 'text-[#96BEE6]'
-    case 'failed': return 'text-red-400'
-    default: return 'text-[#96BEE6]'
+    case 'completed': return 'text-th-success'
+    case 'processing': return 'text-th-accent'
+    case 'failed': return 'text-th-danger'
+    default: return 'text-th-accent'
   }
 }
 
@@ -104,10 +104,10 @@ function workflowStepIcon(status: string) {
 
 function workflowStepColor(status: string) {
   switch (status) {
-    case 'complete': return 'text-green-400'
-    case 'running': return 'text-[#96BEE6]'
-    case 'error': return 'text-red-400'
-    default: return 'text-[#4a7aa5]'
+    case 'complete': return 'text-th-success'
+    case 'running': return 'text-th-accent'
+    case 'error': return 'text-th-danger'
+    default: return 'text-th-muted'
   }
 }
 
@@ -126,8 +126,8 @@ const expandedVenueId = ref<string | null>(null)
         @click="activeFilter = filter"
         class="flex-1 py-2 min-h-[44px] rounded-xl text-sm font-medium transition-colors"
         :class="activeFilter === filter
-          ? 'bg-[#1e407c]/30 text-[#96BEE6] border border-[#1e407c]'
-          : 'bg-[#0a2a52] text-[#96BEE6] border border-[#1e407c]/50 hover:bg-[#0a2a52]'"
+          ? 'bg-th-brand/30 text-th-accent border border-th-edge'
+          : 'bg-th-card text-th-accent border border-th-edge/50 hover:bg-th-card-hover'"
       >
         {{ filter === 'all' ? `All (${captureCount + venueCount})` :
            filter === 'captures' ? `Captures (${captureCount})` :
@@ -135,11 +135,11 @@ const expandedVenueId = ref<string | null>(null)
       </button>
     </div>
 
-    <div v-if="(capturesStore.isLoading || venuesLoading) && !activityFeed.length" class="text-[#96BEE6]/70 text-center py-12">
+    <div v-if="(capturesStore.isLoading || venuesLoading) && !activityFeed.length" class="text-th-accent/70 text-center py-12">
       Loading...
     </div>
 
-    <div v-else-if="!activityFeed.length" class="text-[#96BEE6]/70 text-center py-12">
+    <div v-else-if="!activityFeed.length" class="text-th-accent/70 text-center py-12">
       <p>No activity yet. Head to Capture to get started!</p>
     </div>
 
@@ -150,16 +150,16 @@ const expandedVenueId = ref<string | null>(null)
         <router-link
           v-if="entry.type === 'capture'"
           :to="`/history/${entry.id}`"
-          class="block bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 hover:border-[#1e407c]/50 transition-colors"
+          class="block bg-th-inset border border-th-line rounded-xl p-4 hover:border-th-edge/50 transition-colors"
         >
           <div class="flex items-start justify-between mb-2">
             <div class="flex items-center gap-2">
-              <span class="text-xs px-2 py-0.5 rounded-full bg-[#1e407c]/30 text-[#96BEE6]">Capture</span>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-th-brand/30 text-th-accent">Capture</span>
               <span :class="captureStatusColor((entry.data as CaptureResponse).status)" class="text-sm">
                 {{ captureStatusLabel((entry.data as CaptureResponse).status) }}
               </span>
             </div>
-            <span class="text-xs text-[#4a7aa5]/60">
+            <span class="text-xs text-th-muted/60">
               {{ new Date(entry.timestamp).toLocaleDateString() }}
             </span>
           </div>
@@ -171,20 +171,20 @@ const expandedVenueId = ref<string | null>(null)
               :src="photo"
               class="w-12 h-12 object-cover rounded"
             />
-            <span v-if="(entry.data as CaptureResponse).photos.length > 4" class="text-[#96BEE6]/70 text-xs self-center ml-1">
+            <span v-if="(entry.data as CaptureResponse).photos.length > 4" class="text-th-accent/70 text-xs self-center ml-1">
               +{{ (entry.data as CaptureResponse).photos.length - 4 }}
             </span>
           </div>
 
-          <p v-if="(entry.data as CaptureResponse).userNote" class="text-sm text-[#96BEE6] line-clamp-2">
+          <p v-if="(entry.data as CaptureResponse).userNote" class="text-sm text-th-accent line-clamp-2">
             {{ (entry.data as CaptureResponse).userNote }}
           </p>
 
           <div class="flex items-center justify-between mt-2">
-            <span v-if="(entry.data as CaptureResponse).workflowSteps?.length" class="text-xs text-[#4a7aa5]/60">
+            <span v-if="(entry.data as CaptureResponse).workflowSteps?.length" class="text-xs text-th-muted/60">
               {{ (entry.data as CaptureResponse).workflowSteps.filter(s => s.status === 'complete').length }}/{{ (entry.data as CaptureResponse).workflowSteps.length }} workflow steps
             </span>
-            <span v-if="(entry.data as CaptureResponse).itemIds.length" class="text-xs text-[#96BEE6]">
+            <span v-if="(entry.data as CaptureResponse).itemIds.length" class="text-xs text-th-accent">
               {{ (entry.data as CaptureResponse).itemIds.length }} item(s) →
             </span>
           </div>
@@ -193,24 +193,24 @@ const expandedVenueId = ref<string | null>(null)
         <!-- Venue entry -->
         <div
           v-else
-          class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 hover:border-[#1e407c]/50 transition-colors"
+          class="bg-th-inset border border-th-line rounded-xl p-4 hover:border-th-edge/50 transition-colors"
           :class="(entry.data as Venue).workflowSteps?.length ? 'cursor-pointer' : ''"
           @click="(entry.data as Venue).workflowSteps?.length ? (expandedVenueId = expandedVenueId === entry.id ? null : entry.id) : $router.push(`/venues/${entry.id}`)"
         >
           <div class="flex items-start justify-between mb-2">
             <div class="flex items-center gap-2">
-              <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6]">Venue</span>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-th-card text-th-accent">Venue</span>
               <span :class="venueStatusColor((entry.data as Venue).status)" class="text-sm">
                 {{ venueStatusLabel((entry.data as Venue).status) }}
               </span>
             </div>
-            <span class="text-xs text-[#4a7aa5]/60">
+            <span class="text-xs text-th-muted/60">
               {{ new Date(entry.timestamp).toLocaleDateString() }}
             </span>
           </div>
 
-          <p class="text-sm text-white font-medium">{{ (entry.data as Venue).name }}</p>
-          <p v-if="(entry.data as Venue).address" class="text-xs text-[#96BEE6]/70 mt-0.5">
+          <p class="text-sm text-th-text font-medium">{{ (entry.data as Venue).name }}</p>
+          <p v-if="(entry.data as Venue).address" class="text-xs text-th-accent/70 mt-0.5">
             {{ (entry.data as Venue).address }}
           </p>
 
@@ -218,19 +218,19 @@ const expandedVenueId = ref<string | null>(null)
             <span
               v-for="label in (entry.data as Venue).labels.slice(0, 3)"
               :key="label"
-              class="text-xs px-2 py-0.5 rounded-full bg-[#1e407c]/30 text-[#96BEE6]"
+              class="text-xs px-2 py-0.5 rounded-full bg-th-brand/30 text-th-accent"
             >
               {{ label }}
             </span>
-            <span v-if="(entry.data as Venue).labels.length > 3" class="text-xs text-[#4a7aa5]/60 self-center">
+            <span v-if="(entry.data as Venue).labels.length > 3" class="text-xs text-th-muted/60 self-center">
               +{{ (entry.data as Venue).labels.length - 3 }}
             </span>
           </div>
 
           <!-- Workflow steps (expandable) -->
           <div v-if="(entry.data as Venue).workflowSteps?.length">
-            <div v-if="expandedVenueId === entry.id" class="mt-3 border-t border-[#0a2a52] pt-3">
-              <p class="text-xs text-[#96BEE6]/70 mb-2 font-medium">Agent Workflow</p>
+            <div v-if="expandedVenueId === entry.id" class="mt-3 border-t border-th-line pt-3">
+              <p class="text-xs text-th-accent/70 mb-2 font-medium">Agent Workflow</p>
               <div class="space-y-2">
                 <div
                   v-for="step in (entry.data as Venue).workflowSteps"
@@ -239,26 +239,26 @@ const expandedVenueId = ref<string | null>(null)
                 >
                   <span :class="workflowStepColor(step.status)" class="text-sm mt-0.5">{{ workflowStepIcon(step.status) }}</span>
                   <div class="min-w-0 flex-1">
-                    <p class="text-xs text-white">{{ step.agentName }}</p>
-                    <p v-if="step.summary" class="text-xs text-[#96BEE6]/70 line-clamp-2">{{ step.summary }}</p>
-                    <p v-if="step.detail" class="text-xs text-[#4a7aa5]/60 line-clamp-1">{{ step.detail }}</p>
-                    <p class="text-xs text-[#4a7aa5]/60">
+                    <p class="text-xs text-th-text">{{ step.agentName }}</p>
+                    <p v-if="step.summary" class="text-xs text-th-accent/70 line-clamp-2">{{ step.summary }}</p>
+                    <p v-if="step.detail" class="text-xs text-th-muted/60 line-clamp-1">{{ step.detail }}</p>
+                    <p class="text-xs text-th-muted/60">
                       {{ new Date(step.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) }}
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div v-if="(entry.data as Venue).processingError" class="mt-2 p-2 bg-red-900/20 border border-red-800/30 rounded-lg">
-                <p class="text-xs text-red-400">{{ (entry.data as Venue).processingError }}</p>
+              <div v-if="(entry.data as Venue).processingError" class="mt-2 p-2 bg-th-danger/15 border border-th-danger/40 rounded-lg">
+                <p class="text-xs text-th-danger">{{ (entry.data as Venue).processingError }}</p>
               </div>
 
-              <router-link :to="`/venues/${entry.id}`" class="block text-xs text-[#96BEE6] mt-2 hover:text-white">
+              <router-link :to="`/venues/${entry.id}`" class="block text-xs text-th-accent mt-2 hover:text-th-text">
                 View venue details →
               </router-link>
             </div>
 
-            <p v-else class="text-xs text-[#4a7aa5]/60 mt-1">
+            <p v-else class="text-xs text-th-muted/60 mt-1">
               {{ (entry.data as Venue).workflowSteps.filter(s => s.status === 'complete').length }}/{{ (entry.data as Venue).workflowSteps.length }} workflow steps — tap to expand
             </p>
           </div>

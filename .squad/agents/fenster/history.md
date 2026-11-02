@@ -23,3 +23,5 @@
 
 
 - Admin user management now treats roles as account-type agnostic: users show role/auth provider badges, promote/demote through /api/admin/users/{id}/role, and surface backend safety errors for last-admin/self-lockout. Admin Settings uses /api/admin/auth-settings for OIDC public web origin. (2026-06-24)
+
+- Theming (2026-11-02): Site palette is semantic `th-*` Tailwind tokens (`bg-th-page/inset/card`, `text-th-accent/muted/text`, `border-th-line/edge`, `bg-th-brand`) backed by `--th-*` vars in `src\web\src\style.css`; `:root` keeps the original blue look and `[data-theme=...]` blocks hold the Aurearia palettes. Theme is account state (`preferences.theme`): auth store watch -> `services/theme.ts applyTheme`; `index.html` pre-paint script reads the stored user; `clearAuth` resets it. Never reintroduce `[#hex]` classes (guarded by `src\web\src\__tests__\theme.test.ts`; run `node .\node_modules\vitest\vitest.mjs run`). ECharts reads vars through `useChartTheme().colors`.

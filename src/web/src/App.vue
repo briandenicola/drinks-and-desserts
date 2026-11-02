@@ -12,7 +12,7 @@ onMounted(() => {
 
 <template>
   <div v-if="auth.isLoading" class="flex items-center justify-center min-h-screen">
-    <div class="text-[#96BEE6]/70">Loading...</div>
+    <div class="text-th-accent/70">Loading...</div>
   </div>
 
   <AppLayout v-else>

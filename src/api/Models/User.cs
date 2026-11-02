@@ -71,6 +71,7 @@ public class User
                 PushoverUserKey = !string.IsNullOrEmpty(Preferences.PushoverUserKey) ? "****" : null,
                 PushoverEnabled = Preferences.PushoverEnabled,
                 PushoverSound = Preferences.PushoverSound,
+                Theme = Preferences.Theme,
             },
             ApiKeys = [],
             RefreshTokens = [],
@@ -136,6 +137,17 @@ public class UserPreferences
 
     [JsonPropertyName("pushoverSound")]
     public bool PushoverSound { get; set; } = true;
+
+    [JsonPropertyName("theme")]
+    public string? Theme { get; set; }
+}
+
+public static class AppThemes
+{
+    public static readonly IReadOnlyList<string> Ids =
+        ["dark", "light", "british-museum", "louvre", "capitoline", "byzantine", "modern-greek"];
+
+    public static bool IsValid(string? theme) => theme != null && Ids.Contains(theme, StringComparer.Ordinal);
 }
 
 public class ApiKey

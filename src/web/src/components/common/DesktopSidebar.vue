@@ -53,10 +53,10 @@ function isActive(path: string): boolean {
 </script>
 
 <template>
-  <aside class="fixed left-0 top-0 bottom-0 w-64 bg-[#041e3e] border-r border-[#0a2a52] flex flex-col z-30">
+  <aside class="fixed left-0 top-0 bottom-0 w-64 bg-th-inset border-r border-th-line flex flex-col z-30">
     <!-- Brand -->
-    <div class="px-5 py-4 border-b border-[#0a2a52]">
-      <h1 class="text-lg font-bold text-[#96BEE6]">Drinks &amp; Desserts</h1>
+    <div class="px-5 py-4 border-b border-th-line">
+      <h1 class="text-lg font-bold text-th-accent">Drinks &amp; Desserts</h1>
     </div>
 
     <!-- Navigation -->
@@ -67,8 +67,8 @@ function isActive(path: string): boolean {
         :to="item.path"
         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
         :class="isActive(item.path)
-          ? 'bg-[#1e407c] text-white'
-          : 'text-[#96BEE6]/70 hover:bg-[#0a2a52] hover:text-[#96BEE6]'"
+          ? 'bg-th-brand text-white'
+          : 'text-th-accent/70 hover:bg-th-card-hover hover:text-th-accent'"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" :d="item.icon" />
@@ -78,13 +78,13 @@ function isActive(path: string): boolean {
     </nav>
 
     <!-- Bottom section -->
-    <div class="border-t border-[#0a2a52] px-3 py-3">
+    <div class="border-t border-th-line px-3 py-3">
       <router-link
         to="/admin"
         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
         :class="isActive('/admin')
-          ? 'bg-[#1e407c] text-white'
-          : 'text-[#96BEE6]/70 hover:bg-[#0a2a52] hover:text-[#96BEE6]'"
+          ? 'bg-th-brand text-white'
+          : 'text-th-accent/70 hover:bg-th-card-hover hover:text-th-accent'"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />

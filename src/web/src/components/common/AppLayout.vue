@@ -42,12 +42,12 @@ const navItems = [
 
     <!-- Header (mobile only, or desktop with offset) -->
     <header
-      class="bg-[#041e3e] border-b border-[#0a2a52] px-4 py-3 flex items-center justify-between safe-area-top"
+      class="bg-th-inset border-b border-th-line px-4 py-3 flex items-center justify-between safe-area-top"
       :class="{ 'lg:ml-64': isDesktop && auth.isAuthenticated }"
     >
-      <h1 class="text-lg font-bold text-[#96BEE6]">Drinks &amp; Desserts</h1>
+      <h1 class="text-lg font-bold text-th-accent">Drinks &amp; Desserts</h1>
       <div class="flex items-center gap-3">
-        <router-link v-if="auth.isAuthenticated" to="/friends" class="p-1 text-[#96BEE6] hover:text-white">
+        <router-link v-if="auth.isAuthenticated" to="/friends" class="p-1 text-th-accent hover:text-th-text">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
           </svg>
@@ -56,7 +56,7 @@ const navItems = [
         <router-link
           v-if="auth.isAuthenticated"
           to="/profile"
-          class="p-1 text-[#96BEE6] hover:text-white transition-colors"
+          class="p-1 text-th-accent hover:text-th-text transition-colors"
           aria-label="Profile settings"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -74,7 +74,7 @@ const navItems = [
       <div class="flex items-center justify-center h-full">
         <svg
           v-if="isRefreshing"
-          class="w-5 h-5 text-[#96BEE6] animate-spin"
+          class="w-5 h-5 text-th-accent animate-spin"
           xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
         >
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
@@ -82,7 +82,7 @@ const navItems = [
         </svg>
         <svg
           v-else
-          class="w-5 h-5 text-[#96BEE6]/70 transition-transform duration-200"
+          class="w-5 h-5 text-th-accent/70 transition-transform duration-200"
           :style="{ transform: `rotate(${pullProgress * 180}deg)`, opacity: pullProgress }"
           xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
         >
@@ -109,7 +109,7 @@ const navItems = [
     <PwaInstallPrompt />
 
     <!-- Bottom Navigation (mobile only) -->
-    <nav v-if="auth.isAuthenticated && !isDesktop" class="fixed bottom-0 inset-x-0 bg-[#041e3e] border-t border-[#0a2a52] safe-area-bottom">
+    <nav v-if="auth.isAuthenticated && !isDesktop" class="fixed bottom-0 inset-x-0 bg-th-inset border-t border-th-line safe-area-bottom">
       <div class="flex justify-around items-end pt-1 pb-2">
         <template v-for="item in navItems" :key="item.path">
           <!-- Raised Capture FAB -->
@@ -121,15 +121,15 @@ const navItems = [
             <div
               class="w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all"
               :class="route.path === '/capture'
-                ? 'bg-[#96BEE6] shadow-[#1e407c]/30'
-                : 'bg-gradient-to-br from-[#1e407c] to-[#001E44] shadow-[#1e407c]/20 hover:shadow-[#1e407c]/30'"
+                ? 'bg-th-accent shadow-th-brand/30'
+                : 'bg-gradient-to-br from-th-brand to-th-brand-hover shadow-th-brand/20 hover:shadow-th-brand/30'"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <svg xmlns="http://www.w3.org/2000/svg" :class="route.path === '/capture' ? 'text-th-page' : 'text-white'" class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                 <circle cx="12" cy="13" r="3" />
               </svg>
             </div>
-            <span class="text-[10px] mt-1" :class="route.path === '/capture' ? 'text-[#96BEE6]' : 'text-[#96BEE6]/70'">Capture</span>
+            <span class="text-[10px] mt-1" :class="route.path === '/capture' ? 'text-th-accent' : 'text-th-accent/70'">Capture</span>
           </router-link>
 
           <!-- Standard nav items -->
@@ -137,7 +137,7 @@ const navItems = [
             v-else
             :to="item.path"
             class="flex flex-col items-center px-3 py-1 text-xs transition-colors"
-            :class="route.path === item.path ? 'text-[#96BEE6]' : 'text-[#96BEE6]/70'"
+            :class="route.path === item.path ? 'text-th-accent' : 'text-th-accent/70'"
           >
             <!-- Collection -->
             <svg v-if="item.path === '/items'" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">

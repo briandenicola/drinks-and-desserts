@@ -51,17 +51,17 @@ onMounted(loadThreads)
 <template>
   <div class="p-4 mx-auto pb-24" :class="isDesktop ? 'max-w-6xl' : 'max-w-lg'">
     <div class="flex items-center gap-3 mb-6">
-      <router-link to="/recommendations" class="text-[#96BEE6]/70 hover:text-[#96BEE6] transition-colors">
+      <router-link to="/recommendations" class="text-th-accent/70 hover:text-th-accent transition-colors">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
         </svg>
       </router-link>
-      <h1 class="text-2xl font-bold text-white">Recommendation History</h1>
+      <h1 class="text-2xl font-bold text-th-text">Recommendation History</h1>
     </div>
 
-    <div v-if="isLoading" class="text-center text-[#96BEE6]/70 py-8">Loading...</div>
+    <div v-if="isLoading" class="text-center text-th-accent/70 py-8">Loading...</div>
 
-    <div v-else-if="threads.length === 0" class="bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl p-4 text-sm text-white/70">
+    <div v-else-if="threads.length === 0" class="bg-th-card border border-th-edge/50 rounded-xl p-4 text-sm text-th-text/70">
       No saved recommendations yet. Generate some recommendations and tap "Save this recommendation" to keep them here.
     </div>
 
@@ -69,18 +69,18 @@ onMounted(loadThreads)
       <div
         v-for="thread in threads"
         :key="thread.id"
-        class="bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl p-4 hover:border-[#96BEE6]/30 transition-colors"
+        class="bg-th-card border border-th-edge/50 rounded-xl p-4 hover:border-th-accent/30 transition-colors"
       >
         <div class="flex items-start justify-between gap-3">
           <router-link :to="`/recommendations/history/${thread.id}`" class="flex-1 min-w-0">
-            <p class="text-xs text-[#4a7aa5] mb-1">{{ formatDate(thread.createdAt) }}</p>
-            <p class="text-white font-medium truncate">
+            <p class="text-xs text-th-muted mb-1">{{ formatDate(thread.createdAt) }}</p>
+            <p class="text-th-text font-medium truncate">
               {{ thread.recommendations.map((r) => r.name).join(', ') }}
             </p>
-            <p v-if="thread.request.preferences" class="text-sm text-white/60 mt-1 line-clamp-2">
+            <p v-if="thread.request.preferences" class="text-sm text-th-text/60 mt-1 line-clamp-2">
               "{{ thread.request.preferences }}"
             </p>
-            <p class="text-xs text-[#4a7aa5] mt-2">
+            <p class="text-xs text-th-muted mt-2">
               {{ thread.recommendations.length }} recommendation{{ thread.recommendations.length === 1 ? '' : 's' }}
               <span v-if="thread.extractedMenuItems && thread.extractedMenuItems.length > 0"> &middot; from menu photo</span>
             </p>
@@ -88,7 +88,7 @@ onMounted(loadThreads)
           <button
             :disabled="deletingIds.has(thread.id)"
             @click="deleteThread(thread.id)"
-            class="text-xs text-red-300/70 hover:text-red-300 px-2 py-1 disabled:opacity-50"
+            class="text-xs text-th-danger-soft/70 hover:text-th-danger-soft px-2 py-1 disabled:opacity-50"
           >
             Delete
           </button>

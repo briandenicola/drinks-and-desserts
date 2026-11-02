@@ -108,12 +108,12 @@ watch(() => [route.params.friendId, route.params.id], load, { immediate: true })
 
 <template>
   <div class="p-4 max-w-lg mx-auto">
-    <button @click="router.back()" class="text-[#96BEE6] text-sm mb-4">&larr; Back</button>
+    <button @click="router.back()" class="text-th-accent text-sm mb-4">&larr; Back</button>
 
-    <div v-if="isLoading" class="text-center text-[#5a8ab5] py-12">Loading...</div>
+    <div v-if="isLoading" class="text-center text-th-muted-strong py-12">Loading...</div>
 
     <div v-else-if="error && !selectedVenue && venues.length === 0"
-      class="bg-red-900/30 border border-red-700 text-red-300 rounded-xl p-3 text-sm">
+      class="bg-th-danger/15 border border-th-danger/40 text-th-danger-soft rounded-xl p-3 text-sm">
       {{ error }}
     </div>
 
@@ -121,7 +121,7 @@ watch(() => [route.params.friendId, route.params.id], load, { immediate: true })
     <template v-else-if="!isDetailMode">
       <h2 class="text-xl font-semibold mb-4">Venues</h2>
 
-      <div v-if="venues.length === 0" class="text-center text-[#5a8ab5] py-12">
+      <div v-if="venues.length === 0" class="text-center text-th-muted-strong py-12">
         No venues yet
       </div>
 
@@ -130,7 +130,7 @@ watch(() => [route.params.friendId, route.params.id], load, { immediate: true })
           v-for="venue in venues"
           :key="venue.id"
           :to="`/friends/${friendId}/venues/${venue.id}`"
-          class="block bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 hover:border-[#1e407c]/50 transition-colors"
+          class="block bg-th-inset border border-th-line rounded-xl p-4 hover:border-th-edge/50 transition-colors"
         >
           <div class="flex items-start gap-3">
             <img
@@ -138,13 +138,13 @@ watch(() => [route.params.friendId, route.params.id], load, { immediate: true })
               :src="venue.photoUrls[0]"
               class="w-12 h-12 object-cover rounded-lg shrink-0"
             />
-            <div v-else class="w-12 h-12 bg-[#0a2a52] rounded-lg shrink-0 flex items-center justify-center text-xs text-[#96BEE6]/70">
+            <div v-else class="w-12 h-12 bg-th-card rounded-lg shrink-0 flex items-center justify-center text-xs text-th-accent/70">
               {{ venueTypeLabel(venue.type).charAt(0) }}
             </div>
             <div class="flex-1 min-w-0">
-              <h3 class="font-medium text-white truncate">{{ venue.name }}</h3>
-              <p class="text-xs text-[#5a8ab5]">{{ venueTypeLabel(venue.type) }}</p>
-              <p v-if="venue.address" class="text-xs text-[#4a7aa5] truncate">{{ venue.address }}</p>
+              <h3 class="font-medium text-th-text truncate">{{ venue.name }}</h3>
+              <p class="text-xs text-th-muted-strong">{{ venueTypeLabel(venue.type) }}</p>
+              <p v-if="venue.address" class="text-xs text-th-muted truncate">{{ venue.address }}</p>
             </div>
           </div>
         </router-link>
@@ -153,32 +153,32 @@ watch(() => [route.params.friendId, route.params.id], load, { immediate: true })
 
     <!-- Venue detail -->
     <template v-else-if="selectedVenue">
-      <div class="bg-[#041e3e] border border-[#0a2a52] rounded-xl overflow-hidden mb-4">
+      <div class="bg-th-inset border border-th-line rounded-xl overflow-hidden mb-4">
         <img
           v-if="selectedVenue.photoUrls?.length"
           :src="selectedVenue.photoUrls[0]"
           class="w-full h-48 object-cover"
         />
         <div class="p-4 space-y-3">
-          <h2 class="text-xl font-semibold text-white">{{ selectedVenue.name }}</h2>
-          <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6]">
+          <h2 class="text-xl font-semibold text-th-text">{{ selectedVenue.name }}</h2>
+          <span class="text-xs px-2 py-0.5 rounded-full bg-th-card text-th-accent">
             {{ venueTypeLabel(selectedVenue.type) }}
           </span>
-          <p v-if="selectedVenue.sourceAttribution" class="text-xs text-[#5a8ab5]">
+          <p v-if="selectedVenue.sourceAttribution" class="text-xs text-th-muted-strong">
             Added from {{ selectedVenue.sourceAttribution.sourceDisplayName }}'s collection
           </p>
-          <p v-if="selectedVenue.address" class="text-sm text-[#5a8ab5]">{{ selectedVenue.address }}</p>
+          <p v-if="selectedVenue.address" class="text-sm text-th-muted-strong">{{ selectedVenue.address }}</p>
           <a v-if="selectedVenue.website" :href="selectedVenue.website" target="_blank"
-            class="text-sm text-[#96BEE6] hover:underline block">
+            class="text-sm text-th-accent hover:underline block">
             {{ selectedVenue.website }}
           </a>
           <div v-if="selectedVenue.rating" class="flex items-center gap-1">
             <span v-for="star in 5" :key="star"
-              :class="star <= selectedVenue.rating ? 'text-[#96BEE6]' : 'text-[#1e407c]/50'">&#9733;</span>
+              :class="star <= selectedVenue.rating ? 'text-th-accent' : 'text-th-edge/50'">&#9733;</span>
           </div>
           <div v-if="selectedVenue.labels?.length" class="flex flex-wrap gap-1">
             <span v-for="label in selectedVenue.labels" :key="label"
-              class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6]">
+              class="text-xs px-2 py-0.5 rounded-full bg-th-card text-th-accent">
               {{ label }}
             </span>
           </div>
@@ -190,34 +190,34 @@ watch(() => [route.params.friendId, route.params.id], load, { immediate: true })
         v-if="!addSuccess"
         @click="addToMyVenues"
         :disabled="isAdding"
-        class="w-full min-h-[44px] bg-[#0a2a52] border border-[#1e407c]/50 hover:border-[#1e407c] disabled:opacity-60 text-[#96BEE6] py-3 rounded-xl font-medium mb-4 transition-colors"
+        class="w-full min-h-[44px] bg-th-card border border-th-edge/50 hover:border-th-edge disabled:opacity-60 text-th-accent py-3 rounded-xl font-medium mb-4 transition-colors"
       >
         {{ isAdding ? 'Adding...' : 'Add to My Venues' }}
       </button>
-      <div v-else class="w-full min-h-[44px] bg-[#0a2a52] border border-[#1e407c]/50 text-[#96BEE6] py-3 rounded-xl font-medium mb-4 text-center">
+      <div v-else class="w-full min-h-[44px] bg-th-card border border-th-edge/50 text-th-accent py-3 rounded-xl font-medium mb-4 text-center">
         Added to your venues
       </div>
 
       <!-- Thoughts section -->
       <section class="space-y-4">
-        <h3 class="text-sm font-medium text-[#96BEE6] uppercase tracking-wide">
+        <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">
           Thoughts ({{ thoughts.length }})
         </h3>
 
-        <div class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 space-y-3">
+        <div class="bg-th-inset border border-th-line rounded-xl p-4 space-y-3">
           <textarea
             v-model="newThoughtContent"
             placeholder="Share your thoughts about this venue..."
             maxlength="500"
             rows="3"
-            class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-3 text-white placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c] resize-none"
+            class="w-full bg-th-card border border-th-edge/50 rounded-xl px-4 py-3 text-th-text placeholder-th-muted focus:outline-none focus:border-th-edge resize-none"
           ></textarea>
           <div class="flex items-center justify-between">
-            <p class="text-xs text-[#4a7aa5]">{{ newThoughtContent.length }}/500</p>
+            <p class="text-xs text-th-muted">{{ newThoughtContent.length }}/500</p>
             <button
               @click="submitThought"
               :disabled="!newThoughtContent.trim() || isSubmitting"
-              class="bg-[#1e407c] hover:bg-[#2a5299] disabled:bg-[#0a2a52] disabled:text-[#4a7aa5]/60 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors"
+              class="bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors"
             >
               {{ isSubmitting ? 'Posting...' : 'Post' }}
             </button>
@@ -225,29 +225,29 @@ watch(() => [route.params.friendId, route.params.id], load, { immediate: true })
         </div>
 
         <div v-for="thought in thoughts" :key="thought.id"
-          class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4">
+          class="bg-th-inset border border-th-line rounded-xl p-4">
           <div class="flex items-start justify-between mb-2">
             <div>
-              <span class="font-medium text-white text-sm">{{ thought.authorDisplayName }}</span>
-              <span class="text-xs text-[#4a7aa5] ml-2">{{ new Date(thought.createdAt).toLocaleDateString() }}</span>
+              <span class="font-medium text-th-text text-sm">{{ thought.authorDisplayName }}</span>
+              <span class="text-xs text-th-muted ml-2">{{ new Date(thought.createdAt).toLocaleDateString() }}</span>
             </div>
             <button
               v-if="thought.authorId === auth.user?.id"
               @click="deleteThought(thought)"
-              class="text-red-400 text-xs hover:text-red-300"
+              class="text-th-danger text-xs hover:text-th-danger-soft"
             >
               Delete
             </button>
           </div>
-          <p class="text-sm text-[#96BEE6]/80">{{ thought.content }}</p>
+          <p class="text-sm text-th-accent/80">{{ thought.content }}</p>
         </div>
 
-        <div v-if="thoughts.length === 0" class="text-center text-[#5a8ab5] py-4 text-sm">
+        <div v-if="thoughts.length === 0" class="text-center text-th-muted-strong py-4 text-sm">
           No thoughts yet. Be the first to share one.
         </div>
       </section>
 
-      <div v-if="error" class="bg-red-900/30 border border-red-700 text-red-300 rounded-xl p-3 text-sm mt-4">
+      <div v-if="error" class="bg-th-danger/15 border border-th-danger/40 text-th-danger-soft rounded-xl p-3 text-sm mt-4">
         {{ error }}
       </div>
     </template>

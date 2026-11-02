@@ -370,7 +370,7 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
 <template>
   <div class="p-4 max-w-lg mx-auto lg:max-w-5xl" v-if="venue">
     <!-- Back button -->
-    <button @click="router.back()" class="text-[#96BEE6] hover:text-white text-sm mb-4 flex items-center gap-1">
+    <button @click="router.back()" class="text-th-accent hover:text-th-text text-sm mb-4 flex items-center gap-1">
       <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
         <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
       </svg>
@@ -395,9 +395,9 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
         <!-- Left column: venue info -->
         <div class="lg:col-span-2 space-y-4">
           <div>
-            <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6] capitalize">{{ venue.type }}</span>
-            <h2 class="text-2xl font-bold text-white mt-2">{{ venue.name }}</h2>
-            <p v-if="venue.sourceAttribution" class="text-xs text-[#5a8ab5] mt-1">
+            <span class="text-xs px-2 py-0.5 rounded-full bg-th-card text-th-accent capitalize">{{ venue.type }}</span>
+            <h2 class="text-2xl font-bold text-th-text mt-2">{{ venue.name }}</h2>
+            <p v-if="venue.sourceAttribution" class="text-xs text-th-muted-strong mt-1">
               Added from {{ venue.sourceAttribution.sourceDisplayName }}'s collection
             </p>
           </div>
@@ -406,9 +406,9 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
             <StarRating :rating="venue.rating" size="md" />
           </div>
 
-          <div v-if="venue.address" class="text-[#96BEE6] text-sm">{{ venue.address }}</div>
+          <div v-if="venue.address" class="text-th-accent text-sm">{{ venue.address }}</div>
 
-          <a v-if="venue.website" :href="venue.website" target="_blank" class="text-[#96BEE6] text-sm hover:text-[#96BEE6] block truncate">
+          <a v-if="venue.website" :href="venue.website" target="_blank" class="text-th-accent text-sm hover:text-th-accent block truncate">
             {{ venue.website }}
           </a>
 
@@ -416,7 +416,7 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
             <span
               v-for="label in venue.labels"
               :key="label"
-              class="text-xs px-2.5 py-1 rounded-full bg-[#1e407c]/30 text-[#96BEE6] border border-[#1e407c]/50"
+              class="text-xs px-2.5 py-1 rounded-full bg-th-brand/30 text-th-accent border border-th-edge/50"
             >
               {{ label }}
             </span>
@@ -425,20 +425,20 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
           <div class="flex gap-2">
             <button
               @click="startEditing"
-              class="flex-1 bg-[#1e407c] hover:bg-[#2a5299] text-white py-2.5 min-h-[44px] rounded-xl text-sm font-medium lg:flex-none lg:px-8"
+              class="flex-1 bg-th-brand hover:bg-th-brand-hover text-white py-2.5 min-h-[44px] rounded-xl text-sm font-medium lg:flex-none lg:px-8"
             >
               Edit
             </button>
             <button
               @click="showShareModal = true"
-              class="px-4 py-2.5 min-h-[44px] bg-[#0a2a52] text-[#96BEE6] hover:bg-[#1e407c] rounded-xl text-sm"
+              class="px-4 py-2.5 min-h-[44px] bg-th-card text-th-accent hover:bg-th-brand hover:text-white rounded-xl text-sm"
             >
               Share
             </button>
             <button
               @click="deleteVenue"
               :disabled="isDeleting"
-              class="px-4 py-2.5 min-h-[44px] bg-[#0a2a52] text-red-400 hover:bg-[#1e407c] rounded-xl text-sm"
+              class="px-4 py-2.5 min-h-[44px] bg-th-card text-th-danger hover:bg-th-brand hover:text-white rounded-xl text-sm"
             >
               {{ isDeleting ? 'Deleting...' : 'Delete' }}
             </button>
@@ -446,7 +446,7 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
 
           <!-- Friend Thoughts -->
           <div v-if="friendThoughts.length > 0" class="mt-6">
-            <h3 class="text-sm font-medium text-[#96BEE6] uppercase tracking-wide mb-3">
+            <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide mb-3">
               Friend Thoughts ({{ friendThoughts.length }})
             </h3>
             <ThoughtsList :thoughts="friendThoughts" @delete="handleDeleteThought" />
@@ -457,13 +457,13 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
         <div class="lg:col-span-1 space-y-6 mt-6 lg:mt-0">
           <!-- Linked items -->
           <div v-if="linkedItems.length">
-            <h3 class="text-sm font-medium text-[#96BEE6] mb-3">Linked Items</h3>
+            <h3 class="text-sm font-medium text-th-accent mb-3">Linked Items</h3>
             <div class="space-y-2">
               <router-link
                 v-for="item in linkedItems"
                 :key="item.id"
                 :to="`/items/${item.id}`"
-                class="block bg-[#041e3e] border border-[#0a2a52] rounded-xl p-3 hover:border-[#1e407c]/50 transition-colors"
+                class="block bg-th-inset border border-th-line rounded-xl p-3 hover:border-th-edge/50 transition-colors"
               >
                 <div class="flex items-center gap-3">
                   <img
@@ -472,8 +472,8 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
                     class="w-10 h-10 object-cover rounded-lg shrink-0"
                   />
                   <div class="flex-1 min-w-0">
-                    <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6]">{{ item.type }}</span>
-                    <h4 class="font-medium text-white truncate text-sm">{{ item.name }}</h4>
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-th-card text-th-accent">{{ item.type }}</span>
+                    <h4 class="font-medium text-th-text truncate text-sm">{{ item.name }}</h4>
                   </div>
                 </div>
               </router-link>
@@ -482,7 +482,7 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
 
           <!-- Photos section (desktop sidebar) -->
           <div v-if="photoUrls.length > 1" class="hidden lg:block">
-            <h3 class="text-sm font-medium text-[#96BEE6] mb-3">Photos</h3>
+            <h3 class="text-sm font-medium text-th-accent mb-3">Photos</h3>
             <div class="grid grid-cols-2 gap-2">
               <img
                 v-for="url in photoUrls"
@@ -501,7 +501,7 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
       <div class="lg:max-w-2xl">
       <!-- Photos (edit mode) -->
       <div class="mb-4">
-        <label class="block text-sm text-[#96BEE6] mb-2">Photos</label>
+        <label class="block text-sm text-th-accent mb-2">Photos</label>
         <div class="flex gap-2 overflow-x-auto pb-2">
           <!-- Existing photos with delete toggle -->
           <div
@@ -517,7 +517,7 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
             <button
               v-if="!pendingPhotoDeletes.has(url)"
               @click="markPhotoForDelete(url)"
-              class="absolute top-1 right-1 bg-black/70 text-red-400 hover:text-red-300 rounded-full w-11 h-11 flex items-center justify-center text-xs"
+              class="absolute top-1 right-1 bg-black/70 text-th-danger hover:text-th-danger-soft rounded-full w-11 h-11 flex items-center justify-center text-xs"
               title="Remove photo"
             >&times;</button>
             <button
@@ -535,21 +535,21 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
           >
             <img
               :src="pending.previewUrl"
-              class="h-32 w-32 object-cover rounded-xl border-2 border-[#1e407c]"
+              class="h-32 w-32 object-cover rounded-xl border-2 border-th-edge"
             />
             <button
               @click="removePendingPhoto(i)"
-              class="absolute top-1 right-1 bg-black/70 text-red-400 hover:text-red-300 rounded-full w-11 h-11 flex items-center justify-center text-xs"
+              class="absolute top-1 right-1 bg-black/70 text-th-danger hover:text-th-danger-soft rounded-full w-11 h-11 flex items-center justify-center text-xs"
               title="Remove"
             >&times;</button>
-            <span class="absolute bottom-1 left-1 text-[10px] bg-[#1e407c]/80 text-white px-1.5 py-0.5 rounded">New</span>
+            <span class="absolute bottom-1 left-1 text-[10px] bg-th-brand/80 text-th-text px-1.5 py-0.5 rounded">New</span>
           </div>
 
           <!-- Add photo button -->
           <button
             @click="triggerPhotoUpload"
             :disabled="isUploadingPhoto"
-            class="h-32 w-32 flex-shrink-0 flex flex-col items-center justify-center border-2 border-dashed border-[#1e407c]/50 rounded-xl text-[#96BEE6]/70 hover:text-[#96BEE6] hover:border-[#1e407c] transition-colors"
+            class="h-32 w-32 flex-shrink-0 flex flex-col items-center justify-center border-2 border-dashed border-th-edge/50 rounded-xl text-th-accent/70 hover:text-th-accent hover:border-th-edge transition-colors"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -569,18 +569,18 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
 
       <div class="space-y-4">
         <div>
-          <label class="block text-sm text-[#96BEE6] mb-1">Name</label>
+          <label class="block text-sm text-th-accent mb-1">Name</label>
           <input
             v-model="editName"
-            class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#1e407c]"
+            class="w-full bg-th-card border border-th-edge/50 rounded-xl px-4 py-2.5 text-th-text text-sm focus:outline-none focus:border-th-edge"
           />
         </div>
 
         <div>
-          <label class="block text-sm text-[#96BEE6] mb-1">Type</label>
+          <label class="block text-sm text-th-accent mb-1">Type</label>
           <select
             v-model="editType"
-            class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#1e407c] appearance-none"
+            class="w-full bg-th-card border border-th-edge/50 rounded-xl px-4 py-2.5 text-th-text text-sm focus:outline-none focus:border-th-edge appearance-none"
           >
             <option v-for="opt in venueTypeOptions" :key="opt.value" :value="opt.value">
               {{ opt.label }}
@@ -589,30 +589,30 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
         </div>
 
         <div>
-          <label class="block text-sm text-[#96BEE6] mb-1">Address</label>
+          <label class="block text-sm text-th-accent mb-1">Address</label>
           <input
             v-model="editAddress"
-            class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#1e407c]"
+            class="w-full bg-th-card border border-th-edge/50 rounded-xl px-4 py-2.5 text-th-text text-sm focus:outline-none focus:border-th-edge"
           />
         </div>
 
         <div>
-          <label class="block text-sm text-[#96BEE6] mb-1">Website</label>
+          <label class="block text-sm text-th-accent mb-1">Website</label>
           <input
             v-model="editWebsite"
-            class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#1e407c]"
+            class="w-full bg-th-card border border-th-edge/50 rounded-xl px-4 py-2.5 text-th-text text-sm focus:outline-none focus:border-th-edge"
           />
         </div>
 
         <div>
-          <label class="block text-sm text-[#96BEE6] mb-1">Rating</label>
+          <label class="block text-sm text-th-accent mb-1">Rating</label>
           <div class="flex items-center gap-3">
             <StarRating :rating="editRating" size="lg" interactive @update:rating="editRating = $event" />
-            <span class="text-sm text-[#96BEE6]/70">{{ editRating > 0 ? editRating : '' }}</span>
+            <span class="text-sm text-th-accent/70">{{ editRating > 0 ? editRating : '' }}</span>
             <button
               v-if="editRating > 0"
               @click="editRating = 0"
-              class="text-xs text-[#96BEE6]/70 hover:text-red-400 px-2 py-1 rounded-lg hover:bg-[#0a2a52]/50 transition-colors"
+              class="text-xs text-th-accent/70 hover:text-th-danger px-2 py-1 rounded-lg hover:bg-th-card-hover/50 transition-colors"
               title="Clear rating"
             >Clear</button>
           </div>
@@ -620,17 +620,17 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
 
         <!-- Labels -->
         <div>
-          <label class="block text-sm text-[#96BEE6] mb-2">Labels</label>
+          <label class="block text-sm text-th-accent mb-2">Labels</label>
 
           <!-- Current labels -->
           <div v-if="editLabels.length" class="flex flex-wrap gap-1.5 mb-2">
             <span
               v-for="label in editLabels"
               :key="label"
-              class="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-[#1e407c]/30 text-[#96BEE6] border border-[#1e407c]/50"
+              class="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-th-brand/30 text-th-accent border border-th-edge/50"
             >
               {{ label }}
-              <button @click="removeLabel(label)" class="hover:text-red-400 ml-0.5 text-base leading-none">&times;</button>
+              <button @click="removeLabel(label)" class="hover:text-th-danger ml-0.5 text-base leading-none">&times;</button>
             </span>
           </div>
 
@@ -639,7 +639,7 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
             <input
               v-model="newLabelInput"
               placeholder="Type to search or add labels..."
-              class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-3 py-2 text-white text-sm placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
+              class="w-full bg-th-card border border-th-edge/50 rounded-xl px-3 py-2 text-th-text text-sm placeholder-th-muted focus:outline-none focus:border-th-edge"
               @keydown.enter.prevent="addLabel(newLabelInput)"
               @focus="onLabelInputFocus"
               @blur="onLabelInputBlur"
@@ -647,12 +647,12 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
             <!-- Dropdown -->
             <div
               v-if="showLabelDropdown && (filteredSuggestions.length || showCustomOption)"
-              class="absolute left-0 right-0 top-full mt-1 bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl overflow-hidden z-10 max-h-48 overflow-y-auto"
+              class="absolute left-0 right-0 top-full mt-1 bg-th-card border border-th-edge/50 rounded-xl overflow-hidden z-10 max-h-48 overflow-y-auto"
             >
               <button
                 v-if="showCustomOption"
                 @mousedown.prevent="addLabel(newLabelInput)"
-                class="w-full text-left px-3 py-2 text-sm text-white hover:bg-[#1e407c]/30 border-b border-[#1e407c]/30"
+                class="w-full text-left px-3 py-2 text-sm text-th-text hover:bg-th-brand/30 border-b border-th-edge/30"
               >
                 Add "{{ newLabelInput.trim().toLowerCase() }}"
               </button>
@@ -660,7 +660,7 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
                 v-for="label in filteredSuggestions"
                 :key="label"
                 @mousedown.prevent="addLabel(label)"
-                class="w-full text-left px-3 py-2 text-sm text-[#96BEE6] hover:bg-[#1e407c]/30"
+                class="w-full text-left px-3 py-2 text-sm text-th-accent hover:bg-th-brand/30"
               >
                 {{ label }}
               </button>
@@ -670,24 +670,24 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
 
         <!-- Linked Items Picker -->
         <div>
-          <label class="block text-sm text-[#96BEE6] mb-2">Linked Collection Items</label>
+          <label class="block text-sm text-th-accent mb-2">Linked Collection Items</label>
           <input
             v-model="itemSearchQuery"
             type="text"
             placeholder="Search items..."
-            class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#1e407c] mb-2"
+            class="w-full bg-th-card border border-th-edge/50 rounded-xl px-4 py-2.5 text-th-text text-sm focus:outline-none focus:border-th-edge mb-2"
           />
-          <div class="max-h-48 overflow-y-auto space-y-1 rounded-xl border border-[#0a2a52] bg-[#041e3e]/50 p-2">
+          <div class="max-h-48 overflow-y-auto space-y-1 rounded-xl border border-th-line bg-th-inset/50 p-2">
             <button
               v-for="itm in filteredItems"
               :key="itm.id"
               @click="toggleItemLink(itm.id)"
               class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors min-h-[44px]"
-              :class="selectedItemIds.has(itm.id) ? 'bg-[#1e407c]/30 border border-[#1e407c]/50' : 'hover:bg-[#0a2a52]'"
+              :class="selectedItemIds.has(itm.id) ? 'bg-th-brand/30 border border-th-edge/50' : 'hover:bg-th-card-hover'"
             >
               <div
                 class="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0"
-                :class="selectedItemIds.has(itm.id) ? 'border-[#96BEE6] bg-[#2a5299]' : 'border-[#1e407c]'"
+                :class="selectedItemIds.has(itm.id) ? 'border-th-accent bg-th-brand-hover' : 'border-th-edge'"
               >
                 <svg v-if="selectedItemIds.has(itm.id)" class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
@@ -699,26 +699,26 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
                 class="w-8 h-8 object-cover rounded-lg flex-shrink-0"
               />
               <div class="flex-1 min-w-0">
-                <p class="text-sm text-white truncate">{{ itm.name }}</p>
-                <span class="text-xs text-[#96BEE6]/70 capitalize">{{ itm.type }}</span>
+                <p class="text-sm text-th-text truncate">{{ itm.name }}</p>
+                <span class="text-xs text-th-accent/70 capitalize">{{ itm.type }}</span>
               </div>
             </button>
-            <p v-if="!filteredItems.length" class="text-xs text-[#4a7aa5]/60 text-center py-3">No items found</p>
+            <p v-if="!filteredItems.length" class="text-xs text-th-muted/60 text-center py-3">No items found</p>
           </div>
-          <p class="text-xs text-[#4a7aa5]/60 mt-1">{{ selectedItemIds.size }} item{{ selectedItemIds.size === 1 ? '' : 's' }} selected</p>
+          <p class="text-xs text-th-muted/60 mt-1">{{ selectedItemIds.size }} item{{ selectedItemIds.size === 1 ? '' : 's' }} selected</p>
         </div>
 
         <div class="flex gap-2">
           <button
             @click="saveEdits"
             :disabled="isSaving"
-            class="flex-1 bg-[#1e407c] hover:bg-[#2a5299] disabled:bg-[#1e407c] disabled:text-[#96BEE6]/70 text-white py-2.5 min-h-[44px] rounded-xl text-sm font-medium"
+            class="flex-1 bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-white py-2.5 min-h-[44px] rounded-xl text-sm font-medium"
           >
             {{ isSaving ? 'Saving...' : 'Save' }}
           </button>
           <button
             @click="isEditing = false"
-            class="px-4 py-2.5 min-h-[44px] bg-[#0a2a52] text-[#96BEE6] rounded-xl text-sm hover:bg-[#1e407c]"
+            class="px-4 py-2.5 min-h-[44px] bg-th-card text-th-accent rounded-xl text-sm hover:bg-th-brand hover:text-white"
           >
             Cancel
           </button>
@@ -728,7 +728,7 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
     </template>
 
     <!-- Share error toast -->
-    <div v-if="shareError" class="fixed bottom-4 left-4 right-4 max-w-lg mx-auto bg-red-900/90 border border-red-700 text-red-300 rounded-xl p-3 text-sm z-50">
+    <div v-if="shareError" class="fixed bottom-4 left-4 right-4 max-w-lg mx-auto bg-th-inset border border-th-danger/50 text-th-danger-soft rounded-xl p-3 text-sm z-50">
       {{ shareError }}
     </div>
 

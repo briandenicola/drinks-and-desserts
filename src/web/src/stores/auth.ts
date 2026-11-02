@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import axios from 'axios'
 import {
   authApi,
@@ -9,6 +9,7 @@ import {
   getStoredRefreshToken,
   getStoredExpiresAt,
   getStoredUser,
+  storeUser,
   refreshAccessToken,
   type RegisterRequest,
   type LoginRequest,
@@ -16,6 +17,7 @@ import {
 import { usersApi, type User } from '../services/users'
 import { loginWithEntra, logoutEntra, isEntraConfigured } from '../services/msal'
 import { getErrorMessage } from '../services/errors'
+import { applyTheme } from '../services/theme'
 import router from '../router'
 
 const REFRESH_BUFFER_MS = 5 * 60_000 // refresh 5 minutes before expiry
@@ -30,6 +32,10 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isAuthenticated = computed(() => !!token.value)
   const isAdmin = computed(() => user.value?.role === 'admin')
+
+  // The signed-in account owns the theme: switching accounts or signing out
+  // changes this value and therefore the applied palette.
+  watch(() => user.value?.preferences?.theme, theme => applyTheme(theme), { flush: 'sync' })
 
   function scheduleRefresh() {
     if (refreshTimer) {
@@ -110,8 +116,11 @@ export const useAuthStore = defineStore('auth', () => {
     const storedUser = getStoredUser()
     if (storedUser && token.value) {
       user.value = storedUser
+      applyTheme(storedUser.preferences?.theme)
       loadUser()
       scheduleRefresh()
+    } else {
+      applyTheme(null)
     }
     isLoading.value = false
 
@@ -213,13 +222,21 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function loadUser() {
+    const requestToken = token.value
     try {
       const response = await usersApi.getMe()
-      user.value = response.data
+      // Ignore a response that outlived its session (logout or account switch)
+      if (token.value !== requestToken) return
+      setUser(response.data)
     } catch (e) {
       console.error('Failed to load user', e)
     }
   }
 
-  return { user, isLoading, error, isAuthenticated, isAdmin, initialize, dispose, applyAuthResponse, register, login, loginEntra, logout, loadUser }
+  function setUser(next: User) {
+    user.value = next
+    storeUser(next)
+  }
+
+  return { user, isLoading, error, isAuthenticated, isAdmin, initialize, dispose, applyAuthResponse, register, login, loginEntra, logout, loadUser, setUser }
 })

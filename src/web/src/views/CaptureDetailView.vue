@@ -102,28 +102,28 @@ function statusLabel(status: string): string {
 
 function statusColor(status: string) {
   switch (status) {
-    case 'complete': return 'text-green-400 border-green-800'
-    case 'running': return 'text-[#96BEE6] border-[#1e407c]/50'
-    case 'error': return 'text-red-400 border-red-800'
-    default: return 'text-[#96BEE6]/70 border-[#0a2a52]'
+    case 'complete': return 'text-th-success border-th-success/40'
+    case 'running': return 'text-th-accent border-th-edge/50'
+    case 'error': return 'text-th-danger border-th-danger/40'
+    default: return 'text-th-accent/70 border-th-line'
   }
 }
 
 function dotColor(status: string) {
   switch (status) {
-    case 'complete': return 'bg-green-500'
-    case 'running': return 'bg-[#96BEE6] animate-pulse'
-    case 'error': return 'bg-red-500'
-    default: return 'bg-[#1e407c]'
+    case 'complete': return 'bg-th-success'
+    case 'running': return 'bg-th-accent animate-pulse'
+    case 'error': return 'bg-th-danger'
+    default: return 'bg-th-brand'
   }
 }
 
 function captureStatusColor(status: string): string {
   switch (status) {
-    case 'completed': return 'text-green-400'
-    case 'processing': return 'text-[#96BEE6]'
-    case 'failed': return 'text-red-400'
-    default: return 'text-[#96BEE6]'
+    case 'completed': return 'text-th-success'
+    case 'processing': return 'text-th-accent'
+    case 'failed': return 'text-th-danger'
+    default: return 'text-th-accent'
   }
 }
 
@@ -138,15 +138,15 @@ function captureStatusLabel(status: string): string {
 </script>
 
 <template>
-  <div v-if="isLoading" class="p-4 text-[#96BEE6]/70 text-center py-12">Loading...</div>
+  <div v-if="isLoading" class="p-4 text-th-accent/70 text-center py-12">Loading...</div>
 
-  <div v-else-if="!capture" class="p-4 text-[#96BEE6]/70 text-center py-12">
+  <div v-else-if="!capture" class="p-4 text-th-accent/70 text-center py-12">
     <p>Capture not found.</p>
-    <button @click="router.push('/history')" class="text-[#96BEE6] mt-2 min-h-[44px] min-w-[44px] px-3 py-2 hover:opacity-80 transition-opacity">Back to History</button>
+    <button @click="router.push('/history')" class="text-th-accent mt-2 min-h-[44px] min-w-[44px] px-3 py-2 hover:opacity-80 transition-opacity">Back to History</button>
   </div>
 
   <div v-else class="p-4 max-w-lg mx-auto">
-    <button @click="router.push('/history')" class="text-[#96BEE6] hover:text-white hover:opacity-80 text-sm mb-4 min-h-[44px] min-w-[44px] px-3 py-2 transition-opacity">
+    <button @click="router.push('/history')" class="text-th-accent hover:text-th-text hover:opacity-80 text-sm mb-4 min-h-[44px] min-w-[44px] px-3 py-2 transition-opacity">
       Back to History
     </button>
 
@@ -172,32 +172,32 @@ function captureStatusLabel(status: string): string {
           v-if="canReprocess"
           @click="reprocess"
           :disabled="isReprocessing"
-          class="text-xs px-3 py-1.5 rounded-lg bg-[#1e407c] hover:bg-[#2a5299] disabled:bg-[#1e407c] disabled:text-[#96BEE6]/70 text-white transition-colors"
+          class="text-xs px-3 py-1.5 rounded-lg bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-white transition-colors"
         >
           {{ isReprocessing ? 'Reprocessing...' : 'Rerun AI Workflow' }}
         </button>
-        <span class="text-xs text-[#4a7aa5]/60">
+        <span class="text-xs text-th-muted/60">
           {{ new Date(capture.createdAt).toLocaleString() }}
         </span>
       </div>
     </div>
 
-    <p v-if="capture.userNote" class="text-sm text-[#96BEE6] mb-4 italic">"{{ capture.userNote }}"</p>
+    <p v-if="capture.userNote" class="text-sm text-th-accent mb-4 italic">"{{ capture.userNote }}"</p>
 
     <!-- Workflow Steps Timeline -->
     <div v-if="capture.workflowSteps.length" class="mb-6">
-      <h3 class="text-sm font-medium text-[#96BEE6] mb-1">
+      <h3 class="text-sm font-medium text-th-accent mb-1">
         {{ usedAi ? 'AI Agent Workflow' : 'Processing Workflow' }}
       </h3>
-      <p v-if="usedAi" class="text-xs text-[#4a7aa5]/60 mb-3">
+      <p v-if="usedAi" class="text-xs text-th-muted/60 mb-3">
         Steps below were executed by AI agents in Azure AI Foundry.
       </p>
-      <p v-else class="text-xs text-yellow-600 mb-3">
+      <p v-else class="text-xs text-th-warning mb-3">
         AI agents were not available. Results below are from local keyword extraction only.
       </p>
 
       <div class="relative">
-        <div class="absolute left-3 top-3 bottom-3 w-0.5 bg-[#0a2a52]"></div>
+        <div class="absolute left-3 top-3 bottom-3 w-0.5 bg-th-card"></div>
 
         <div
           v-for="(step, i) in capture.workflowSteps"
@@ -206,14 +206,14 @@ function captureStatusLabel(status: string): string {
         >
           <div class="absolute left-1.5 top-1.5 w-3 h-3 rounded-full" :class="dotColor(step.status)"></div>
 
-          <div class="bg-[#041e3e] border rounded-xl p-3" :class="statusColor(step.status)">
+          <div class="bg-th-inset border rounded-xl p-3" :class="statusColor(step.status)">
             <div class="flex items-center justify-between mb-1">
               <div class="flex items-center gap-2">
                 <span
                   class="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded"
                   :class="isAiStep(step)
-                    ? 'bg-[#1e407c]/40 text-[#96BEE6] border border-[#1e407c]/50'
-                    : 'bg-[#0a2a52] text-[#96BEE6]/70 border border-[#1e407c]/50'"
+                    ? 'bg-th-brand/40 text-th-accent border border-th-edge/50'
+                    : 'bg-th-card text-th-accent/70 border border-th-edge/50'"
                 >
                   {{ isAiStep(step) ? 'AI Agent' : 'Local' }}
                 </span>
@@ -221,13 +221,13 @@ function captureStatusLabel(status: string): string {
               </div>
               <div class="flex items-center gap-2">
                 <span class="text-xs" :class="statusColor(step.status)">{{ statusLabel(step.status) }}</span>
-                <span class="text-xs text-[#4a7aa5]/40">{{ step.stepId }}</span>
+                <span class="text-xs text-th-muted/40">{{ step.stepId }}</span>
               </div>
             </div>
-            <p v-if="step.summary" class="text-xs text-[#96BEE6] leading-relaxed">{{ step.summary }}</p>
+            <p v-if="step.summary" class="text-xs text-th-accent leading-relaxed">{{ step.summary }}</p>
             <details v-if="step.detail && step.detail !== step.summary" class="mt-2">
-              <summary class="text-xs text-[#4a7aa5]/60 cursor-pointer hover:text-[#96BEE6]">Show full output</summary>
-              <pre class="mt-2 text-xs text-[#96BEE6]/70 bg-[#001E44] rounded-lg p-3 overflow-x-auto whitespace-pre-wrap max-h-48 overflow-y-auto">{{ step.detail }}</pre>
+              <summary class="text-xs text-th-muted/60 cursor-pointer hover:text-th-accent">Show full output</summary>
+              <pre class="mt-2 text-xs text-th-accent/70 bg-th-page rounded-lg p-3 overflow-x-auto whitespace-pre-wrap max-h-48 overflow-y-auto">{{ step.detail }}</pre>
             </details>
           </div>
         </div>
@@ -235,20 +235,20 @@ function captureStatusLabel(status: string): string {
     </div>
 
     <!-- Processing error -->
-    <div v-if="capture.processingError" class="bg-red-950/30 border border-red-900 rounded-xl p-3 mb-4">
-      <p class="text-xs font-medium text-red-400 mb-1">Processing Error</p>
-      <p class="text-xs text-red-400/80">{{ capture.processingError }}</p>
+    <div v-if="capture.processingError" class="bg-th-danger/15 border border-th-danger/40 rounded-xl p-3 mb-4">
+      <p class="text-xs font-medium text-th-danger mb-1">Processing Error</p>
+      <p class="text-xs text-th-danger/80">{{ capture.processingError }}</p>
     </div>
 
     <!-- Resulting Items -->
     <div v-if="items.length" class="mb-4">
-      <h3 class="text-sm font-medium text-[#96BEE6] mb-3">Identified Items</h3>
+      <h3 class="text-sm font-medium text-th-accent mb-3">Identified Items</h3>
       <div class="space-y-2">
         <router-link
           v-for="item in items"
           :key="item.id"
           :to="`/items/${item.id}`"
-          class="block bg-[#041e3e] border border-[#0a2a52] hover:border-[#1e407c]/50 rounded-xl p-3 transition-colors"
+          class="block bg-th-inset border border-th-line hover:border-th-edge/50 rounded-xl p-3 transition-colors"
         >
           <div class="flex items-center gap-3">
             <img
@@ -256,18 +256,18 @@ function captureStatusLabel(status: string): string {
               :src="item.photoUrls[0]"
               class="w-12 h-12 object-cover rounded-lg shrink-0"
             />
-            <div v-else class="w-12 h-12 bg-[#0a2a52] rounded-lg shrink-0 flex items-center justify-center text-xs text-[#96BEE6]/70 uppercase">
+            <div v-else class="w-12 h-12 bg-th-card rounded-lg shrink-0 flex items-center justify-center text-xs text-th-accent/70 uppercase">
               {{ item.type }}
             </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 mb-0.5">
-                <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6]">{{ item.type }}</span>
-                <span v-if="item.aiConfidence" class="text-xs text-[#4a7aa5]/60">{{ Math.round(item.aiConfidence * 100) }}%</span>
+                <span class="text-xs px-2 py-0.5 rounded-full bg-th-card text-th-accent">{{ item.type }}</span>
+                <span v-if="item.aiConfidence" class="text-xs text-th-muted/60">{{ Math.round(item.aiConfidence * 100) }}%</span>
               </div>
-              <h4 class="font-medium text-white truncate text-sm">{{ item.name }}</h4>
-              <p v-if="item.brand" class="text-xs text-[#96BEE6]/70 truncate">{{ item.brand }} {{ item.category ? `/ ${item.category}` : '' }}</p>
+              <h4 class="font-medium text-th-text truncate text-sm">{{ item.name }}</h4>
+              <p v-if="item.brand" class="text-xs text-th-accent/70 truncate">{{ item.brand }} {{ item.category ? `/ ${item.category}` : '' }}</p>
             </div>
-            <span class="text-[#4a7aa5]/60 text-sm">&rarr;</span>
+            <span class="text-th-muted/60 text-sm">&rarr;</span>
           </div>
         </router-link>
       </div>
@@ -275,8 +275,8 @@ function captureStatusLabel(status: string): string {
 
     <!-- Empty state while processing -->
     <div v-else-if="capture.status === 'processing'" class="text-center py-6">
-      <div class="inline-block w-5 h-5 border-2 border-[#1e407c] border-t-[#96BEE6] rounded-full animate-spin mb-3"></div>
-      <p class="text-[#96BEE6]/70 text-sm">Processing your capture...</p>
+      <div class="inline-block w-5 h-5 border-2 border-th-edge border-t-th-accent rounded-full animate-spin mb-3"></div>
+      <p class="text-th-accent/70 text-sm">Processing your capture...</p>
     </div>
   </div>
 </template>

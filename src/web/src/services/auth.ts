@@ -1,6 +1,7 @@
 import axios from 'axios'
 import api from './api'
 import type { User } from './users'
+import { applyTheme } from './theme'
 
 export interface RegisterRequest {
   email: string
@@ -150,11 +151,17 @@ export function storeAuth(auth: AuthResponse) {
   localStorage.setItem(USER_KEY, JSON.stringify(auth.user))
 }
 
+export function storeUser(user: User) {
+  localStorage.setItem(USER_KEY, JSON.stringify(user))
+}
+
 export function clearAuth() {
   localStorage.removeItem(TOKEN_KEY)
   localStorage.removeItem(REFRESH_TOKEN_KEY)
   localStorage.removeItem(EXPIRES_AT_KEY)
   localStorage.removeItem(USER_KEY)
+  // The theme belongs to the account, so it must not outlive the session
+  applyTheme(null)
 }
 
 // ---------------------------------------------------------------------------

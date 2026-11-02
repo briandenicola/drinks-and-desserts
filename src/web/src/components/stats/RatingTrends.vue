@@ -5,11 +5,11 @@ import { LineChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent } from 'echarts/components'
 import { SVGRenderer } from 'echarts/renderers'
 import VChart from 'vue-echarts'
-import { useChartTheme } from '../../composables/useChartTheme'
+import { useChartTheme, withAlpha } from '../../composables/useChartTheme'
 
 use([LineChart, GridComponent, TooltipComponent, SVGRenderer])
 
-const { theme } = useChartTheme()
+const { theme, colors } = useChartTheme()
 
 const props = defineProps<{
   ratingTrend: { month: string; avgRating: number; count: number }[]
@@ -44,15 +44,15 @@ const chartOption = computed(() => {
         type: 'line',
         data: ratings,
         smooth: true,
-        lineStyle: { color: '#96BEE6', width: 3 },
-        itemStyle: { color: '#96BEE6' },
+        lineStyle: { color: colors.accent, width: 3 },
+        itemStyle: { color: colors.accent },
         areaStyle: {
           color: {
             type: 'linear',
             x: 0, y: 0, x2: 0, y2: 1,
             colorStops: [
-              { offset: 0, color: 'rgba(150,190,230,0.3)' },
-              { offset: 1, color: 'rgba(150,190,230,0.05)' },
+              { offset: 0, color: withAlpha(colors.accent, 0.3) },
+              { offset: 1, color: withAlpha(colors.accent, 0.05) },
             ],
           },
         },
@@ -64,9 +64,9 @@ const chartOption = computed(() => {
 </script>
 
 <template>
-  <section class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 space-y-3">
-    <h3 class="text-sm font-medium text-[#96BEE6] uppercase tracking-wide">Rating Trends</h3>
-    <div v-if="!ratingTrend.some(m => m.count > 0)" class="text-center py-6 text-[#96BEE6]/50 text-sm">
+  <section class="bg-th-inset border border-th-line rounded-xl p-4 space-y-3">
+    <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">Rating Trends</h3>
+    <div v-if="!ratingTrend.some(m => m.count > 0)" class="text-center py-6 text-th-accent/50 text-sm">
       Not enough rating data yet
     </div>
     <v-chart v-else :option="chartOption" style="height: 280px" autoresize />

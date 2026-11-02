@@ -103,3 +103,22 @@
 - All meaningful changes require team consensus
 - Document architectural decisions here
 - Keep history focused on work, decisions focused on direction
+
+### Account Preferences Theme Allowlist (2026-11-02)
+
+**Author:** Fenster (Frontend). **Status:** Implemented.
+
+**Specification:** Account theme preference allowlist defines exact theme IDs: `dark`, `light`, `british-museum`, `louvre`, `capitoline`, `byzantine`, `modern-greek`. Field is nullable and backward-compatible.
+
+**Implementation:**
+- Frontend saves complete preferences object via existing `GET/PUT api/users/me` endpoints
+- Theme field omitted from request payload when not set; server preserves existing value
+- Logout and account changes reset theme to null (original blue appearance)
+- Stale theme responses after logout ignored by client
+- Accounts without preference (`null`) retain original blue theme as default
+- No schema migration required; nullable design maintains backward compatibility
+
+**Rationale:**
+- Allows forward-compatible theme expansion without breaking existing clients
+- Sending the full preferences object preserves unrelated fields when saving a theme
+- Graceful degradation for old clients unaware of theme field

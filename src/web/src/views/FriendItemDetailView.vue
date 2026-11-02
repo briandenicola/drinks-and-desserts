@@ -92,17 +92,17 @@ onMounted(load)
 
 <template>
   <div class="p-4 max-w-lg mx-auto">
-    <button @click="router.back()" class="text-[#96BEE6] text-sm mb-4">&larr; Back</button>
+    <button @click="router.back()" class="text-th-accent text-sm mb-4">&larr; Back</button>
 
-    <div v-if="isLoading" class="text-center text-[#5a8ab5] py-12">Loading...</div>
+    <div v-if="isLoading" class="text-center text-th-muted-strong py-12">Loading...</div>
 
-    <div v-else-if="error && !item" class="bg-red-900/30 border border-red-700 text-red-300 rounded-xl p-3 text-sm">
+    <div v-else-if="error && !item" class="bg-th-danger/15 border border-th-danger/40 text-th-danger-soft rounded-xl p-3 text-sm">
       {{ error }}
     </div>
 
     <template v-else-if="item">
       <!-- Item detail -->
-      <div class="bg-[#041e3e] border border-[#0a2a52] rounded-xl overflow-hidden mb-4">
+      <div class="bg-th-inset border border-th-line rounded-xl overflow-hidden mb-4">
         <img
           v-if="item.photoUrls?.length"
           :src="item.photoUrls[0]"
@@ -111,26 +111,26 @@ onMounted(load)
 
         <div class="p-4 space-y-3">
           <div class="flex items-center gap-2">
-            <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6]">{{ item.type }}</span>
-            <span v-if="item.category" class="text-xs text-[#5a8ab5]">{{ item.category }}</span>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-th-card text-th-accent">{{ item.type }}</span>
+            <span v-if="item.category" class="text-xs text-th-muted-strong">{{ item.category }}</span>
           </div>
 
-          <h2 class="text-xl font-semibold text-white">{{ item.name }}</h2>
-          <p v-if="item.brand" class="text-[#96BEE6]">{{ item.brand }}</p>
+          <h2 class="text-xl font-semibold text-th-text">{{ item.name }}</h2>
+          <p v-if="item.brand" class="text-th-accent">{{ item.brand }}</p>
 
           <div v-if="item.userRating">
             <StarRating :rating="item.userRating" size="md" />
           </div>
 
-          <p v-if="item.userNotes" class="text-sm text-[#5a8ab5]">{{ item.userNotes }}</p>
+          <p v-if="item.userNotes" class="text-sm text-th-muted-strong">{{ item.userNotes }}</p>
 
-          <div v-if="item.venue" class="text-sm text-[#5a8ab5]">
+          <div v-if="item.venue" class="text-sm text-th-muted-strong">
             Venue: {{ item.venue.name || 'Unknown' }}
           </div>
 
           <div v-if="item.tags?.length" class="flex flex-wrap gap-1">
             <span v-for="tag in item.tags" :key="tag"
-              class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6]">
+              class="text-xs px-2 py-0.5 rounded-full bg-th-card text-th-accent">
               {{ tag }}
             </span>
           </div>
@@ -142,39 +142,39 @@ onMounted(load)
         v-if="!addSuccess"
         @click="addToMyCollection"
         :disabled="isAdding"
-        class="w-full min-h-[44px] bg-[#0a2a52] border border-[#1e407c]/50 hover:border-[#1e407c] disabled:opacity-60 text-[#96BEE6] py-3 rounded-xl font-medium mb-4 transition-colors"
+        class="w-full min-h-[44px] bg-th-card border border-th-edge/50 hover:border-th-edge disabled:opacity-60 text-th-accent py-3 rounded-xl font-medium mb-4 transition-colors"
       >
         {{ isAdding ? 'Adding...' : 'Add to My Collection' }}
       </button>
-      <div v-else class="w-full min-h-[44px] bg-[#0a2a52] border border-[#1e407c]/50 text-[#96BEE6] py-3 rounded-xl font-medium mb-4 text-center">
+      <div v-else class="w-full min-h-[44px] bg-th-card border border-th-edge/50 text-th-accent py-3 rounded-xl font-medium mb-4 text-center">
         Added to your collection
       </div>
 
       <!-- Thoughts section -->
       <section class="space-y-4">
-        <h3 class="text-sm font-medium text-[#96BEE6] uppercase tracking-wide">
+        <h3 class="text-sm font-medium text-th-accent uppercase tracking-wide">
           Thoughts ({{ thoughts.length }})
         </h3>
 
         <!-- Composer -->
-        <div class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 space-y-3">
+        <div class="bg-th-inset border border-th-line rounded-xl p-4 space-y-3">
           <textarea
             v-model="newThoughtContent"
             placeholder="Share your thoughts..."
             maxlength="500"
             rows="3"
-            class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-3 text-white placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c] resize-none"
+            class="w-full bg-th-card border border-th-edge/50 rounded-xl px-4 py-3 text-th-text placeholder-th-muted focus:outline-none focus:border-th-edge resize-none"
           ></textarea>
 
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
-              <span class="text-xs text-[#5a8ab5]">Rate:</span>
+              <span class="text-xs text-th-muted-strong">Rate:</span>
               <button
                 v-for="star in 5"
                 :key="star"
                 @click="newThoughtRating = newThoughtRating === star ? undefined : star"
                 class="text-lg"
-                :class="newThoughtRating && star <= newThoughtRating ? 'text-[#96BEE6]' : 'text-[#1e407c]/50'"
+                :class="newThoughtRating && star <= newThoughtRating ? 'text-th-accent' : 'text-th-edge/50'"
               >
                 &#9733;
               </button>
@@ -183,43 +183,43 @@ onMounted(load)
             <button
               @click="submitThought"
               :disabled="!newThoughtContent.trim() || isSubmitting"
-              class="bg-[#1e407c] hover:bg-[#2a5299] disabled:bg-[#0a2a52] disabled:text-[#4a7aa5]/60 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors"
+              class="bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors"
             >
               {{ isSubmitting ? 'Posting...' : 'Post' }}
             </button>
           </div>
-          <p class="text-xs text-[#4a7aa5] text-right">{{ newThoughtContent.length }}/500</p>
+          <p class="text-xs text-th-muted text-right">{{ newThoughtContent.length }}/500</p>
         </div>
 
         <!-- Thoughts list -->
         <div v-for="thought in thoughts" :key="thought.id"
-          class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4">
+          class="bg-th-inset border border-th-line rounded-xl p-4">
           <div class="flex items-start justify-between mb-2">
             <div>
-              <span class="font-medium text-white text-sm">{{ thought.authorDisplayName }}</span>
-              <span class="text-xs text-[#4a7aa5] ml-2">{{ new Date(thought.createdAt).toLocaleDateString() }}</span>
+              <span class="font-medium text-th-text text-sm">{{ thought.authorDisplayName }}</span>
+              <span class="text-xs text-th-muted ml-2">{{ new Date(thought.createdAt).toLocaleDateString() }}</span>
             </div>
             <button
               v-if="thought.authorId === auth.user?.id"
               @click="deleteThought(thought)"
-              class="text-red-400 text-xs hover:text-red-300"
+              class="text-th-danger text-xs hover:text-th-danger-soft"
             >
               Delete
             </button>
           </div>
           <div v-if="thought.rating" class="mb-1">
             <span v-for="star in 5" :key="star"
-              :class="star <= thought.rating ? 'text-[#96BEE6]' : 'text-[#1e407c]/50'">&#9733;</span>
+              :class="star <= thought.rating ? 'text-th-accent' : 'text-th-edge/50'">&#9733;</span>
           </div>
-          <p class="text-sm text-[#96BEE6]/80">{{ thought.content }}</p>
+          <p class="text-sm text-th-accent/80">{{ thought.content }}</p>
         </div>
 
-        <div v-if="thoughts.length === 0" class="text-center text-[#5a8ab5] py-4 text-sm">
+        <div v-if="thoughts.length === 0" class="text-center text-th-muted-strong py-4 text-sm">
           No thoughts yet. Be the first to share one.
         </div>
       </section>
 
-      <div v-if="error" class="bg-red-900/30 border border-red-700 text-red-300 rounded-xl p-3 text-sm mt-4">
+      <div v-if="error" class="bg-th-danger/15 border border-th-danger/40 text-th-danger-soft rounded-xl p-3 text-sm mt-4">
         {{ error }}
       </div>
     </template>

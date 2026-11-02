@@ -28,7 +28,7 @@ function onScroll(e: Event) {
   <div class="flex-1 overflow-y-auto p-6" @scroll="onScroll">
     <div
       v-if="!items.length"
-      class="text-[#96BEE6]/70 text-center py-20"
+      class="text-th-accent/70 text-center py-20"
     >
       <p>No items match the current filters.</p>
     </div>
@@ -41,8 +41,8 @@ function onScroll(e: Event) {
         v-for="item in items"
         :key="item.id"
         @click="emit('select', item.id)"
-        class="text-left bg-[#041e3e] border rounded-xl p-4 transition-colors hover:border-[#1e407c]/80 focus:outline-none focus:ring-1 focus:ring-[#96BEE6]/40"
-        :class="selectedId === item.id ? 'border-[#96BEE6]' : 'border-[#0a2a52]'"
+        class="text-left bg-th-inset border rounded-xl p-4 transition-colors hover:border-th-edge/80 focus:outline-none focus:ring-1 focus:ring-th-accent/40"
+        :class="selectedId === item.id ? 'border-th-accent' : 'border-th-line'"
       >
         <img
           v-if="item.photoUrls.length"
@@ -52,17 +52,17 @@ function onScroll(e: Event) {
         />
         <div
           v-else
-          class="w-full h-36 bg-[#0a2a52] rounded-lg mb-3 flex items-center justify-center text-sm text-[#96BEE6]/70 uppercase"
+          class="w-full h-36 bg-th-card rounded-lg mb-3 flex items-center justify-center text-sm text-th-accent/70 uppercase"
         >
           {{ item.type }}
         </div>
 
-        <span class="inline-block text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6] mb-1">
+        <span class="inline-block text-xs px-2 py-0.5 rounded-full bg-th-card text-th-accent mb-1">
           {{ item.type }}
         </span>
 
-        <h3 class="font-medium text-white truncate text-sm">{{ item.name }}</h3>
-        <p v-if="item.brand" class="text-xs text-[#96BEE6]/70 truncate">{{ item.brand }}</p>
+        <h3 class="font-medium text-th-text truncate text-sm">{{ item.name }}</h3>
+        <p v-if="item.brand" class="text-xs text-th-accent/70 truncate">{{ item.brand }}</p>
 
         <div v-if="item.userRating" class="mt-2">
           <StarRating :rating="item.userRating" size="sm" />
@@ -70,7 +70,7 @@ function onScroll(e: Event) {
       </button>
     </div>
 
-    <div v-if="isLoading && items.length" class="text-[#96BEE6]/70 text-center py-6 text-sm">
+    <div v-if="isLoading && items.length" class="text-th-accent/70 text-center py-6 text-sm">
       Loading more...
     </div>
   </div>

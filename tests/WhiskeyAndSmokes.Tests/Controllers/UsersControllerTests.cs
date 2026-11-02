@@ -205,4 +205,76 @@ public class UsersControllerTests : IClassFixture<CustomWebApplicationFactory>
         var response = await _client.DeleteAsync("/api/users/me/api-keys/key-to-revoke");
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
-}
+
+    [Theory]
+    [InlineData("dark")]
+    [InlineData("light")]
+    [InlineData("british-museum")]
+    [InlineData("louvre")]
+    [InlineData("capitoline")]
+    [InlineData("byzantine")]
+    [InlineData("modern-greek")]
+    public async Task UpdateMe_ValidTheme_PersistsAndIsReturnedByGetMe(string theme)
+    {
+        var user = CreateTestUser(u => u.DisplayName = "Keep Me");
+        User? saved = null;
+        _factory.CosmosDb.GetAsync<User>("users", TestUserId, TestUserId).Returns(_ => saved ?? user);
+        _factory.CosmosDb.UpsertAsync("users", Arg.Any<User>(), Arg.Any<string>())
+            .Returns(callInfo => saved = callInfo.ArgAt<User>(1));
+
+        var put = await _client.PutAsJsonAsync("/api/users/me", new UpdateUserRequest
+        {
+            Preferences = new UserPreferences { Theme = theme, VenueSort = "type" }
+        });
+        put.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await (await _client.GetAsync("/api/users/me")).Content.ReadFromJsonAsync<User>();
+        body!.Preferences.Theme.Should().Be(theme);
+        body.DisplayName.Should().Be("Keep Me");
+        body.Preferences.VenueSort.Should().Be("type");
+    }
+
+    [Fact]
+    public async Task GetMe_AccountWithoutTheme_ReturnsNullTheme()
+    {
+        _factory.CosmosDb.GetAsync<User>("users", TestUserId, TestUserId).Returns(CreateTestUser());
+
+        var body = await (await _client.GetAsync("/api/users/me")).Content.ReadFromJsonAsync<User>();
+        body!.Preferences.Theme.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UpdateMe_PreferencesWithoutTheme_KeepsSavedTheme()
+    {
+        var user = CreateTestUser(u => u.Preferences.Theme = "louvre");
+        _factory.CosmosDb.GetAsync<User>("users", TestUserId, TestUserId).Returns(user);
+        _factory.CosmosDb.UpsertAsync("users", Arg.Any<User>(), Arg.Any<string>())
+            .Returns(callInfo => callInfo.ArgAt<User>(1));
+
+        var response = await _client.PutAsJsonAsync("/api/users/me", new UpdateUserRequest
+        {
+            Preferences = new UserPreferences { DefaultView = "collection" }
+        });
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<User>();
+        body!.Preferences.Theme.Should().Be("louvre");
+        body.Preferences.DefaultView.Should().Be("collection");
+    }
+
+    [Theory]
+    [InlineData("neon")]
+    [InlineData("Dark")]
+    [InlineData("")]
+    public async Task UpdateMe_InvalidTheme_Returns400AndDoesNotSave(string theme)
+    {
+        _factory.CosmosDb.ClearReceivedCalls();
+        _factory.CosmosDb.GetAsync<User>("users", TestUserId, TestUserId).Returns(CreateTestUser());
+
+        var response = await _client.PutAsJsonAsync("/api/users/me", new UpdateUserRequest
+        {
+            Preferences = new UserPreferences { Theme = theme }
+        });
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await _factory.CosmosDb.DidNotReceive().UpsertAsync("users", Arg.Any<User>(), Arg.Any<string>());
+    }}

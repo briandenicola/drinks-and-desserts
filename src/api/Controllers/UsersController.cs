@@ -54,6 +54,9 @@ public class UsersController : ControllerBase
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
+        if (request.Preferences?.Theme != null && !AppThemes.IsValid(request.Preferences.Theme))
+            return BadRequest(new { message = $"Invalid theme. Allowed values: {string.Join(", ", AppThemes.Ids)}" });
+
         using var activity = Diagnostics.Auth.StartActivity("UserUpdateProfile");
         var userId = GetUserId();
         activity?.SetTag("user.id", userId);
@@ -67,7 +70,12 @@ public class UsersController : ControllerBase
         }
 
         if (request.DisplayName != null) user.DisplayName = request.DisplayName;
-        if (request.Preferences != null) user.Preferences = request.Preferences;
+        if (request.Preferences != null)
+        {
+            // Clients that omit theme must not wipe a previously saved selection
+            request.Preferences.Theme ??= user.Preferences.Theme;
+            user.Preferences = request.Preferences;
+        }
         user.UpdatedAt = DateTime.UtcNow;
 
         user = await _cosmosDb.UpsertAsync(ContainerName, user, user.PartitionKey);

@@ -1,16 +1,208 @@
 @import "tailwindcss";
 
+/*
+ * Semantic theme tokens. `:root` holds the site's original blue palette, which
+ * stays in effect for accounts with no saved theme. A `data-theme` attribute on
+ * <html> (set by services/theme.ts) swaps in one of the named palettes.
+ * Palette values follow the Aurearia themes.
+ *
+ *   page        app background            inset      panels / sidebars / dropdowns
+ *   card        inputs / inner tiles      card-hover hover surface for card
+ *   line        hairline dividers         edge       input / outline borders
+ *   brand       filled buttons + active   brand-hover
+ *   accent      headings and emphasis     muted      secondary / tertiary text
+ *   text        primary text
+ */
 :root {
-  --color-primary: #1e407c;
-  --color-primary-light: #96BEE6;
-  --color-surface: #001E44;
-  --color-surface-light: #0a2a52;
-  --color-text: #ffffff;
-  --color-text-muted: #96BEE6;
+  color-scheme: dark;
+  --th-page: #001e44;
+  --th-inset: #041e3e;
+  --th-card: #0a2a52;
+  --th-card-hover: #0a2a52;
+  --th-line: #0a2a52;
+  --th-edge: #1e407c;
+  --th-brand: #1e407c;
+  --th-brand-hover: #2a5299;
+  --th-accent: #96bee6;
+  --th-muted: #4a7aa5;
+  --th-muted-strong: #5a8ab5;
+  --th-text: #ffffff;
+  --th-danger: oklch(70.4% 0.191 22.216);
+  --th-danger-soft: oklch(80.8% 0.114 19.571);
+  --th-success: oklch(79.2% 0.209 151.711);
+  --th-success-soft: oklch(87.1% 0.15 154.449);
+  --th-warning: oklch(85.2% 0.199 91.936);
+  --th-sky: oklch(74.6% 0.16 232.661);
+  --th-blue: oklch(70.7% 0.165 254.624);
+  --th-pink: oklch(71.8% 0.202 349.761);
+  --th-emerald: oklch(76.5% 0.177 163.223);
+}
+
+@theme inline {
+  --color-th-warning: var(--th-warning);
+  --color-th-sky: var(--th-sky);
+  --color-th-blue: var(--th-blue);
+  --color-th-pink: var(--th-pink);
+  --color-th-emerald: var(--th-emerald);
+  --color-th-page: var(--th-page);
+  --color-th-inset: var(--th-inset);
+  --color-th-card: var(--th-card);
+  --color-th-card-hover: var(--th-card-hover);
+  --color-th-line: var(--th-line);
+  --color-th-edge: var(--th-edge);
+  --color-th-brand: var(--th-brand);
+  --color-th-brand-hover: var(--th-brand-hover);
+  --color-th-accent: var(--th-accent);
+  --color-th-muted: var(--th-muted);
+  --color-th-muted-strong: var(--th-muted-strong);
+  --color-th-text: var(--th-text);
+  --color-th-danger: var(--th-danger);
+  --color-th-danger-soft: var(--th-danger-soft);
+  --color-th-success: var(--th-success);
+  --color-th-success-soft: var(--th-success-soft);
+}
+
+[data-theme="dark"] {
+  --th-page: #0f0f1a;
+  --th-inset: #1a1a2e;
+  --th-card: #16213e;
+  --th-card-hover: #1a2747;
+  --th-line: rgba(201, 168, 76, 0.15);
+  --th-edge: rgba(201, 168, 76, 0.4);
+  --th-brand: #7a5f22;
+  --th-brand-hover: #93732b;
+  --th-accent: #d4b96a;
+  --th-muted: #8a8068;
+  --th-muted-strong: #a09880;
+  --th-text: #e8e0d0;
+  --th-danger: #fb8476;
+  --th-danger-soft: #fb8476;
+  --th-success: #2ecc71;
+  --th-success-soft: #2ecc71;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --th-page: #f5f0e8;
+  --th-inset: #ffffff;
+  --th-card: #f0ebe3;
+  --th-card-hover: #ede5d8;
+  --th-line: rgba(154, 123, 46, 0.2);
+  --th-edge: rgba(154, 123, 46, 0.5);
+  --th-brand: #8a6d3b;
+  --th-brand-hover: #6b5520;
+  --th-accent: #6b5520;
+  --th-muted: #6e6350;
+  --th-muted-strong: #5c5040;
+  --th-text: #2c2416;
+  --th-danger: #a63125;
+  --th-danger-soft: #a63125;
+  --th-success: #146e44;
+  --th-success-soft: #146e44;
+  --th-warning: #8a5a00;
+  --th-sky: #0b6a94;
+  --th-blue: #1f55b5;
+  --th-pink: #a3245f;
+  --th-emerald: #0f6e55;
+}
+
+[data-theme="british-museum"] {
+  --th-page: #0c0c0b;
+  --th-inset: #131312;
+  --th-card: #1a1a19;
+  --th-card-hover: #222221;
+  --th-line: rgba(216, 212, 204, 0.15);
+  --th-edge: rgba(216, 212, 204, 0.4);
+  --th-brand: #5a5650;
+  --th-brand-hover: #6e6a62;
+  --th-accent: #f0ece4;
+  --th-muted: #8a867e;
+  --th-muted-strong: #a8a49c;
+  --th-text: #e8e4dc;
+  --th-danger: #fb8476;
+  --th-danger-soft: #fb8476;
+  --th-success: #2ecc71;
+  --th-success-soft: #2ecc71;
+}
+
+[data-theme="louvre"] {
+  --th-page: #1a1510;
+  --th-inset: #231c14;
+  --th-card: #2a2218;
+  --th-card-hover: #32291e;
+  --th-line: rgba(151, 123, 60, 0.18);
+  --th-edge: rgba(151, 123, 60, 0.5);
+  --th-brand: #843c00;
+  --th-brand-hover: #9a4a08;
+  --th-accent: #b8984a;
+  --th-muted: #9a8764;
+  --th-muted-strong: #b0a080;
+  --th-text: #ffffff;
+  --th-danger: #fb8476;
+  --th-danger-soft: #fb8476;
+  --th-success: #2ecc71;
+  --th-success-soft: #2ecc71;
+}
+
+[data-theme="capitoline"] {
+  --th-page: #0a0808;
+  --th-inset: #120e0e;
+  --th-card: #1a1212;
+  --th-card-hover: #221818;
+  --th-line: rgba(240, 188, 66, 0.18);
+  --th-edge: rgba(240, 188, 66, 0.45);
+  --th-brand: #8e1f2f;
+  --th-brand-hover: #a62a3b;
+  --th-accent: #f0bc42;
+  --th-muted: #a09c9e;
+  --th-muted-strong: #cacacc;
+  --th-text: #f0e8d8;
+  --th-danger: #fb8476;
+  --th-danger-soft: #fb8476;
+  --th-success: #2ecc71;
+  --th-success-soft: #2ecc71;
+}
+
+[data-theme="byzantine"] {
+  --th-page: #100a08;
+  --th-inset: #180e0c;
+  --th-card: #1e1210;
+  --th-card-hover: #261816;
+  --th-line: rgba(255, 191, 0, 0.18);
+  --th-edge: rgba(255, 191, 0, 0.45);
+  --th-brand: #ba0e09;
+  --th-brand-hover: #d11a14;
+  --th-accent: #ffbf00;
+  --th-muted: #a8885c;
+  --th-muted-strong: #c8a870;
+  --th-text: #f5e8d0;
+  --th-danger: #fb8476;
+  --th-danger-soft: #fb8476;
+  --th-success: #2ecc71;
+  --th-success-soft: #2ecc71;
+}
+
+[data-theme="modern-greek"] {
+  --th-page: #060d18;
+  --th-inset: #0a1424;
+  --th-card: #0e1c30;
+  --th-card-hover: #12243a;
+  --th-line: rgba(13, 94, 175, 0.35);
+  --th-edge: rgba(13, 94, 175, 0.65);
+  --th-brand: #0d5eaf;
+  --th-brand-hover: #1570c8;
+  --th-accent: #ffffff;
+  --th-muted: #6f84b4;
+  --th-muted-strong: #8099c8;
+  --th-text: #e8f0ff;
+  --th-danger: #fb8476;
+  --th-danger-soft: #fb8476;
+  --th-success: #2ecc71;
+  --th-success-soft: #2ecc71;
 }
 
 body {
-  @apply bg-[#001E44] text-white min-h-screen;
+  @apply bg-th-page text-th-text min-h-screen;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   touch-action: manipulation;
