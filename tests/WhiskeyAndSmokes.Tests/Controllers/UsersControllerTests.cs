@@ -192,6 +192,69 @@ public class UsersControllerTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task CreateApiKey_DefaultsToReadCapabilityOnly()
+    {
+        var user = CreateTestUser(u => u.ApiKeys = []);
+        _factory.CosmosDb.GetAsync<User>("users", TestUserId, TestUserId).Returns(user);
+        _factory.CosmosDb.UpsertAsync("users", Arg.Any<User>(), Arg.Any<string>())
+            .Returns(callInfo => callInfo.ArgAt<User>(1));
+
+        var request = new CreateApiKeyRequest { Name = "Read Only Key" };
+        var response = await _client.PostAsJsonAsync("/api/users/me/api-keys", request);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<CreateApiKeyResponse>();
+        body.Should().NotBeNull();
+        body!.Capabilities.Should().BeEquivalentTo([ApiKeyCapability.Read]);
+    }
+
+    [Fact]
+    public async Task CreateApiKey_RequestingAgentic_GrantsBothCapabilities()
+    {
+        var user = CreateTestUser(u => u.ApiKeys = []);
+        _factory.CosmosDb.GetAsync<User>("users", TestUserId, TestUserId).Returns(user);
+        _factory.CosmosDb.UpsertAsync("users", Arg.Any<User>(), Arg.Any<string>())
+            .Returns(callInfo => callInfo.ArgAt<User>(1));
+
+        var request = new CreateApiKeyRequest { Name = "Agentic Key", Capabilities = [ApiKeyCapability.Agentic] };
+        var response = await _client.PostAsJsonAsync("/api/users/me/api-keys", request);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<CreateApiKeyResponse>();
+        body.Should().NotBeNull();
+        body!.Capabilities.Should().BeEquivalentTo([ApiKeyCapability.Read, ApiKeyCapability.Agentic]);
+    }
+
+    [Fact]
+    public async Task CreateApiKey_InvalidCapability_Returns400()
+    {
+        var user = CreateTestUser(u => u.ApiKeys = []);
+        _factory.CosmosDb.GetAsync<User>("users", TestUserId, TestUserId).Returns(user);
+
+        var request = new CreateApiKeyRequest { Name = "Bad Key", Capabilities = ["admin"] };
+        var response = await _client.PostAsJsonAsync("/api/users/me/api-keys", request);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task ListApiKeys_LegacyKeyWithoutCapabilities_ShowsReadAndWrite()
+    {
+        var user = CreateTestUser(u => u.ApiKeys =
+        [
+            new ApiKey { Id = "legacy-key", Name = "Legacy", Prefix = "ws_legacy...", KeyHash = "hash", Capabilities = [] }
+        ]);
+        _factory.CosmosDb.GetAsync<User>("users", TestUserId, TestUserId).Returns(user);
+
+        var response = await _client.GetAsync("/api/users/me/api-keys");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<List<ApiKeyResponse>>();
+        body.Should().NotBeNull();
+        // It could always capture, and keeps that until its access is changed.
+        body!.Single(k => k.Id == "legacy-key").Capabilities.Should().Equal(ApiKeyCapability.Read, ApiKeyCapability.Write);
+    }
+
+    [Fact]
     public async Task RevokeApiKey_ReturnsOk()
     {
         var user = CreateTestUser(u => u.ApiKeys =
@@ -277,4 +340,70 @@ public class UsersControllerTests : IClassFixture<CustomWebApplicationFactory>
         });
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         await _factory.CosmosDb.DidNotReceive().UpsertAsync("users", Arg.Any<User>(), Arg.Any<string>());
-    }}
+    }
+
+    // Keys made before write was its own option could always capture, so they keep it.
+    [Fact]
+    public void OlderKeysKeepWrite_NewKeysGetWhatWasPicked()
+    {
+        new ApiKey { Capabilities = [ApiKeyCapability.Read] }.Effective().Should().Equal("read", "write");
+        new ApiKey { Capabilities = ["read", "agentic"] }.Effective().Should().Equal("read", "write", "agentic");
+        new ApiKey { Capabilities = [ApiKeyCapability.Read], AccessSet = true }.Effective().Should().Equal("read");
+        new ApiKey { Capabilities = ["agentic", "write"], AccessSet = true }.Effective().Should().Equal("read", "write", "agentic");
+    }
+
+    [Fact]
+    public async Task UpdateApiKey_ChangesAccessInPlace()
+    {
+        var user = CreateTestUser(u => u.ApiKeys = [new ApiKey { Id = "key-1", Name = "Shortcut", Prefix = "ws_abc...", KeyHash = "hash1" }]);
+        _factory.CosmosDb.GetAsync<User>("users", TestUserId, TestUserId).Returns(user);
+        _factory.CosmosDb.UpsertAsync("users", Arg.Any<User>(), Arg.Any<string>())
+            .Returns(callInfo => callInfo.ArgAt<User>(1));
+
+        var response = await _client.PatchAsJsonAsync("/api/users/me/api-keys/key-1", new UpdateApiKeyRequest { Capabilities = ["read"] });
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<ApiKeyResponse>();
+        body!.Capabilities.Should().Equal("read");
+        user.ApiKeys[0].AccessSet.Should().BeTrue();
+        user.ApiKeys[0].KeyHash.Should().Be("hash1", "the key itself stays the same");
+
+        response = await _client.PatchAsJsonAsync("/api/users/me/api-keys/key-1", new UpdateApiKeyRequest { Capabilities = ["read", "write"] });
+        (await response.Content.ReadFromJsonAsync<ApiKeyResponse>())!.Capabilities.Should().Equal("read", "write");
+
+        (await _client.PatchAsJsonAsync("/api/users/me/api-keys/key-1", new UpdateApiKeyRequest { Capabilities = ["admin"] }))
+            .StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await _client.PatchAsJsonAsync("/api/users/me/api-keys/nope", new UpdateApiKeyRequest { Capabilities = ["read"] }))
+            .StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task CreateApiKey_WithWrite()
+    {
+        var user = CreateTestUser(u => u.ApiKeys = []);
+        _factory.CosmosDb.GetAsync<User>("users", TestUserId, TestUserId).Returns(user);
+        _factory.CosmosDb.UpsertAsync("users", Arg.Any<User>(), Arg.Any<string>())
+            .Returns(callInfo => callInfo.ArgAt<User>(1));
+
+        var response = await _client.PostAsJsonAsync("/api/users/me/api-keys", new CreateApiKeyRequest { Name = "Shortcut", Capabilities = ["read", "write"] });
+        (await response.Content.ReadFromJsonAsync<CreateApiKeyResponse>())!.Capabilities.Should().Equal("read", "write");
+        user.ApiKeys[0].AccessSet.Should().BeTrue();
+    }
+
+    // A capture adds an item: a Read key can't, a Read + write key can.
+    [Theory]
+    [InlineData("read", HttpStatusCode.Forbidden)]
+    [InlineData("read,agentic", HttpStatusCode.Forbidden)]
+    [InlineData("read,write", HttpStatusCode.BadRequest)] // past the check; no image sent
+    public async Task Capture_NeedsWrite(string capabilities, HttpStatusCode expected)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/external/capture")
+        {
+            Content = new MultipartFormDataContent { { new StringContent("a note"), "note" } },
+        };
+        request.Headers.Add("X-Test-ApiKeyCapabilities", capabilities);
+        var response = await _client.SendAsync(request);
+        response.StatusCode.Should().Be(expected);
+        if (expected == HttpStatusCode.Forbidden)
+            (await response.Content.ReadAsStringAsync()).Should().Contain("Read + write");
+    }
+}

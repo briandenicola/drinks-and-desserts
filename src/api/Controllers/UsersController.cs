@@ -141,6 +141,7 @@ public class UsersController : ControllerBase
             CreatedAt = k.CreatedAt,
             LastUsedAt = k.LastUsedAt,
             IsRevoked = k.IsRevoked,
+            Capabilities = k.Effective(),
         }).ToList();
 
         return Ok(keys);
@@ -162,6 +163,16 @@ public class UsersController : ControllerBase
         if (activeKeys >= 5)
             return BadRequest(new { message = "Maximum of 5 active API keys allowed" });
 
+        var requested = (request.Capabilities ?? [])
+            .Select(c => c.Trim().ToLowerInvariant())
+            .Distinct()
+            .ToList();
+        if (requested.Any(c => !ApiKeyCapability.All.Contains(c)))
+            return BadRequest(new { message = $"Invalid capability. Allowed: {string.Join(", ", ApiKeyCapability.All)}" });
+
+        // "read" is always included — it's the baseline. "write" and "agentic" are additive.
+        var capabilities = ApiKeyCapability.Canonical(requested);
+
         var rawKey = ApiKeyAuthHandler.GenerateKey();
         var keyHash = ApiKeyAuthHandler.HashKey(rawKey);
         var prefix = rawKey[..10] + "...";
@@ -171,14 +182,16 @@ public class UsersController : ControllerBase
             Name = request.Name,
             Prefix = prefix,
             KeyHash = keyHash,
+            Capabilities = capabilities,
+            AccessSet = true,
         };
 
         user.ApiKeys.Add(apiKey);
         user.UpdatedAt = DateTime.UtcNow;
         await _cosmosDb.UpsertAsync(ContainerName, user, user.PartitionKey);
 
-        _logger.LogInformation("API key created for user {UserId}: keyId={KeyId}, name={Name}",
-            userId, apiKey.Id, request.Name);
+        _logger.LogInformation("API key created for user {UserId}: keyId={KeyId}, name={Name}, capabilities={Capabilities}",
+            userId, apiKey.Id, request.Name, string.Join(",", capabilities));
 
         return Ok(new CreateApiKeyResponse
         {
@@ -187,6 +200,41 @@ public class UsersController : ControllerBase
             Key = rawKey,
             Prefix = prefix,
             CreatedAt = apiKey.CreatedAt,
+            Capabilities = capabilities,
+        });
+    }
+
+    /// <summary>Changes what a key may do without replacing it, so the app using it keeps working.</summary>
+    [HttpPatch("me/api-keys/{keyId}")]
+    public async Task<ActionResult<ApiKeyResponse>> UpdateApiKey(string keyId, [FromBody] UpdateApiKeyRequest request)
+    {
+        var requested = (request.Capabilities ?? []).Select(c => c.Trim().ToLowerInvariant()).Distinct().ToList();
+        if (requested.Any(c => !ApiKeyCapability.All.Contains(c)))
+            return BadRequest(new { message = $"Invalid capability. Allowed: {string.Join(", ", ApiKeyCapability.All)}" });
+
+        var userId = GetUserId();
+        var user = await _cosmosDb.GetAsync<User>(ContainerName, userId, userId);
+        if (user == null) return NotFound();
+
+        var apiKey = user.ApiKeys.FirstOrDefault(k => k.Id == keyId && !k.IsRevoked);
+        if (apiKey == null) return NotFound(new { message = "No such key, or it was revoked." });
+
+        apiKey.Capabilities = ApiKeyCapability.Canonical(requested);
+        apiKey.AccessSet = true;
+        user.UpdatedAt = DateTime.UtcNow;
+        await _cosmosDb.UpsertAsync(ContainerName, user, user.PartitionKey);
+
+        _logger.LogInformation("API key access changed for user {UserId}: keyId={KeyId}, capabilities={Capabilities}",
+            userId, keyId, string.Join(",", apiKey.Capabilities));
+        return Ok(new ApiKeyResponse
+        {
+            Id = apiKey.Id,
+            Name = apiKey.Name,
+            Prefix = apiKey.Prefix,
+            CreatedAt = apiKey.CreatedAt,
+            LastUsedAt = apiKey.LastUsedAt,
+            IsRevoked = apiKey.IsRevoked,
+            Capabilities = apiKey.Effective(),
         });
     }
 

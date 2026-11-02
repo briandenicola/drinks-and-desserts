@@ -348,12 +348,26 @@ public class UpdatePromptRequest
     public string Content { get; set; } = string.Empty;
 }
 
+public class UpdateApiKeyRequest
+{
+    /// <summary>"read" always; "write" and "agentic" when given.</summary>
+    [JsonPropertyName("capabilities")]
+    public List<string>? Capabilities { get; set; }
+}
+
 public class CreateApiKeyRequest
 {
     [JsonPropertyName("name")]
     [Required]
     [StringLength(100)]
     public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Optional MCP capability scopes: "read" (default, baseline read-only tools) and/or
+    /// "agentic" (AI-pipeline tools like get_recommendations). Defaults to ["read"].
+    /// </summary>
+    [JsonPropertyName("capabilities")]
+    public List<string>? Capabilities { get; set; }
 }
 
 public class AddPhotoRequest

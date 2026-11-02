@@ -49,6 +49,11 @@ public class ExternalController : ControllerBase
     {
         var userId = GetUserId();
 
+        // A capture adds an item, so the key needs write access.
+        var capabilities = (User.FindFirstValue("api_key_capabilities") ?? "").Split(',', StringSplitOptions.TrimEntries);
+        if (!capabilities.Contains(ApiKeyCapability.Write))
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = "This API key can only read. Give it Read + write access on your Profile page to capture with it." });
+
         if (note != null && note.Length > 1000)
             return BadRequest(new { message = "Note must be 1000 characters or less" });
 

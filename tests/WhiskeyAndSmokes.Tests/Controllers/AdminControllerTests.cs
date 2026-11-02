@@ -80,7 +80,36 @@ public class AdminControllerTests
         await cosmos.DidNotReceiveWithAnyArgs().UpsertAsync<AppAuthSettingsDocument>(default!, default!, default!);
     }
 
-    private static AdminController CreateController(ICosmosDbService cosmos, string userId, IAuthService? authService = null)
+    [Fact]
+    public void GetMcpSettings_DefaultsToDisabled()
+    {
+        var cosmos = Substitute.For<ICosmosDbService>();
+        var controller = CreateController(cosmos, "admin-1");
+
+        var result = controller.GetMcpSettings();
+
+        var ok = result.Result.Should().BeOfType<OkObjectResult>().Subject;
+        ok.Value.Should().BeOfType<McpSettings>().Which.Enabled.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task UpdateMcpSettings_PersistsAndReflectsEnabledState()
+    {
+        var cosmos = Substitute.For<ICosmosDbService>();
+        cosmos.UpsertAsync("settings", Arg.Any<McpSettingsDocument>(), Arg.Any<string>())
+            .Returns(call => call.ArgAt<McpSettingsDocument>(1));
+        var mcpSettings = new McpSettingsService();
+        var controller = CreateController(cosmos, "admin-1", mcpSettings: mcpSettings);
+
+        var result = await controller.UpdateMcpSettings(new McpSettings { Enabled = true });
+
+        var ok = result.Result.Should().BeOfType<OkObjectResult>().Subject;
+        ok.Value.Should().BeOfType<McpSettings>().Which.Enabled.Should().BeTrue();
+        mcpSettings.IsEnabled.Should().BeTrue();
+        await cosmos.Received(1).UpsertAsync("settings", Arg.Is<McpSettingsDocument>(d => d.Settings.Enabled), Arg.Any<string>());
+    }
+
+    private static AdminController CreateController(ICosmosDbService cosmos, string userId, IAuthService? authService = null, McpSettingsService? mcpSettings = null)
     {
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -94,6 +123,7 @@ public class AdminControllerTests
             Substitute.For<IPromptService>(),
             new DynamicLogLevelService(),
             new FoundryStatusService(),
+            mcpSettings ?? new McpSettingsService(),
             configuration,
             NullLogger<AdminController>.Instance);
         var identity = new ClaimsIdentity([

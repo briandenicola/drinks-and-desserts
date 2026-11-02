@@ -148,13 +148,19 @@ public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions
         var email = Request.Headers["X-Test-Email"].FirstOrDefault()
             ?? CustomWebApplicationFactory.TestUserEmail;
 
-        var claims = new[]
+        var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, userId),
             new Claim(ClaimTypes.Email, email),
             new Claim(ClaimTypes.Role, role),
             new Claim("sub", userId),
         };
+        // Acts as an API key with these capabilities, as ApiKeyAuthHandler would.
+        if (Request.Headers.TryGetValue("X-Test-ApiKeyCapabilities", out var caps))
+        {
+            claims.Add(new Claim("auth_method", "api_key"));
+            claims.Add(new Claim("api_key_capabilities", caps.ToString()));
+        }
 
         var identity = new ClaimsIdentity(claims, "TestScheme");
         var principal = new ClaimsPrincipal(identity);

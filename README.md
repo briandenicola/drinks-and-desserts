@@ -20,6 +20,7 @@ Track your drinks, coffee, desserts, and venues. Snap a photo, let AI do the res
 - **Autocomplete** for name, brand, tags, and venue labels based on your existing data
 - **Photo management** on items (add, remove photos after capture)
 - **External API** for iOS Shortcuts and other integrations (API key auth)
+- **MCP server** — native Model Context Protocol endpoint for agentic harnesses (e.g. Hermes Agent), with read-only tools plus an AI recommendations tool, gated by capability-scoped API keys (admin-enabled, default-off)
 - **PWA support** — installable on iOS/Android with offline-capable service worker and refresh tokens
 - **Profile** — **Theme** selection with Dark, Light, British Museum, Louvre, Capitoline, Byzantine, and Modern Greek palettes derived from Aurealia. Theme selection auto-saves to signed-in account and syncs across devices. Accounts without a theme preference retain the original blue appearance. Charts and surfaces follow the chosen theme
 
@@ -121,6 +122,7 @@ For detailed architectural explanation, see [Recommendation Engine Documentation
 | [OIDC Sign-in Provider Setup](docs/oidc-setup.md) | Microsoft Entra ID and Pocket ID provider configuration |
 | [AI Agents](docs/ai-agents.md) | Plain-language guide to the agents that read your photos: who they are, where they run, and how they work together |
 | [Recommendation Engine](docs/recommendation-engine.md) | Deep dive into recommendation architecture, AI usage, and why not Foundry agents |
+| [MCP Server](docs/mcp-server.md) | Enabling the MCP endpoint, capability-scoped API keys, tool reference, and client setup (Hermes Agent, Copilot CLI, etc.) |
 | [Screenshot Guide](docs/screenshot-guide.md) | Auto-capture app screenshots for documentation with Playwright |
 
 ## Friends API
@@ -187,6 +189,17 @@ API keys are managed in the Profile tab. Keys are hashed with SHA256 and stored 
 
 Accepted image formats: JPEG, PNG, GIF, WebP, HEIC (max 15MB per file, 50MB total).
 
+### Life store feed
+
+The household life store reads everything with one API key:
+
+```
+GET /api/lifestore/records?limit=200&page=<next>
+Headers: X-API-Key: <your-key>
+```
+
+It answers `{schema, records: [{kind, id, updatedAt, data}], next}`: every item (AI drafts, reviewed and wishlist alike), then every venue, belonging to the key's owner. Pass `next` back as `page` until it is `null`. Photos, capture links, AI processing details and friends' thoughts are not included. `limit` is held to 1–200. A `page` the feed did not give out returns `400`. Spec: `specs/003-life-store-feed/`.
+
 ## Admin Features
 
 Access the admin panel at `/admin` (requires admin role — the first registered user is automatically promoted to admin).
@@ -197,6 +210,7 @@ Access the admin panel at `/admin` (requires admin role — the first registered
 | **AI Prompts** | View prompts for each agent (Vision Analyst, Domain Expert, Data Curator) |
 | **Foundry Status** | Agent validation status, connectivity test, configuration display |
 | **Logging** | Configure per-category log levels at runtime |
+| **MCP Server** | Enable/disable the native MCP endpoint (`/api/mcp`) for agentic harness integrations — see [MCP Server](docs/mcp-server.md) |
 
 ## Security
 
@@ -231,6 +245,7 @@ src/
       AdminController           User management, prompts, logging, diagnostics
       UploadsController         Local file upload/download (dev/self-hosted)
     Models/                     Domain models (Capture, Item, User, Venue, Friendship, Thought, Notification)
+    Mcp/                         Native MCP server tools (read-only collection/venue tools + agentic recommendations tool)
     Services/                   Business logic (Auth, CosmosDB, Blob, Prompts, Notifications)
   AgentInitiator/               CLI tool -- creates/recreates agents in Foundry
     Prompts/                    Agent prompt markdown files

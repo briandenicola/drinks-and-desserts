@@ -17,6 +17,7 @@ public class AdminController : ControllerBase
     private readonly IPromptService _promptService;
     private readonly DynamicLogLevelService _logLevelService;
     private readonly FoundryStatusService _foundryStatus;
+    private readonly McpSettingsService _mcpSettings;
     private readonly IConfiguration _configuration;
     private readonly ILogger<AdminController> _logger;
     private const string UsersContainer = "users";
@@ -27,6 +28,7 @@ public class AdminController : ControllerBase
         IPromptService promptService,
         DynamicLogLevelService logLevelService,
         FoundryStatusService foundryStatus,
+        McpSettingsService mcpSettings,
         IConfiguration configuration,
         ILogger<AdminController> logger)
     {
@@ -35,6 +37,7 @@ public class AdminController : ControllerBase
         _promptService = promptService;
         _logLevelService = logLevelService;
         _foundryStatus = foundryStatus;
+        _mcpSettings = mcpSettings;
         _configuration = configuration;
         _logger = logger;
     }
@@ -251,6 +254,27 @@ public class AdminController : ControllerBase
 
         _logger.LogInformation("Log levels updated and persisted successfully");
         return Ok(_logLevelService.GetSettings());
+    }
+
+    // ── MCP (Model Context Protocol) Server ──────────────────
+
+    /// <summary>
+    /// Read the current enabled/disabled state of the native MCP endpoint (POST /api/mcp).
+    /// Default-off. Gates whether any API key, regardless of capability, can reach the endpoint.
+    /// </summary>
+    [HttpGet("mcp-settings")]
+    public ActionResult<McpSettings> GetMcpSettings()
+    {
+        return Ok(_mcpSettings.GetSettings());
+    }
+
+    [HttpPut("mcp-settings")]
+    public async Task<ActionResult<McpSettings>> UpdateMcpSettings([FromBody] McpSettings request)
+    {
+        var adminId = GetUserId();
+        var settings = await _mcpSettings.SaveToStoreAsync(_cosmosDb, request.Enabled, adminId);
+        _logger.LogInformation("Admin {AdminId} set MCP server enabled={Enabled}", adminId, settings.Enabled);
+        return Ok(settings);
     }
 
     private async Task<int> AdminCountAsync()
