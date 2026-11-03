@@ -14,9 +14,10 @@
  *               gold fills of Capitoline and Byzantine, as in Domus and Watch Tracker)
  *   accent      labels, nav, body accents  muted      secondary / tertiary text
  *   emphasis    headings, selected borders, rings, chart accent (same as accent
- *               except Capitoline, where accent is cream and emphasis is gold)
+ *               except Capitoline and Byzantine, where accent is cream and
+ *               emphasis is gold)
  *   chrome      header, sidebar and bottom nav background (same as inset except
- *               Capitoline, where panels are lighter than the chrome)
+ *               Capitoline and Byzantine, where panels are lighter than the chrome)
  *   heading     titles that sit on text (same as text except the gold of
  *               Capitoline and Byzantine)
  *   text        primary text
@@ -201,15 +202,15 @@
 
 [data-theme="byzantine"] {
   --th-page: #100a08;
-  --th-inset: #180e0c;
-  --th-card: #1e1210;
-  --th-card-hover: #261816;
+  --th-inset: #1e1210;
+  --th-card: #2a1b19;
+  --th-card-hover: #33221f;
   --th-line: rgba(255, 191, 0, 0.18);
   --th-edge: rgba(255, 191, 0, 0.45);
   --th-brand: #ffbf00;
   --th-brand-hover: #ffcb2e;
   --th-on-brand: #1a0e00;
-  --th-accent: #ffbf00;
+  --th-accent: #f5e8d0;
   --th-emphasis: #ffbf00;
   --th-chrome: #180e0c;
   --th-heading: #ffbf00;

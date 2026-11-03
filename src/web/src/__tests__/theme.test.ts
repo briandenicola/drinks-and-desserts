@@ -318,21 +318,24 @@ describe('stylesheet coverage', () => {
     return new RegExp(`${token}:\\s*([^;]+);`).exec(block)?.[1]
   }
 
-  it('only Capitoline separates cream labels from gold, Byzantine heads in gold, and Capitoline lifts inputs above panels', () => {
+  it('only the gold themes separate cream labels from gold headings and lift inputs above panels', () => {
+    const gold = { capitoline: ['#f0bc42', '#f0e8d8'], byzantine: ['#ffbf00', '#f5e8d0'] } as Record<string, [string, string]>
     for (const { id } of THEME_OPTIONS) {
-      if (id === 'capitoline') continue
       const sel = `[data-theme="${id}"]`
+      if (gold[id]) {
+        const [g, cream] = gold[id]
+        expect(valueOf(sel, '--th-emphasis'), id).toBe(g)
+        expect(valueOf(sel, '--th-heading'), id).toBe(g)
+        expect(valueOf(sel, '--th-accent'), id).toBe(cream)
+        expect(valueOf(sel, '--th-text'), id).toBe(cream)
+        expect(valueOf(sel, '--th-card'), id).not.toBe(valueOf(sel, '--th-inset'))
+        expect(valueOf(sel, '--th-chrome'), id).not.toBe(valueOf(sel, '--th-inset'))
+        continue
+      }
       expect(valueOf(sel, '--th-emphasis'), id).toBe(valueOf(sel, '--th-accent'))
       expect(valueOf(sel, '--th-chrome'), id).toBe(valueOf(sel, '--th-inset'))
-      if (id === 'byzantine') expect(valueOf(sel, '--th-heading'), id).toBe('#ffbf00')
-      else expect(valueOf(sel, '--th-heading'), id).toBe(valueOf(sel, '--th-text'))
+      expect(valueOf(sel, '--th-heading'), id).toBe(valueOf(sel, '--th-text'))
     }
-    const cap = '[data-theme="capitoline"]'
-    expect(valueOf(cap, '--th-emphasis')).toBe('#f0bc42')
-    expect(valueOf(cap, '--th-heading')).toBe('#f0bc42')
-    expect(valueOf(cap, '--th-accent')).toBe('#f0e8d8')
-    expect(valueOf(cap, '--th-card')).not.toBe(valueOf(cap, '--th-inset'))
-    expect(valueOf(cap, '--th-chrome')).not.toBe(valueOf(cap, '--th-inset'))
     expect(css).toMatch(/\[data-theme="capitoline"\] body \{[^}]*Inter Capitoline/)
   })
 
