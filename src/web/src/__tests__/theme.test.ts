@@ -336,6 +336,11 @@ describe('stylesheet coverage', () => {
     expect(css).toMatch(/\[data-theme="capitoline"\] body \{[^}]*Inter Capitoline/)
   })
 
+  it('sets Byzantine in Cinzel headings over Inter, as Aurearia does', () => {
+    expect(css).toMatch(/\[data-theme="byzantine"\] body,\s*\[data-theme="capitoline"\] body \{[^}]*Inter Capitoline/)
+    expect(css).toMatch(/:is\(\[data-theme="capitoline"\], \[data-theme="byzantine"\]\) :is\(h1, h2, h3, h4, legend\) \{[^}]*Cinzel/)
+  })
+
   it('colours headings with a heading role, not the label or body text colour', () => {
     const offenders = vueSources()
       .filter(f => /<(?:h[1-4]|legend)\b[^>]*text-th-(?:accent|text)\b/.test(f.text))

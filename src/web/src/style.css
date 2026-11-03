@@ -253,7 +253,8 @@ body {
 }
 
 /*
- * Capitoline typography follows Aurearia: Cinzel headings over Inter body text.
+ * Capitoline and Byzantine typography follows Aurearia: Cinzel headings over
+ * Inter body text.
  * Inter is registered under its own family name so the other palettes keep
  * their existing system-font rendering.
  */
@@ -305,13 +306,14 @@ body {
   src: url('../node_modules/@fontsource/cinzel/files/cinzel-latin-700-normal.woff2') format('woff2');
 }
 
+[data-theme="byzantine"] body,
 [data-theme="capitoline"] body {
   font-family: 'Inter Capitoline', 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 /* Layered so utility colours and weights on individual headings still win */
 @layer base {
-  [data-theme="capitoline"] :is(h1, h2, h3, h4, legend) {
+  :is([data-theme="capitoline"], [data-theme="byzantine"]) :is(h1, h2, h3, h4, legend) {
     font-family: 'Cinzel', Georgia, serif;
     color: var(--th-heading);
     letter-spacing: 0.02em;
