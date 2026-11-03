@@ -17,7 +17,8 @@
  *               except Capitoline, where accent is cream and emphasis is gold)
  *   chrome      header, sidebar and bottom nav background (same as inset except
  *               Capitoline, where panels are lighter than the chrome)
- *   heading     titles that sit on text (same as text except Capitoline gold)
+ *   heading     titles that sit on text (same as text except the gold of
+ *               Capitoline and Byzantine)
  *   text        primary text
  */
 :root {
@@ -211,7 +212,7 @@
   --th-accent: #ffbf00;
   --th-emphasis: #ffbf00;
   --th-chrome: #180e0c;
-  --th-heading: #f5e8d0;
+  --th-heading: #ffbf00;
   --th-muted: #a8885c;
   --th-muted-strong: #c8a870;
   --th-text: #f5e8d0;

@@ -318,13 +318,14 @@ describe('stylesheet coverage', () => {
     return new RegExp(`${token}:\\s*([^;]+);`).exec(block)?.[1]
   }
 
-  it('only Capitoline separates cream labels from gold headings and lifts inputs above panels', () => {
+  it('only Capitoline separates cream labels from gold, Byzantine heads in gold, and Capitoline lifts inputs above panels', () => {
     for (const { id } of THEME_OPTIONS) {
       if (id === 'capitoline') continue
       const sel = `[data-theme="${id}"]`
       expect(valueOf(sel, '--th-emphasis'), id).toBe(valueOf(sel, '--th-accent'))
       expect(valueOf(sel, '--th-chrome'), id).toBe(valueOf(sel, '--th-inset'))
-      expect(valueOf(sel, '--th-heading'), id).toBe(valueOf(sel, '--th-text'))
+      if (id === 'byzantine') expect(valueOf(sel, '--th-heading'), id).toBe('#ffbf00')
+      else expect(valueOf(sel, '--th-heading'), id).toBe(valueOf(sel, '--th-text'))
     }
     const cap = '[data-theme="capitoline"]'
     expect(valueOf(cap, '--th-emphasis')).toBe('#f0bc42')
@@ -348,6 +349,13 @@ describe('stylesheet coverage', () => {
       expect(valueOf(sel, '--th-brand'), id).toBe(valueOf(sel, '--th-emphasis'))
       expect(valueOf(sel, '--th-on-brand'), id).toBe('#1a0e00')
     }
+  })
+
+  it('draws toggle knobs in the on-brand ink when on, so they show on a gold track', () => {
+    const offenders = vueSources()
+      .filter(f => /w-5 h-5 bg-white rounded-full transition-transform/.test(f.text))
+      .map(f => f.path)
+    expect(offenders).toEqual([])
   })
 
   it('never puts hardcoded white text on a brand fill', () => {

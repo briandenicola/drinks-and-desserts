@@ -813,8 +813,8 @@ async function changePassword() {
             :class="pushoverEnabled ? 'bg-th-brand' : 'bg-th-card'"
           >
             <span
-              class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform"
-              :class="pushoverEnabled ? 'translate-x-5' : ''"
+              class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full transition-transform"
+              :class="pushoverEnabled ? 'translate-x-5 bg-th-on-brand' : 'bg-th-muted-strong'"
             />
           </button>
         </div>
@@ -850,8 +850,8 @@ async function changePassword() {
               :class="pushoverSound ? 'bg-th-brand' : 'bg-th-card'"
             >
               <span
-                class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform"
-                :class="pushoverSound ? 'translate-x-5' : ''"
+                class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full transition-transform"
+                :class="pushoverSound ? 'translate-x-5 bg-th-on-brand' : 'bg-th-muted-strong'"
               />
             </button>
           </div>
