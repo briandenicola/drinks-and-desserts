@@ -49,7 +49,7 @@ onMounted(load)
         @click="activeTab = 'collection'"
         class="px-4 py-2.5 min-h-[44px] rounded-full text-sm border transition-colors"
         :class="activeTab === 'collection'
-          ? 'bg-th-brand border-th-edge text-white'
+          ? 'bg-th-brand border-th-edge text-th-on-brand'
           : 'bg-th-card border-th-edge/50 text-th-accent hover:border-th-edge'"
       >
         Collection ({{ items.length }})

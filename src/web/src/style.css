@@ -10,6 +10,8 @@
  *   card        inputs / inner tiles      card-hover hover surface for card
  *   line        hairline dividers         edge       input / outline borders
  *   brand       filled buttons + active   brand-hover
+ *   on-brand    text and icons on a brand fill (white, except dark ink on the
+ *               gold fills of Capitoline and Byzantine, as in Domus and Watch Tracker)
  *   accent      labels, nav, body accents  muted      secondary / tertiary text
  *   emphasis    headings, selected borders, rings, chart accent (same as accent
  *               except Capitoline, where accent is cream and emphasis is gold)
@@ -28,6 +30,7 @@
   --th-edge: #1e407c;
   --th-brand: #1e407c;
   --th-brand-hover: #2a5299;
+  --th-on-brand: #ffffff;
   --th-accent: #96bee6;
   --th-emphasis: #96bee6;
   --th-chrome: #041e3e;
@@ -60,6 +63,7 @@
   --color-th-edge: var(--th-edge);
   --color-th-brand: var(--th-brand);
   --color-th-brand-hover: var(--th-brand-hover);
+  --color-th-on-brand: var(--th-on-brand);
   --color-th-accent: var(--th-accent);
   --color-th-emphasis: var(--th-emphasis);
   --color-th-chrome: var(--th-chrome);
@@ -82,6 +86,7 @@
   --th-edge: rgba(201, 168, 76, 0.4);
   --th-brand: #7a5f22;
   --th-brand-hover: #93732b;
+  --th-on-brand: #ffffff;
   --th-accent: #d4b96a;
   --th-emphasis: #d4b96a;
   --th-chrome: #1a1a2e;
@@ -105,6 +110,7 @@
   --th-edge: rgba(154, 123, 46, 0.5);
   --th-brand: #8a6d3b;
   --th-brand-hover: #6b5520;
+  --th-on-brand: #ffffff;
   --th-accent: #6b5520;
   --th-emphasis: #6b5520;
   --th-chrome: #ffffff;
@@ -132,6 +138,7 @@
   --th-edge: rgba(216, 212, 204, 0.4);
   --th-brand: #5a5650;
   --th-brand-hover: #6e6a62;
+  --th-on-brand: #ffffff;
   --th-accent: #f0ece4;
   --th-emphasis: #f0ece4;
   --th-chrome: #131312;
@@ -154,6 +161,7 @@
   --th-edge: rgba(151, 123, 60, 0.5);
   --th-brand: #843c00;
   --th-brand-hover: #9a4a08;
+  --th-on-brand: #ffffff;
   --th-accent: #b8984a;
   --th-emphasis: #b8984a;
   --th-chrome: #231c14;
@@ -174,13 +182,14 @@
   --th-card-hover: #2f2323;
   --th-line: rgba(240, 188, 66, 0.18);
   --th-edge: rgba(240, 188, 66, 0.45);
-  --th-brand: #54421c;
-  --th-brand-hover: #6a5424;
+  --th-brand: #f0bc42;
+  --th-brand-hover: #f3c864;
+  --th-on-brand: #1a0e00;
   --th-accent: #f0e8d8;
   --th-emphasis: #f0bc42;
   --th-chrome: #120e0e;
   --th-heading: #f0bc42;
-  --th-muted: #a09c9e;
+  --th-muted: #8a8688;
   --th-muted-strong: #cacacc;
   --th-text: #f0e8d8;
   --th-danger: #fb8476;
@@ -196,8 +205,9 @@
   --th-card-hover: #261816;
   --th-line: rgba(255, 191, 0, 0.18);
   --th-edge: rgba(255, 191, 0, 0.45);
-  --th-brand: #ba0e09;
-  --th-brand-hover: #d11a14;
+  --th-brand: #ffbf00;
+  --th-brand-hover: #ffcb2e;
+  --th-on-brand: #1a0e00;
   --th-accent: #ffbf00;
   --th-emphasis: #ffbf00;
   --th-chrome: #180e0c;
@@ -220,6 +230,7 @@
   --th-edge: rgba(13, 94, 175, 0.65);
   --th-brand: #0d5eaf;
   --th-brand-hover: #1570c8;
+  --th-on-brand: #ffffff;
   --th-accent: #ffffff;
   --th-emphasis: #ffffff;
   --th-chrome: #0a1424;

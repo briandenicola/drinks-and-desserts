@@ -278,7 +278,7 @@ function toggleMode() {
       <button
         type="submit"
         :disabled="isSubmitting"
-        class="w-full bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-white font-semibold py-4 rounded-xl transition-colors text-lg"
+        class="w-full bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-th-on-brand font-semibold py-4 rounded-xl transition-colors text-lg"
       >
         {{ isSubmitting ? 'Please wait...' : (isRegister ? 'Create Account' : 'Sign In') }}
       </button>

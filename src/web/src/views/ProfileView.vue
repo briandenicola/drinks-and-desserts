@@ -555,7 +555,7 @@ async function changePassword() {
         <button
           @click="saveProfile"
           :disabled="isSaving"
-          class="w-full bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-white py-3 rounded-xl font-medium"
+          class="w-full bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-th-on-brand py-3 rounded-xl font-medium"
         >
           {{ isSaving ? 'Saving...' : 'Save Profile' }}
         </button>
@@ -628,7 +628,7 @@ async function changePassword() {
         <button
           @click="changePassword"
           :disabled="isChangingPassword || !currentPassword || !newPassword"
-          class="w-full bg-th-brand hover:bg-th-brand disabled:bg-th-card disabled:text-th-muted text-white py-3 rounded-xl font-medium"
+          class="w-full bg-th-brand hover:bg-th-brand disabled:bg-th-card disabled:text-th-muted text-th-on-brand py-3 rounded-xl font-medium"
         >
           {{ isChangingPassword ? 'Changing...' : 'Change Password' }}
         </button>
@@ -694,7 +694,7 @@ async function changePassword() {
               type="button"
               @click="linkOidcProvider(provider)"
               :disabled="linkingProviderId === provider.id"
-              class="rounded-xl border border-th-edge/50 bg-th-card px-3 py-2 text-sm font-medium text-th-accent hover:bg-th-brand hover:text-white disabled:text-th-muted/60"
+              class="rounded-xl border border-th-edge/50 bg-th-card px-3 py-2 text-sm font-medium text-th-accent hover:bg-th-brand hover:text-th-on-brand disabled:text-th-muted/60"
             >
               {{ linkingProviderId === provider.id ? 'Starting...' : `Link ${provider.displayName}` }}
             </button>
@@ -723,7 +723,7 @@ async function changePassword() {
             </code>
             <button
               @click="copyKey"
-              class="shrink-0 px-3 py-2 rounded bg-th-brand hover:bg-th-brand-hover text-white text-xs font-medium"
+              class="shrink-0 px-3 py-2 rounded bg-th-brand hover:bg-th-brand-hover text-th-on-brand text-xs font-medium"
             >
               {{ keyCopied ? 'Copied' : 'Copy' }}
             </button>
@@ -752,7 +752,7 @@ async function changePassword() {
           <button
             @click="createApiKey"
             :disabled="isCreatingKey || !newKeyName.trim()"
-            class="shrink-0 px-4 py-2.5 bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-white rounded-xl text-sm font-medium"
+            class="shrink-0 px-4 py-2.5 bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-th-on-brand rounded-xl text-sm font-medium"
           >
             {{ isCreatingKey ? '...' : 'Create' }}
           </button>
@@ -864,7 +864,7 @@ async function changePassword() {
         <button
           @click="savePushover"
           :disabled="isSavingPushover || (pushoverEnabled && (!pushoverAppToken.trim() || !pushoverUserKey.trim()))"
-          class="w-full bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-white py-3 rounded-xl font-medium"
+          class="w-full bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-th-on-brand py-3 rounded-xl font-medium"
         >
           {{ isSavingPushover ? 'Saving...' : 'Save Pushover Settings' }}
         </button>
@@ -884,7 +884,7 @@ async function changePassword() {
         <button
           @click="exportData"
           :disabled="isExporting"
-          class="w-full bg-th-brand hover:bg-th-brand disabled:bg-th-card disabled:text-th-muted text-white py-3 rounded-xl font-medium"
+          class="w-full bg-th-brand hover:bg-th-brand disabled:bg-th-card disabled:text-th-muted text-th-on-brand py-3 rounded-xl font-medium"
         >
           {{ isExporting ? 'Exporting...' : 'Export All Data' }}
         </button>

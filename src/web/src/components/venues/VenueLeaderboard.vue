@@ -36,12 +36,12 @@ const sorted = computed(() => {
         <button
           @click="emit('sort', 'rating')"
           class="text-[10px] px-2 py-1 rounded-full transition-colors"
-          :class="sortBy === 'rating' ? 'bg-th-brand text-white' : 'text-th-accent/70 hover:text-th-accent'"
+          :class="sortBy === 'rating' ? 'bg-th-brand text-th-on-brand' : 'text-th-accent/70 hover:text-th-accent'"
         >Rating</button>
         <button
           @click="emit('sort', 'items')"
           class="text-[10px] px-2 py-1 rounded-full transition-colors"
-          :class="sortBy === 'items' ? 'bg-th-brand text-white' : 'text-th-accent/70 hover:text-th-accent'"
+          :class="sortBy === 'items' ? 'bg-th-brand text-th-on-brand' : 'text-th-accent/70 hover:text-th-accent'"
         >Items</button>
       </div>
     </div>

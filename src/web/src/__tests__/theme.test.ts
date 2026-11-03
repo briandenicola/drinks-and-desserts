@@ -342,6 +342,21 @@ describe('stylesheet coverage', () => {
     expect(offenders).toEqual([])
   })
 
+  it('fills buttons with gold and dark ink in the gold themes, as Domus and Watch Tracker do', () => {
+    for (const id of ['capitoline', 'byzantine']) {
+      const sel = `[data-theme="${id}"]`
+      expect(valueOf(sel, '--th-brand'), id).toBe(valueOf(sel, '--th-emphasis'))
+      expect(valueOf(sel, '--th-on-brand'), id).toBe('#1a0e00')
+    }
+  })
+
+  it('never puts hardcoded white text on a brand fill', () => {
+    const offenders = vueSources()
+      .filter(f => [...f.text.matchAll(/class="([^"]*)"/g)].some(m => /th-brand/.test(m[1]) && /(?<![\w-])text-white\b/.test(m[1])))
+      .map(f => f.path)
+    expect(offenders).toEqual([])
+  })
+
   it('leaves no hardcoded palette colours in components', () => {
     const offenders = vueSources().filter(f => /\[#[0-9a-f]{6}\]/i.test(f.text)).map(f => f.path)
     expect(offenders).toEqual([])

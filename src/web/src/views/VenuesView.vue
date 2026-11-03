@@ -342,7 +342,7 @@ function resetForm() {
                 @click="setFilter(opt.value)"
                 class="px-3 py-2 rounded-lg text-xs border text-left transition-colors"
                 :class="activeFilter === opt.value
-                  ? 'bg-th-brand border-th-edge text-white'
+                  ? 'bg-th-brand border-th-edge text-th-on-brand'
                   : 'bg-th-card border-th-edge/50 text-th-accent'"
               >
                 {{ opt.label }}
@@ -359,7 +359,7 @@ function resetForm() {
                 @click="setSort(opt.value)"
                 class="px-3 py-2 rounded-lg text-xs border text-left transition-colors"
                 :class="activeSort === opt.value
-                  ? 'bg-th-brand border-th-edge text-white'
+                  ? 'bg-th-brand border-th-edge text-th-on-brand'
                   : 'bg-th-card border-th-edge/50 text-th-accent'"
               >
                 {{ opt.label }}
@@ -376,7 +376,7 @@ function resetForm() {
                 @click="setSortDirection(opt.value)"
                 class="px-3 py-2 rounded-lg text-xs border text-left transition-colors"
                 :class="activeSortDirection === opt.value
-                  ? 'bg-th-brand border-th-edge text-white'
+                  ? 'bg-th-brand border-th-edge text-th-on-brand'
                   : 'bg-th-card border-th-edge/50 text-th-accent'"
               >
                 {{ opt.label }}
@@ -393,7 +393,7 @@ function resetForm() {
                 @click="setGroupBy(opt.value)"
                 class="px-3 py-2 rounded-lg text-xs border text-left transition-colors"
                 :class="activeGroupBy === opt.value
-                  ? 'bg-th-brand border-th-edge text-white'
+                  ? 'bg-th-brand border-th-edge text-th-on-brand'
                   : 'bg-th-card border-th-edge/50 text-th-accent'"
               >
                 {{ opt.label }}
@@ -509,7 +509,7 @@ function resetForm() {
                 @click="addMode = 'manual'"
                 :class="[
                   'flex-1 py-1.5 text-xs font-medium rounded-md transition-colors',
-                  addMode === 'manual' ? 'bg-th-brand text-white' : 'text-th-accent hover:text-th-text/80'
+                  addMode === 'manual' ? 'bg-th-brand text-th-on-brand' : 'text-th-accent hover:text-th-text/80'
                 ]"
               >
                 Manual
@@ -518,7 +518,7 @@ function resetForm() {
                 @click="addMode = 'url'"
                 :class="[
                   'flex-1 py-1.5 text-xs font-medium rounded-md transition-colors',
-                  addMode === 'url' ? 'bg-th-brand text-white' : 'text-th-accent hover:text-th-text/80'
+                  addMode === 'url' ? 'bg-th-brand text-th-on-brand' : 'text-th-accent hover:text-th-text/80'
                 ]"
               >
                 From URL
@@ -557,7 +557,7 @@ function resetForm() {
               <button
                 @click="addVenue"
                 :disabled="isAdding || !newName.trim()"
-                class="w-full bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-white py-3 rounded-xl font-medium transition-colors"
+                class="w-full bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-th-on-brand py-3 rounded-xl font-medium transition-colors"
               >
                 {{ isAdding ? 'Adding...' : 'Add Venue' }}
               </button>
@@ -576,7 +576,7 @@ function resetForm() {
               <button
                 @click="addVenueFromUrl"
                 :disabled="isAdding || !newUrl.trim()"
-                class="w-full bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-white py-3 rounded-xl font-medium transition-colors"
+                class="w-full bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-th-on-brand py-3 rounded-xl font-medium transition-colors"
               >
                 {{ isAdding ? 'Extracting...' : 'Extract Venue' }}
               </button>

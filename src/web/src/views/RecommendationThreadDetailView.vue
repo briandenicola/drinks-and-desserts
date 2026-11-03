@@ -70,7 +70,7 @@ onMounted(loadThread)
             <span
               v-for="type in thread.request.itemTypes"
               :key="type"
-              class="px-2 py-1 rounded-full text-xs bg-th-brand text-white"
+              class="px-2 py-1 rounded-full text-xs bg-th-brand text-th-on-brand"
             >
               {{ type }}
             </span>
@@ -106,7 +106,7 @@ onMounted(loadThread)
             <p v-if="rec.category" class="text-sm text-th-muted">{{ rec.category }}</p>
           </div>
           <div class="flex flex-col items-end gap-1">
-            <span class="text-xs bg-th-brand text-white px-2 py-1 rounded">
+            <span class="text-xs bg-th-brand text-th-on-brand px-2 py-1 rounded">
               {{ (rec.confidence * 100).toFixed(0) }}% match
             </span>
             <span v-if="rec.matchedFromMenu" class="text-xs bg-th-success/15 text-th-success-soft px-2 py-1 rounded">

@@ -425,20 +425,20 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
           <div class="flex gap-2">
             <button
               @click="startEditing"
-              class="flex-1 bg-th-brand hover:bg-th-brand-hover text-white py-2.5 min-h-[44px] rounded-xl text-sm font-medium lg:flex-none lg:px-8"
+              class="flex-1 bg-th-brand hover:bg-th-brand-hover text-th-on-brand py-2.5 min-h-[44px] rounded-xl text-sm font-medium lg:flex-none lg:px-8"
             >
               Edit
             </button>
             <button
               @click="showShareModal = true"
-              class="px-4 py-2.5 min-h-[44px] bg-th-card text-th-accent hover:bg-th-brand hover:text-white rounded-xl text-sm"
+              class="px-4 py-2.5 min-h-[44px] bg-th-card text-th-accent hover:bg-th-brand hover:text-th-on-brand rounded-xl text-sm"
             >
               Share
             </button>
             <button
               @click="deleteVenue"
               :disabled="isDeleting"
-              class="px-4 py-2.5 min-h-[44px] bg-th-card text-th-danger hover:bg-th-brand hover:text-white rounded-xl text-sm"
+              class="px-4 py-2.5 min-h-[44px] bg-th-card text-th-danger hover:bg-th-brand hover:text-th-on-brand rounded-xl text-sm"
             >
               {{ isDeleting ? 'Deleting...' : 'Delete' }}
             </button>
@@ -689,7 +689,7 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
                 class="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0"
                 :class="selectedItemIds.has(itm.id) ? 'border-th-emphasis bg-th-brand-hover' : 'border-th-edge'"
               >
-                <svg v-if="selectedItemIds.has(itm.id)" class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                <svg v-if="selectedItemIds.has(itm.id)" class="w-3 h-3 text-th-on-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
@@ -712,13 +712,13 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
           <button
             @click="saveEdits"
             :disabled="isSaving"
-            class="flex-1 bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-white py-2.5 min-h-[44px] rounded-xl text-sm font-medium"
+            class="flex-1 bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-th-on-brand py-2.5 min-h-[44px] rounded-xl text-sm font-medium"
           >
             {{ isSaving ? 'Saving...' : 'Save' }}
           </button>
           <button
             @click="isEditing = false"
-            class="px-4 py-2.5 min-h-[44px] bg-th-card text-th-accent rounded-xl text-sm hover:bg-th-brand hover:text-white"
+            class="px-4 py-2.5 min-h-[44px] bg-th-card text-th-accent rounded-xl text-sm hover:bg-th-brand hover:text-th-on-brand"
           >
             Cancel
           </button>

@@ -156,7 +156,7 @@ function getErrorResponse(error: unknown): { status?: number } | null {
 
       <router-link
         to="/profile"
-        class="block w-full rounded-xl bg-th-brand py-3 font-medium text-white transition-colors hover:bg-th-brand-hover"
+        class="block w-full rounded-xl bg-th-brand py-3 font-medium text-th-on-brand transition-colors hover:bg-th-brand-hover"
       >
         Back to Profile
       </router-link>

@@ -217,7 +217,7 @@ watch(() => [route.params.friendId, route.params.id], load, { immediate: true })
             <button
               @click="submitThought"
               :disabled="!newThoughtContent.trim() || isSubmitting"
-              class="bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors"
+              class="bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-th-on-brand px-4 py-2 rounded-xl text-sm font-medium transition-colors"
             >
               {{ isSubmitting ? 'Posting...' : 'Post' }}
             </button>

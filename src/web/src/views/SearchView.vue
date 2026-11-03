@@ -220,19 +220,19 @@ const searchInput = ref<HTMLInputElement | null>(null)
       <div class="flex rounded-lg bg-th-card p-0.5 mb-3">
         <button
           @click="activeTab = 'all'"
-          :class="['flex-1 py-1.5 text-xs font-medium rounded-md transition-colors', activeTab === 'all' ? 'bg-th-brand text-white' : 'text-th-accent hover:text-th-text/80']"
+          :class="['flex-1 py-1.5 text-xs font-medium rounded-md transition-colors', activeTab === 'all' ? 'bg-th-brand text-th-on-brand' : 'text-th-accent hover:text-th-text/80']"
         >
           All ({{ totalResults }})
         </button>
         <button
           @click="activeTab = 'items'"
-          :class="['flex-1 py-1.5 text-xs font-medium rounded-md transition-colors', activeTab === 'items' ? 'bg-th-brand text-white' : 'text-th-accent hover:text-th-text/80']"
+          :class="['flex-1 py-1.5 text-xs font-medium rounded-md transition-colors', activeTab === 'items' ? 'bg-th-brand text-th-on-brand' : 'text-th-accent hover:text-th-text/80']"
         >
           Items ({{ itemResults.length }})
         </button>
         <button
           @click="activeTab = 'venues'"
-          :class="['flex-1 py-1.5 text-xs font-medium rounded-md transition-colors', activeTab === 'venues' ? 'bg-th-brand text-white' : 'text-th-accent hover:text-th-text/80']"
+          :class="['flex-1 py-1.5 text-xs font-medium rounded-md transition-colors', activeTab === 'venues' ? 'bg-th-brand text-th-on-brand' : 'text-th-accent hover:text-th-text/80']"
         >
           Venues ({{ venueResults.length }})
         </button>

@@ -136,19 +136,19 @@ onMounted(() => {
       <!-- Camera / Gallery buttons -->
       <div v-if="!previews.length" class="flex gap-3">
         <label class="group flex-1 bg-th-card hover:bg-th-brand border border-th-edge/50 rounded-xl py-3 flex flex-col items-center cursor-pointer transition-colors">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mb-1 text-th-text/80 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mb-1 text-th-text/80 group-hover:text-th-on-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
             <circle cx="12" cy="13" r="3" />
           </svg>
-          <span class="text-xs text-th-accent group-hover:text-white">Camera</span>
+          <span class="text-xs text-th-accent group-hover:text-th-on-brand">Camera</span>
           <input type="file" accept="image/*" capture="environment" @change="addFromInput" class="hidden" />
         </label>
 
         <label class="group flex-1 bg-th-card hover:bg-th-brand border border-th-edge/50 rounded-xl py-3 flex flex-col items-center cursor-pointer transition-colors">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mb-1 text-th-text/80 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mb-1 text-th-text/80 group-hover:text-th-on-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <span class="text-xs text-th-accent group-hover:text-white">Gallery</span>
+          <span class="text-xs text-th-accent group-hover:text-th-on-brand">Gallery</span>
           <input type="file" accept="image/*" @change="addFromInput" class="hidden" />
         </label>
       </div>
@@ -180,8 +180,8 @@ onMounted(() => {
           :class="[
             'px-3 py-1 rounded-full text-xs border transition-colors',
             selectedTypes.includes(type)
-              ? 'bg-th-brand border-th-emphasis text-white'
-              : 'bg-th-card border-th-edge/50 text-th-accent hover:bg-th-brand hover:text-white'
+              ? 'bg-th-brand border-th-emphasis text-th-on-brand'
+              : 'bg-th-card border-th-edge/50 text-th-accent hover:bg-th-brand hover:text-th-on-brand'
           ]"
         >
           {{ type }}
@@ -193,7 +193,7 @@ onMounted(() => {
     <button
       @click="handleGetRecommendations"
       :disabled="isLoadingRecommendations || isUploadingPhoto || (profileData !== null && profileData.totalRatedItems === 0)"
-      class="w-full bg-th-brand hover:bg-th-brand-hover text-white font-medium py-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors mb-6"
+      class="w-full bg-th-brand hover:bg-th-brand-hover text-th-on-brand font-medium py-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors mb-6"
     >
       <span v-if="isUploadingPhoto">Uploading photo...</span>
       <span v-else-if="isLoadingRecommendations">Generating recommendations...</span>
@@ -224,7 +224,7 @@ onMounted(() => {
           v-if="!savedThreadId"
           :disabled="isSavingThread"
           @click="store.saveThread()"
-          class="text-xs bg-th-brand hover:bg-th-brand-hover text-white px-3 py-1.5 rounded transition-colors disabled:opacity-50"
+          class="text-xs bg-th-brand hover:bg-th-brand-hover text-th-on-brand px-3 py-1.5 rounded transition-colors disabled:opacity-50"
         >
           <span v-if="isSavingThread">Saving...</span>
           <span v-else>Save this recommendation</span>
@@ -247,7 +247,7 @@ onMounted(() => {
             <p v-if="rec.category" class="text-sm text-th-muted">{{ rec.category }}</p>
           </div>
           <div class="flex flex-col items-end gap-1">
-            <span class="text-xs bg-th-brand text-white px-2 py-1 rounded">
+            <span class="text-xs bg-th-brand text-th-on-brand px-2 py-1 rounded">
               {{ (rec.confidence * 100).toFixed(0) }}% match
             </span>
             <span v-if="rec.matchedFromMenu" class="text-xs bg-th-success/15 text-th-success-soft px-2 py-1 rounded">
@@ -272,7 +272,7 @@ onMounted(() => {
 
       <button
         @click="handleReset"
-        class="w-full bg-th-card hover:bg-th-brand hover:text-white border border-th-edge/50 text-th-accent font-medium py-3 rounded-xl transition-colors"
+        class="w-full bg-th-card hover:bg-th-brand hover:text-th-on-brand border border-th-edge/50 text-th-accent font-medium py-3 rounded-xl transition-colors"
       >
         Start Over
       </button>

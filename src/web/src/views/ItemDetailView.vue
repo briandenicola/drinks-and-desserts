@@ -605,7 +605,7 @@ async function shareWithFriend(friendId: string) {
         <button
           @click="addJournalEntry"
           :disabled="!newJournalEntry.trim() || isAddingNote"
-          class="self-end px-4 py-2 bg-th-card hover:bg-th-brand hover:text-white disabled:opacity-30 text-th-accent rounded-xl text-sm font-medium"
+          class="self-end px-4 py-2 bg-th-card hover:bg-th-brand hover:text-th-on-brand disabled:opacity-30 text-th-accent rounded-xl text-sm font-medium"
         >{{ isAddingNote ? '...' : 'Add' }}</button>
       </div>
     </div>
@@ -632,7 +632,7 @@ async function shareWithFriend(friendId: string) {
             @click="editType = opt.value"
             class="px-3 py-1.5 rounded-full text-xs border transition-colors"
             :class="editType === opt.value
-              ? 'bg-th-brand border-th-edge text-white'
+              ? 'bg-th-brand border-th-edge text-th-on-brand'
               : 'bg-th-card border-th-edge/50 text-th-accent'"
           >
             {{ opt.label }}
@@ -718,7 +718,7 @@ async function shareWithFriend(friendId: string) {
           <button
             @click="addTag"
             :disabled="!newTag.trim()"
-            class="px-4 bg-th-card hover:bg-th-brand hover:text-white disabled:opacity-30 text-th-accent rounded-xl text-sm font-medium"
+            class="px-4 bg-th-card hover:bg-th-brand hover:text-th-on-brand disabled:opacity-30 text-th-accent rounded-xl text-sm font-medium"
           >+ Add</button>
         </div>
       </div>
@@ -761,7 +761,7 @@ async function shareWithFriend(friendId: string) {
             Are you sure you want to delete <strong>{{ item.name }}</strong>? This action cannot be undone.
           </p>
           <div class="flex gap-2 justify-end">
-            <button @click="showDeleteConfirm = false" class="px-4 py-2 text-sm rounded-xl bg-th-card text-th-accent hover:bg-th-brand hover:text-white">Cancel</button>
+            <button @click="showDeleteConfirm = false" class="px-4 py-2 text-sm rounded-xl bg-th-card text-th-accent hover:bg-th-brand hover:text-th-on-brand">Cancel</button>
             <button @click="deleteItem" class="px-4 py-2 text-sm rounded-xl bg-red-700 text-white hover:bg-red-600">Delete</button>
           </div>
         </div>

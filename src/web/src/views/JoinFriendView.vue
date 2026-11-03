@@ -43,7 +43,7 @@ onMounted(() => {
     <template v-if="success">
       <div class="text-center space-y-4">
         <div class="w-16 h-16 bg-th-brand rounded-full flex items-center justify-center mx-auto">
-          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-8 h-8 text-th-on-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
           </svg>
         </div>
@@ -51,7 +51,7 @@ onMounted(() => {
         <p class="text-th-muted-strong">You can now view each other's collections and share thoughts.</p>
         <button
           @click="router.push('/friends')"
-          class="bg-th-brand hover:bg-th-brand-hover text-white px-6 py-3 rounded-xl font-medium transition-colors"
+          class="bg-th-brand hover:bg-th-brand-hover text-th-on-brand px-6 py-3 rounded-xl font-medium transition-colors"
         >
           View Friends
         </button>
@@ -75,7 +75,7 @@ onMounted(() => {
           <button
             @click="join"
             :disabled="isJoining"
-            class="w-full bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-white py-3 rounded-xl font-medium transition-colors"
+            class="w-full bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-th-on-brand py-3 rounded-xl font-medium transition-colors"
           >
             {{ isJoining ? 'Joining...' : 'Accept Invite' }}
           </button>

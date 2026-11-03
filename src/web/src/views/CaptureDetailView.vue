@@ -172,7 +172,7 @@ function captureStatusLabel(status: string): string {
           v-if="canReprocess"
           @click="reprocess"
           :disabled="isReprocessing"
-          class="text-xs px-3 py-1.5 rounded-lg bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-white transition-colors"
+          class="text-xs px-3 py-1.5 rounded-lg bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-th-on-brand transition-colors"
         >
           {{ isReprocessing ? 'Reprocessing...' : 'Rerun AI Workflow' }}
         </button>

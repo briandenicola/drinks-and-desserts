@@ -453,7 +453,7 @@ function navigateToItem(id: string) {
         @click="switchTab(tab.value)"
         class="flex-1 px-4 py-2 min-h-[44px] rounded-xl text-sm font-medium transition-colors"
         :class="activeTab === tab.value
-          ? 'bg-th-brand text-white'
+          ? 'bg-th-brand text-th-on-brand'
           : 'text-th-accent hover:text-th-text'"
       >
         {{ tab.label }}
@@ -498,7 +498,7 @@ function navigateToItem(id: string) {
                 @click="setFilter(opt.value)"
                 class="px-3 py-2 rounded-lg text-xs border text-left transition-colors"
                 :class="activeFilter === opt.value
-                  ? 'bg-th-brand border-th-edge text-white'
+                  ? 'bg-th-brand border-th-edge text-th-on-brand'
                   : 'bg-th-card border-th-edge/50 text-th-accent'"
               >
                 {{ opt.label }}
@@ -515,7 +515,7 @@ function navigateToItem(id: string) {
                 @click="setSort(opt.value)"
                 class="px-3 py-2 rounded-lg text-xs border text-left transition-colors"
                 :class="activeSort === opt.value
-                  ? 'bg-th-brand border-th-edge text-white'
+                  ? 'bg-th-brand border-th-edge text-th-on-brand'
                   : 'bg-th-card border-th-edge/50 text-th-accent'"
               >
                 {{ opt.label }}
@@ -532,7 +532,7 @@ function navigateToItem(id: string) {
                 @click="setSortDirection(opt.value)"
                 class="px-3 py-2 rounded-lg text-xs border text-left transition-colors"
                 :class="activeSortDirection === opt.value
-                  ? 'bg-th-brand border-th-edge text-white'
+                  ? 'bg-th-brand border-th-edge text-th-on-brand'
                   : 'bg-th-card border-th-edge/50 text-th-accent'"
               >
                 {{ opt.label }}
@@ -549,7 +549,7 @@ function navigateToItem(id: string) {
                 @click="setGroupBy(opt.value)"
                 class="px-3 py-2 rounded-lg text-xs border text-left transition-colors"
                 :class="activeGroupBy === opt.value
-                  ? 'bg-th-brand border-th-edge text-white'
+                  ? 'bg-th-brand border-th-edge text-th-on-brand'
                   : 'bg-th-card border-th-edge/50 text-th-accent'"
               >
                 {{ opt.label }}
@@ -582,7 +582,7 @@ function navigateToItem(id: string) {
             <button
               @click="addWishlistFromUrl"
               :disabled="isExtractingUrl || !newUrl.trim()"
-              class="shrink-0 px-4 py-2.5 bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-white rounded-xl text-sm font-medium min-h-[44px]"
+              class="shrink-0 px-4 py-2.5 bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-th-on-brand rounded-xl text-sm font-medium min-h-[44px]"
             >
               {{ isExtractingUrl ? 'Extracting...' : 'Extract' }}
             </button>
@@ -627,13 +627,13 @@ function navigateToItem(id: string) {
           <button
             @click="addWishlistItem"
             :disabled="isAdding || !newName.trim()"
-            class="flex-1 bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-white py-2.5 rounded-xl text-sm font-medium"
+            class="flex-1 bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-th-on-brand py-2.5 rounded-xl text-sm font-medium"
           >
             {{ isAdding ? 'Adding...' : 'Add' }}
           </button>
           <button
             @click="showAddForm = false"
-            class="px-4 py-2.5 bg-th-card text-th-accent rounded-xl text-sm hover:bg-th-brand hover:text-white"
+            class="px-4 py-2.5 bg-th-card text-th-accent rounded-xl text-sm hover:bg-th-brand hover:text-th-on-brand"
           >
             Cancel
           </button>
@@ -725,13 +725,13 @@ function navigateToItem(id: string) {
             <div class="flex gap-2 mt-3">
               <button
                 @click="convertItem(virtualItems[row.index].item!.id)"
-                class="flex-1 bg-th-brand hover:bg-th-brand-hover text-white py-2 min-h-[44px] rounded-xl text-sm font-medium transition-colors"
+                class="flex-1 bg-th-brand hover:bg-th-brand-hover text-th-on-brand py-2 min-h-[44px] rounded-xl text-sm font-medium transition-colors"
               >
                 Add to Collection
               </button>
               <button
                 @click="deleteItem(virtualItems[row.index].item!.id)"
-                class="px-4 py-2 min-h-[44px] bg-th-card text-th-danger hover:bg-th-brand hover:text-white rounded-xl text-sm transition-colors"
+                class="px-4 py-2 min-h-[44px] bg-th-card text-th-danger hover:bg-th-brand hover:text-th-on-brand rounded-xl text-sm transition-colors"
               >
                 Remove
               </button>

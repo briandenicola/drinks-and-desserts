@@ -126,7 +126,7 @@ onBeforeUnmount(() => {
         @click="activeTab = tab"
         class="px-4 py-2.5 min-h-[44px] rounded-full text-sm border transition-colors relative"
         :class="activeTab === tab
-          ? 'bg-th-brand border-th-edge text-white'
+          ? 'bg-th-brand border-th-edge text-th-on-brand'
           : 'bg-th-card border-th-edge/50 text-th-accent hover:border-th-edge'"
       >
         {{ tab === 'friends' ? `Friends (${friends.length})` : 'Requests' }}
@@ -179,7 +179,7 @@ onBeforeUnmount(() => {
         >
           <h3 class="font-medium text-th-heading mb-1">{{ req.friendDisplayName }}</h3>
           <div class="flex gap-2">
-            <button @click="acceptRequest(req)" class="flex-1 bg-th-brand hover:bg-th-brand-hover text-white py-2 rounded-xl text-sm font-medium">
+            <button @click="acceptRequest(req)" class="flex-1 bg-th-brand hover:bg-th-brand-hover text-th-on-brand py-2 rounded-xl text-sm font-medium">
               Accept
             </button>
             <button @click="declineRequest(req)" class="flex-1 bg-th-card hover:bg-th-inset text-th-accent py-2 rounded-xl text-sm font-medium border border-th-edge/50">
@@ -235,7 +235,7 @@ onBeforeUnmount(() => {
 
               <button
                 @click="copyLink"
-                class="w-full bg-th-brand hover:bg-th-brand-hover text-white py-3 rounded-xl font-medium transition-colors"
+                class="w-full bg-th-brand hover:bg-th-brand-hover text-th-on-brand py-3 rounded-xl font-medium transition-colors"
               >
                 {{ linkCopied ? 'Copied' : 'Copy Invite Link' }}
               </button>

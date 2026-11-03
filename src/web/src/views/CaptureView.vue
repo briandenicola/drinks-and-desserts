@@ -110,19 +110,19 @@ async function submit() {
       <!-- Camera / Gallery buttons -->
       <div class="flex gap-3">
         <label class="group flex-1 bg-th-card hover:bg-th-brand border border-th-edge/50 rounded-xl py-4 flex flex-col items-center cursor-pointer transition-colors">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mb-1 text-th-text/80 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mb-1 text-th-text/80 group-hover:text-th-on-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
             <circle cx="12" cy="13" r="3" />
           </svg>
-          <span class="text-xs text-th-accent group-hover:text-white">Camera</span>
+          <span class="text-xs text-th-accent group-hover:text-th-on-brand">Camera</span>
           <input type="file" accept="image/*" capture="environment" multiple @change="addFromInput" class="hidden" />
         </label>
 
         <label class="group flex-1 bg-th-card hover:bg-th-brand border border-th-edge/50 rounded-xl py-4 flex flex-col items-center cursor-pointer transition-colors">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mb-1 text-th-text/80 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mb-1 text-th-text/80 group-hover:text-th-on-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <span class="text-xs text-th-accent group-hover:text-white">Gallery</span>
+          <span class="text-xs text-th-accent group-hover:text-th-on-brand">Gallery</span>
           <input type="file" accept="image/*" multiple @change="addFromInput" class="hidden" />
         </label>
       </div>
@@ -150,7 +150,7 @@ async function submit() {
     <button
       @click="submit"
       :disabled="isSubmitting || (photos.length === 0 && !userNote.trim())"
-      class="w-full bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-white font-semibold py-4 rounded-xl transition-colors text-lg"
+      class="w-full bg-th-brand hover:bg-th-brand-hover disabled:bg-th-card disabled:text-th-muted text-th-on-brand font-semibold py-4 rounded-xl transition-colors text-lg"
     >
       {{ isSubmitting ? 'Uploading...' : 'Capture' }}
     </button>

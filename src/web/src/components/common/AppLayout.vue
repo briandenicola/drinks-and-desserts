@@ -124,12 +124,12 @@ const navItems = [
                 ? 'bg-th-emphasis shadow-th-brand/30'
                 : 'bg-gradient-to-br from-th-brand to-th-brand-hover shadow-th-brand/20 hover:shadow-th-brand/30'"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" :class="route.path === '/capture' ? 'text-th-page' : 'text-white'" class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <svg xmlns="http://www.w3.org/2000/svg" :class="route.path === '/capture' ? 'text-th-page' : 'text-th-on-brand'" class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                 <circle cx="12" cy="13" r="3" />
               </svg>
             </div>
-            <span class="text-[10px] mt-1" :class="route.path === '/capture' ? 'text-th-accent' : 'text-th-accent/70'">Capture</span>
+            <span class="text-[10px] mt-1" :class="route.path === '/capture' ? 'text-th-emphasis' : 'text-th-accent/70'">Capture</span>
           </router-link>
 
           <!-- Standard nav items -->
@@ -137,7 +137,7 @@ const navItems = [
             v-else
             :to="item.path"
             class="flex flex-col items-center px-3 py-1 text-xs transition-colors"
-            :class="route.path === item.path ? 'text-th-accent' : 'text-th-accent/70'"
+            :class="route.path === item.path ? 'text-th-emphasis' : 'text-th-accent/70'"
           >
             <!-- Collection -->
             <svg v-if="item.path === '/items'" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">

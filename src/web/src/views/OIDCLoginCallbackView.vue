@@ -149,14 +149,14 @@ function getErrorResponse(error: unknown): { status?: number } | null {
         v-if="status === 'success'"
         type="button"
         @click="continueToApp"
-        class="w-full rounded-xl bg-th-brand py-3 font-medium text-white transition-colors hover:bg-th-brand-hover"
+        class="w-full rounded-xl bg-th-brand py-3 font-medium text-th-on-brand transition-colors hover:bg-th-brand-hover"
       >
         Continue to Collection
       </button>
       <router-link
         v-else-if="status === 'error'"
         to="/login"
-        class="block w-full rounded-xl border border-th-edge/50 bg-th-card py-3 font-medium text-th-accent transition-colors hover:bg-th-brand hover:text-white"
+        class="block w-full rounded-xl border border-th-edge/50 bg-th-card py-3 font-medium text-th-accent transition-colors hover:bg-th-brand hover:text-th-on-brand"
       >
         Back to Sign In
       </router-link>

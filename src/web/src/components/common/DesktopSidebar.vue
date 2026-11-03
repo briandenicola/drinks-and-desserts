@@ -67,7 +67,7 @@ function isActive(path: string): boolean {
         :to="item.path"
         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
         :class="isActive(item.path)
-          ? 'bg-th-brand text-white'
+          ? 'bg-th-brand text-th-on-brand'
           : 'text-th-accent/70 hover:bg-th-card-hover hover:text-th-accent'"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -83,7 +83,7 @@ function isActive(path: string): boolean {
         to="/admin"
         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
         :class="isActive('/admin')
-          ? 'bg-th-brand text-white'
+          ? 'bg-th-brand text-th-on-brand'
           : 'text-th-accent/70 hover:bg-th-card-hover hover:text-th-accent'"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
