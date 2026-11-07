@@ -214,6 +214,8 @@ else
 // Auth & AI services
 builder.Services.AddSingleton(logLevelService);
 builder.Services.AddSingleton<FoundryStatusService>();
+builder.Services.AddSingleton<IAiModelSettingsService, AiModelSettingsService>();
+builder.Services.AddSingleton<IFoundryAgentProvisioner, FoundryAgentProvisioner>();
 builder.Services.AddSingleton<IAuthService, AuthService>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IOidcService, OidcService>();

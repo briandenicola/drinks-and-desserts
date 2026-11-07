@@ -20,13 +20,15 @@ public class SearchIntentInterpreter : ISearchIntentInterpreter
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
     private readonly SearchRuleInterpreter _fallback;
     private readonly AiFoundryOptions _foundryOptions;
+    private readonly IAiModelSettingsService _aiModels;
     private readonly bool _isFoundryConfigured;
     private readonly ILogger<SearchIntentInterpreter> _logger;
 
-    public SearchIntentInterpreter(TimeProvider timeProvider, IOptions<AiFoundryOptions> foundryOptions, ILogger<SearchIntentInterpreter> logger)
+    public SearchIntentInterpreter(TimeProvider timeProvider, IOptions<AiFoundryOptions> foundryOptions, IAiModelSettingsService aiModels, ILogger<SearchIntentInterpreter> logger)
     {
         _fallback = new SearchRuleInterpreter(timeProvider);
         _foundryOptions = foundryOptions.Value;
+        _aiModels = aiModels;
         _isFoundryConfigured = !string.IsNullOrWhiteSpace(_foundryOptions.ProjectEndpoint);
         _logger = logger;
     }
@@ -39,11 +41,18 @@ public class SearchIntentInterpreter : ISearchIntentInterpreter
             return fallback;
         }
 
+        var models = await _aiModels.GetEffectiveAsync(cancellationToken);
+        if (string.IsNullOrEmpty(models.ReasoningModel))
+        {
+            _logger.LogDebug("No reasoning model configured — using rule-based search interpretation");
+            return fallback;
+        }
+
         try
         {
             var credential = CredentialFactory.Create();
             var projectClient = new AIProjectClient(new Uri(_foundryOptions.ProjectEndpoint), credential);
-            var chatClient = projectClient.OpenAI.GetChatClient(_foundryOptions.Models.Reasoning).AsIChatClient();
+            var chatClient = projectClient.OpenAI.GetChatClient(models.ReasoningModel).AsIChatClient();
 
             var response = await chatClient.GetResponseAsync(
                 [new ChatMessage(ChatRole.User, BuildPrompt(query))],

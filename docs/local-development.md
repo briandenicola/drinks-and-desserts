@@ -6,8 +6,8 @@ The only Azure dependency for local development is **Azure AI Foundry** (for the
 |---------|-------|------------|
 | Database | LiteDB (file-based, zero config) | Azure CosmosDB |
 | Blob Storage | Local filesystem (`uploads/`) | Azure Blob Storage |
-| AI Vision | gpt-4o via Azure AI Foundry | gpt-4o via Azure AI Foundry |
-| AI Reasoning | gpt-5-mini via Azure AI Foundry | gpt-5-mini via Azure AI Foundry |
+| AI Vision | Vision model via Azure AI Foundry (deployment chosen in Admin → Foundry) | Same |
+| AI Reasoning | Reasoning model via Azure AI Foundry (deployment chosen in Admin → Foundry) | Same |
 | Observability | Aspire Dashboard (OTLP) | Azure Application Insights |
 | Auth | JWT with dev secret | Azure Entra ID + JWT |
 
@@ -39,7 +39,7 @@ az login
 
 ### 3. Provision Azure AI Foundry
 
-Creates a resource group, an Azure AI Foundry account, deploys **gpt-4o** (vision) and **gpt-5-mini** (reasoning) models, and grants your Azure user the **Cognitive Services OpenAI User** role.
+Creates a resource group, an Azure AI Foundry account, deploys a vision model and a reasoning model (the `models` list in `infrastructure/local/ai_foundry_projects.tf`), and grants your Azure user the **Cognitive Services OpenAI User** role. The deployment names are exported as the `FOUNDRY_VISION_MODEL` / `FOUNDRY_REASONING_MODEL` outputs and used only to seed the app on first boot; after that, change them in **Admin → Foundry**.
 
 ```bash
 task local:up
@@ -47,11 +47,14 @@ task local:up
 
 ### 4. Initialize Foundry Agents
 
-Creates (or recreates) the three agents in your Foundry project with prompts from `src/AgentInitiator/Prompts/`:
+Creates (or recreates) the agents in your Foundry project with prompts from `src/api/AgentPrompts/`, on the model deployments Terraform created:
 
 ```bash
 task local:agents
 ```
+
+You can skip this step: once the app is running, **Admin → Foundry → Save & Sync Agents** does the same
+thing from inside the app, and is the way to move the agents to a different model later.
 
 ### 5. Run the application
 

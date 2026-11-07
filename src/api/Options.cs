@@ -39,10 +39,15 @@ public class AiFoundryOptions
     public AiFoundryModelOptions Models { get; set; } = new();
 }
 
+/// <summary>
+/// Optional environment seed for the model deployments (AiFoundry__Models__Vision / __Reasoning).
+/// Intentionally has no defaults: the effective models are chosen in-app (Admin → Foundry) and
+/// stored in the settings container, so a model retirement never needs a code or infra change.
+/// </summary>
 public class AiFoundryModelOptions
 {
-    public string Vision { get; set; } = "gpt-5.1";
-    public string Reasoning { get; set; } = "gpt-5.4-mini";
+    public string Vision { get; set; } = string.Empty;
+    public string Reasoning { get; set; } = string.Empty;
 }
 
 public class CosmosDbOptions

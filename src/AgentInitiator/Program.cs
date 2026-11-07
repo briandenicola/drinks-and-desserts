@@ -23,6 +23,18 @@ var endpoint = config["AiFoundry__ProjectEndpoint"]
     ?? args.FirstOrDefault(a => a.StartsWith("--endpoint="))?.Split('=', 2)[1]
     ?? "";
 
+// Model deployments are deliberately NOT hardcoded: pass them in so this CLI never needs a
+// code change when a model is retired. The running API can also re-provision the agents
+// itself from Admin → Foundry, which is the preferred path.
+var visionModel = config["AiFoundry__Models__Vision"]
+    ?? config["AiFoundry:Models:Vision"]
+    ?? args.FirstOrDefault(a => a.StartsWith("--vision-model="))?.Split('=', 2)[1]
+    ?? "";
+var reasoningModel = config["AiFoundry__Models__Reasoning"]
+    ?? config["AiFoundry:Models:Reasoning"]
+    ?? args.FirstOrDefault(a => a.StartsWith("--reasoning-model="))?.Split('=', 2)[1]
+    ?? "";
+
 if (string.IsNullOrEmpty(endpoint))
 {
     Console.Error.WriteLine("ERROR: AiFoundry project endpoint not configured.");
@@ -31,13 +43,22 @@ if (string.IsNullOrEmpty(endpoint))
     return 1;
 }
 
+if (string.IsNullOrWhiteSpace(visionModel) || string.IsNullOrWhiteSpace(reasoningModel))
+{
+    Console.Error.WriteLine("ERROR: model deployments not configured.");
+    Console.Error.WriteLine("Set AiFoundry__Models__Vision and AiFoundry__Models__Reasoning env vars,");
+    Console.Error.WriteLine("or pass --vision-model=<deployment> --reasoning-model=<deployment>.");
+    Console.Error.WriteLine("Tip: the running API can also sync agents from Admin → Foundry.");
+    return 1;
+}
+
 Console.WriteLine("🥃💨 Whiskey & Smokes Agent Initializer (New Foundry Agent API)");
 Console.WriteLine($"   Endpoint: {endpoint}");
 Console.WriteLine($"   API:      AIProjectClient.Agents.CreateAgentVersionAsync");
 Console.WriteLine();
 Console.WriteLine("   Model Assignments:");
-Console.WriteLine("     gpt-4o       → Vision Analyst (image analysis)");
-Console.WriteLine("     gpt-5-mini   → Domain Expert, Data Curator, Note Analyst, Wishlist URL Extractor (reasoning)");
+Console.WriteLine($"     {visionModel,-14} → Vision Analyst (image analysis)");
+Console.WriteLine($"     {reasoningModel,-14} → Domain Expert, Data Curator, Note Analyst, Wishlist/Venue URL Extractors (reasoning)");
 Console.WriteLine();
 
 // ── Step 1: Acquire Entra ID credential ───────────────────────────────────
@@ -145,32 +166,32 @@ var agentSpecs = new AgentSpec[]
 {
     new("dd-vision-analyst",
         "Vision Analyst — examines photos, describes visible items",
-        "gpt-4o",
+        visionModel,
         LoadPrompt("vision-analyst.md")),
 
     new("dd-domain-expert",
         "Domain Expert — identifies products, adds expert knowledge",
-        "gpt-5-mini",
+        reasoningModel,
         LoadPrompt("domain-expert.md")),
 
     new("dd-data-curator",
         "Data Curator — structures JSON output, validates quality",
-        "gpt-5-mini",
+        reasoningModel,
         LoadPrompt("data-curator.md")),
 
     new("dd-note-analyst",
         "Note Analyst — extracts venue, sentiment rating, and occasion from user notes",
-        "gpt-5-mini",
+        reasoningModel,
         LoadPrompt("note-analyst.md")),
 
     new("dd-wishlist-url-extractor",
         "Wishlist URL Extractor — extracts product details from webpage content",
-        "gpt-5-mini",
+        reasoningModel,
         LoadPrompt("wishlist-url-extractor.md")),
 
     new("dd-venue-url-extractor",
         "Venue URL Extractor — extracts venue details from Apple Maps or venue webpage content",
-        "gpt-5-mini",
+        reasoningModel,
         LoadPrompt("venue-url-extractor.md")),
 };
 

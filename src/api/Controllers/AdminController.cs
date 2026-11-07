@@ -18,6 +18,8 @@ public class AdminController : ControllerBase
     private readonly DynamicLogLevelService _logLevelService;
     private readonly FoundryStatusService _foundryStatus;
     private readonly McpSettingsService _mcpSettings;
+    private readonly IAiModelSettingsService _aiModels;
+    private readonly IFoundryAgentProvisioner _agentProvisioner;
     private readonly IConfiguration _configuration;
     private readonly ILogger<AdminController> _logger;
     private const string UsersContainer = "users";
@@ -29,6 +31,8 @@ public class AdminController : ControllerBase
         DynamicLogLevelService logLevelService,
         FoundryStatusService foundryStatus,
         McpSettingsService mcpSettings,
+        IAiModelSettingsService aiModels,
+        IFoundryAgentProvisioner agentProvisioner,
         IConfiguration configuration,
         ILogger<AdminController> logger)
     {
@@ -38,6 +42,8 @@ public class AdminController : ControllerBase
         _logLevelService = logLevelService;
         _foundryStatus = foundryStatus;
         _mcpSettings = mcpSettings;
+        _aiModels = aiModels;
+        _agentProvisioner = agentProvisioner;
         _configuration = configuration;
         _logger = logger;
     }
@@ -196,6 +202,91 @@ public class AdminController : ControllerBase
         return Ok(AuthSettingsResponse(doc.Settings));
     }
 
+    // ── AI Model Settings ────────────────────────────────────
+
+    /// <summary>
+    /// Which Foundry model deployments the app uses. Admin-set values are stored in the settings
+    /// container and override the AiFoundry__Models__* environment seed, so a retired model is
+    /// swapped here without a code change or an infrastructure redeploy.
+    /// </summary>
+    [HttpGet("ai-settings")]
+    public async Task<ActionResult<AppAiSettingsResponse>> GetAiSettings()
+    {
+        var stored = await _aiModels.GetStoredAsync();
+        return Ok(AiSettingsResponse(stored, _foundryStatus.GetStatus().LastAgentSync));
+    }
+
+    [HttpPut("ai-settings")]
+    public async Task<ActionResult<AppAiSettingsResponse>> UpdateAiSettings([FromBody] UpdateAppAiSettingsRequest request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        var visionError = AiModelName.TryNormalize(request.VisionModel, out var vision);
+        if (visionError != null) return BadRequest(new { message = $"Vision model: {visionError}" });
+
+        var reasoningError = AiModelName.TryNormalize(request.ReasoningModel, out var reasoning);
+        if (reasoningError != null) return BadRequest(new { message = $"Reasoning model: {reasoningError}" });
+
+        var adminId = GetUserId();
+        var saved = await _aiModels.SaveAsync(new AppAiSettings { VisionModel = vision, ReasoningModel = reasoning }, adminId);
+        var effective = AiModelSettingsService.Resolve(saved.Settings, _aiModels.Fallback);
+
+        _foundryStatus.Update(s =>
+        {
+            s.VisionModel = effective.VisionModel;
+            s.ReasoningModel = effective.ReasoningModel;
+            s.ModelSource = effective.Source;
+        });
+        _logger.LogInformation("Admin {AdminId} updated AI model settings: vision={Vision}, reasoning={Reasoning}, source={Source}",
+            adminId, effective.VisionModel, effective.ReasoningModel, effective.Source);
+
+        AgentSyncResult? sync = null;
+        if (request.SyncAgents)
+        {
+            sync = await _agentProvisioner.SyncAsync(effective, HttpContext.RequestAborted);
+            _logger.LogInformation("Admin {AdminId} agent sync after model change: status={Status} ({Message})",
+                adminId, sync.Status, sync.Message);
+        }
+
+        return Ok(AiSettingsResponse(saved, sync));
+    }
+
+    /// <summary>
+    /// Re-provisions the Foundry agents on the currently effective models. Foundry binds the
+    /// model when an agent version is created, so this is what actually moves agents off a
+    /// retired model once the settings have been changed.
+    /// </summary>
+    [HttpPost("foundry/sync-agents")]
+    public async Task<ActionResult<FoundryStatus>> SyncFoundryAgents()
+    {
+        var adminId = GetUserId();
+        var effective = await _aiModels.GetEffectiveAsync(HttpContext.RequestAborted);
+        var sync = await _agentProvisioner.SyncAsync(effective, HttpContext.RequestAborted);
+        _logger.LogInformation("Admin {AdminId} requested agent sync: status={Status} ({Message})", adminId, sync.Status, sync.Message);
+        return Ok(_foundryStatus.GetStatus());
+    }
+
+    private AppAiSettingsResponse AiSettingsResponse(AppAiSettingsDocument? stored, AgentSyncResult? sync)
+    {
+        var fallback = _aiModels.Fallback;
+        var effective = AiModelSettingsService.Resolve(stored?.Settings, fallback);
+        return new AppAiSettingsResponse
+        {
+            Settings = stored?.Settings ?? new AppAiSettings(),
+            EffectiveVisionModel = NullIfEmpty(effective.VisionModel),
+            EffectiveReasoningModel = NullIfEmpty(effective.ReasoningModel),
+            FallbackVisionModel = NullIfEmpty(fallback.VisionModel),
+            FallbackReasoningModel = NullIfEmpty(fallback.ReasoningModel),
+            Source = effective.Source,
+            IsConfigured = effective.IsConfigured,
+            UpdatedAt = stored?.UpdatedAt,
+            UpdatedBy = stored?.UpdatedBy,
+            AgentSync = sync
+        };
+    }
+
+    private static string? NullIfEmpty(string value) => string.IsNullOrEmpty(value) ? null : value;
+
     // ── Prompt Management ────────────────────────────────────
 
     [HttpGet("prompts")]
@@ -223,8 +314,8 @@ public class AdminController : ControllerBase
     [HttpPut("prompts/{id}")]
     public ActionResult UpdatePrompt(string id, [FromBody] UpdatePromptRequest request)
     {
-        // Prompts are now managed as files in AgentInitiator/Prompts/ and baked into Foundry agents.
-        // To change a prompt, edit the file and re-run the agent:init task.
+        // Prompts are managed as files in src/api/AgentPrompts/ and baked into Foundry agents.
+        // To change a prompt, edit the file, redeploy, and re-sync agents from Admin → Foundry.
         return StatusCode(405, new { message = "Prompts are read-only and managed through the deployment pipeline." });
     }
 

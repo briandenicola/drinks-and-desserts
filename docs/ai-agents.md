@@ -10,10 +10,10 @@ resident expert who knows the products, and one is the editor who checks the pap
 
 | Agent | Think of it as... | What it does | Model |
 |-------|-------------------|--------------|-------|
-| **Vision Analyst** | The person with the sharp eyes | Looks at your photos and describes what's in front of you: labels, bottle shapes, liquid color, cigar bands, plating. It only reports what it *sees*. It doesn't guess the product. | `gpt-4o` |
-| **Note Analyst** | The person who reads your scribbles | Reads your quick note and pulls out *where* you were, *how you felt* (turned into a 1-5 star suggestion), and the *occasion* (date night, celebration...). | `gpt-5-mini` |
-| **Domain Expert** | The sommelier / master blender / tobacconist | Takes the Vision Analyst's description and names the actual product: distillery, age, region, vintage, cigar vitola. Adds tasting notes, price range, pairings, and a confidence score. | `gpt-5-mini` |
-| **Data Curator** | The editor | Turns the expert's write-up into a tidy, validated record and checks it's complete and sensible. If something is off, it sends it back with feedback. | `gpt-5-mini` |
+| **Vision Analyst** | The person with the sharp eyes | Looks at your photos and describes what's in front of you: labels, bottle shapes, liquid color, cigar bands, plating. It only reports what it *sees*. It doesn't guess the product. | Vision model |
+| **Note Analyst** | The person who reads your scribbles | Reads your quick note and pulls out *where* you were, *how you felt* (turned into a 1-5 star suggestion), and the *occasion* (date night, celebration...). | Reasoning model |
+| **Domain Expert** | The sommelier / master blender / tobacconist | Takes the Vision Analyst's description and names the actual product: distillery, age, region, vintage, cigar vitola. Adds tasting notes, price range, pairings, and a confidence score. | Reasoning model |
+| **Data Curator** | The editor | Turns the expert's write-up into a tidy, validated record and checks it's complete and sensible. If something is off, it sends it back with feedback. | Reasoning model |
 
 A few ground rules baked into the agents:
 
@@ -31,11 +31,13 @@ A few ground rules baked into the agents:
 | **The agents and AI models** | Microsoft Azure AI Foundry (Foundry Agent Service) |
 | **Your photos** | Blob storage (local disk when self-hosted) |
 | **Your items, captures and the step-by-step log** | Azure Cosmos DB |
-| **Agent instructions (prompts)** | Markdown files in `src/AgentInitiator/Prompts/`, loaded into Foundry by the **Agent Initiator** tool |
+| **Agent instructions (prompts)** | Markdown files in `src/api/AgentPrompts/`, embedded in the API and loaded into Foundry when agents are synced (Admin → Foundry, or the **Agent Initiator** tool) |
+| **Which models the agents run on** | Chosen in the app under **Admin → Foundry** and stored in the settings container. Not hardcoded anywhere, so a retired model is swapped without a redeploy. |
 
-The **Agent Initiator** is a small command-line tool run at setup time (`task local:agents`). It registers
-the agents in Foundry and gives each its instructions. To change how an agent behaves, edit its prompt file
-and re-run that tool. Sign-in between the app and Foundry uses Azure identity, so there are no passwords
+The agents are registered in Foundry either from the app (**Admin → Foundry → Save & Sync Agents**) or by the
+**Agent Initiator**, a small command-line tool (`task local:agents`). Both give each agent its instructions and
+bind it to the currently selected model. To change how an agent behaves, edit its prompt file, redeploy, and
+re-sync. To move the agents to a different model, change the deployment name in **Admin → Foundry** and save. Sign-in between the app and Foundry uses Azure identity, so there are no passwords
 or keys stored in the app.
 
 ## The Workflow, Step by Step
@@ -86,7 +88,7 @@ sequenceDiagram
     actor You
     participant API as App API<br/>(Container Apps)
     participant Q as Background queue
-    participant V as Vision Analyst<br/>(gpt-4o)
+    participant V as Vision Analyst<br/>(vision model)
     participant N as Note Analyst<br/>(Foundry agent)
     participant E as Domain Expert<br/>(Foundry agent)
     participant C as Data Curator<br/>(Foundry agent)
@@ -133,8 +135,8 @@ flowchart LR
     subgraph Azure["Azure"]
         API["API<br/>Container Apps"]
         subgraph Foundry["AI Foundry"]
-            GPT4o["gpt-4o<br/>Vision Analyst"]
-            subgraph Agents["Registered agents (gpt-5-mini)"]
+            GPT4o["Vision model<br/>Vision Analyst"]
+            subgraph Agents["Registered agents (reasoning model)"]
                 NA[Note Analyst]
                 DE[Domain Expert]
                 DC[Data Curator]

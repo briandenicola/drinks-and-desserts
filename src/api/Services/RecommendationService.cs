@@ -15,18 +15,21 @@ public class RecommendationService : IRecommendationService
     private readonly IBlobStorageService _blobStorage;
     private readonly ILogger<RecommendationService> _logger;
     private readonly AiFoundryOptions _foundryOptions;
+    private readonly IAiModelSettingsService _aiModels;
     private readonly bool _isFoundryConfigured;
 
     public RecommendationService(
         ICosmosDbService cosmosDb,
         IBlobStorageService blobStorage,
         ILogger<RecommendationService> logger,
-        IOptions<AiFoundryOptions> foundryOptions)
+        IOptions<AiFoundryOptions> foundryOptions,
+        IAiModelSettingsService aiModels)
     {
         _cosmosDb = cosmosDb;
         _blobStorage = blobStorage;
         _logger = logger;
         _foundryOptions = foundryOptions.Value;
+        _aiModels = aiModels;
         _isFoundryConfigured = !string.IsNullOrEmpty(_foundryOptions.ProjectEndpoint);
     }
 
@@ -187,9 +190,16 @@ public class RecommendationService : IRecommendationService
         {
             _logger.LogInformation("Extracting menu items from photo: {PhotoUrl}", photoUrl);
 
+            var models = await _aiModels.GetEffectiveAsync();
+            if (string.IsNullOrEmpty(models.VisionModel))
+            {
+                _logger.LogWarning("No vision model configured (Admin → Foundry) — cannot extract menu items");
+                return [];
+            }
+
             var credential = CredentialFactory.Create();
             var projectClient = new AIProjectClient(new Uri(_foundryOptions.ProjectEndpoint), credential);
-            var chatClient = projectClient.OpenAI.GetChatClient(_foundryOptions.Models.Vision).AsIChatClient();
+            var chatClient = projectClient.OpenAI.GetChatClient(models.VisionModel).AsIChatClient();
 
             // Download the photo
             var photoBytes = await _blobStorage.DownloadAsync(photoUrl);
@@ -315,9 +325,13 @@ If no items are visible or the photo is not of a menu, return an empty array: []
 
         try
         {
+            var models = await _aiModels.GetEffectiveAsync(cancellationToken);
+            if (string.IsNullOrEmpty(models.ReasoningModel))
+                throw new InvalidOperationException("No reasoning model configured. Set it in Admin → Foundry.");
+
             var credential = CredentialFactory.Create();
             var projectClient = new AIProjectClient(new Uri(_foundryOptions.ProjectEndpoint), credential);
-            var chatClient = projectClient.OpenAI.GetChatClient(_foundryOptions.Models.Reasoning).AsIChatClient();
+            var chatClient = projectClient.OpenAI.GetChatClient(models.ReasoningModel).AsIChatClient();
 
             var promptBuilder = new StringBuilder();
             promptBuilder.AppendLine("You are a personalized recommendation engine for drinks and desserts.");

@@ -211,6 +211,87 @@ public class AppAuthSettingsDocument
     public string? UpdatedBy { get; set; }
 }
 
+public class AppAiSettings
+{
+    /// <summary>Foundry model deployment name used for image analysis. Null means "use the environment fallback".</summary>
+    [JsonPropertyName("visionModel")]
+    public string? VisionModel { get; set; }
+
+    /// <summary>Foundry model deployment name used for text reasoning. Null means "use the environment fallback".</summary>
+    [JsonPropertyName("reasoningModel")]
+    public string? ReasoningModel { get; set; }
+}
+
+public class UpdateAppAiSettingsRequest
+{
+    [JsonPropertyName("visionModel")]
+    [StringLength(Services.AiModelName.MaxLength)]
+    public string? VisionModel { get; set; }
+
+    [JsonPropertyName("reasoningModel")]
+    [StringLength(Services.AiModelName.MaxLength)]
+    public string? ReasoningModel { get; set; }
+
+    /// <summary>Re-provision the Foundry agents on the new models after saving (default: true).</summary>
+    [JsonPropertyName("syncAgents")]
+    public bool SyncAgents { get; set; } = true;
+}
+
+public class AppAiSettingsResponse
+{
+    [JsonPropertyName("settings")]
+    public AppAiSettings Settings { get; set; } = new();
+
+    [JsonPropertyName("effectiveVisionModel")]
+    public string? EffectiveVisionModel { get; set; }
+
+    [JsonPropertyName("effectiveReasoningModel")]
+    public string? EffectiveReasoningModel { get; set; }
+
+    [JsonPropertyName("fallbackVisionModel")]
+    public string? FallbackVisionModel { get; set; }
+
+    [JsonPropertyName("fallbackReasoningModel")]
+    public string? FallbackReasoningModel { get; set; }
+
+    /// <summary>"admin", "environment" or "none".</summary>
+    [JsonPropertyName("source")]
+    public string Source { get; set; } = Services.AiModelSelection.SourceNone;
+
+    [JsonPropertyName("isConfigured")]
+    public bool IsConfigured { get; set; }
+
+    [JsonPropertyName("updatedAt")]
+    public DateTime? UpdatedAt { get; set; }
+
+    [JsonPropertyName("updatedBy")]
+    public string? UpdatedBy { get; set; }
+
+    [JsonPropertyName("agentSync")]
+    public Services.AgentSyncResult? AgentSync { get; set; }
+}
+
+public class AppAiSettingsDocument
+{
+    public const string DocumentId = "ai-settings";
+    public const string PartitionKeyValue = "settings";
+
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = DocumentId;
+
+    [JsonPropertyName("partitionKey")]
+    public string PartitionKey { get; set; } = PartitionKeyValue;
+
+    [JsonPropertyName("settings")]
+    public AppAiSettings Settings { get; set; } = new();
+
+    [JsonPropertyName("updatedAt")]
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    [JsonPropertyName("updatedBy")]
+    public string? UpdatedBy { get; set; }
+}
+
 public class PagedResponse<T>
 {
     [JsonPropertyName("items")]

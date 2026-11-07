@@ -29,11 +29,18 @@ tasks:
       REGION: "{{default .DEFAULT_REGION .CLI_ARGS}}"
 
   agents:
-    desc: Validates agent configuration against AI Foundry
+    desc: (Re)creates the Foundry agents from the CLI. Prefer Admin → Foundry → "Save & Sync Agents" in the running app.
     env:
       AiFoundry__ProjectEndpoint: "{{.PROJECT_ENDPOINT}}"
+      AiFoundry__Models__Vision: "{{.VISION_MODEL}}"
+      AiFoundry__Models__Reasoning: "{{.REASONING_MODEL}}"
     cmds:
       - dotnet run --project ../../src/AgentInitiator
+    vars:
+      VISION_MODEL:
+        sh: terraform output -raw FOUNDRY_VISION_MODEL 2>/dev/null || echo ""
+      REASONING_MODEL:
+        sh: terraform output -raw FOUNDRY_REASONING_MODEL 2>/dev/null || echo ""
     # vars:
     #   PROJECT_ENDPOINT: https://poodle-63974-foundry.services.ai.azure.com/api/projects/poodle-63974-project
     #     #sh: terraform output -raw FOUNDRY_PROJECT_ENDPOINT 2>/dev/null || echo ""

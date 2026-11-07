@@ -66,14 +66,22 @@ resource "azurerm_container_app" "api" {
         value = local.foundry_project_endpoint
       }
 
-      env {
-        name  = "AiFoundry__Models__Vision"
-        value = "gpt-4o"
+      # Model deployments are chosen in-app (Admin → Foundry) and stored in Cosmos.
+      # These are optional first-boot seeds only; leave the variables empty to skip them.
+      dynamic "env" {
+        for_each = var.ai_vision_model_seed != "" ? [var.ai_vision_model_seed] : []
+        content {
+          name  = "AiFoundry__Models__Vision"
+          value = env.value
+        }
       }
 
-      env {
-        name  = "AiFoundry__Models__Reasoning"
-        value = "gpt-5-mini"
+      dynamic "env" {
+        for_each = var.ai_reasoning_model_seed != "" ? [var.ai_reasoning_model_seed] : []
+        content {
+          name  = "AiFoundry__Models__Reasoning"
+          value = env.value
+        }
       }
 
       env {

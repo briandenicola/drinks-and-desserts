@@ -37,3 +37,15 @@ output "SPN_TENANT_ID" {
   value     = data.azurerm_client_config.current.tenant_id
   sensitive = false
 }
+
+# Deployment names created in the Foundry project. Used only to seed the app's
+# AiFoundry__Models__* env on first boot; the live values are managed in Admin → Foundry.
+output "FOUNDRY_VISION_MODEL" {
+  value     = module.project_1.MODEL_DEPLOYMENT_NAMES[0]
+  sensitive = false
+}
+
+output "FOUNDRY_REASONING_MODEL" {
+  value     = module.project_1.MODEL_DEPLOYMENT_NAMES[1]
+  sensitive = false
+}

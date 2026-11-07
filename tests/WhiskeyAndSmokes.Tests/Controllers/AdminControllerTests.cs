@@ -5,7 +5,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using NSubstitute;
+using WhiskeyAndSmokes.Api;
 using WhiskeyAndSmokes.Api.Controllers;
 using WhiskeyAndSmokes.Api.Models;
 using WhiskeyAndSmokes.Api.Services;
@@ -109,7 +111,120 @@ public class AdminControllerTests
         await cosmos.Received(1).UpsertAsync("settings", Arg.Is<McpSettingsDocument>(d => d.Settings.Enabled), Arg.Any<string>());
     }
 
-    private static AdminController CreateController(ICosmosDbService cosmos, string userId, IAuthService? authService = null, McpSettingsService? mcpSettings = null)
+    [Fact]
+    public async Task GetAiSettings_WithNothingStored_FallsBackToEnvironmentSeed()
+    {
+        var cosmos = Substitute.For<ICosmosDbService>();
+        cosmos.GetAsync<AppAiSettingsDocument>("settings", AppAiSettingsDocument.DocumentId, AppAiSettingsDocument.PartitionKeyValue)
+            .Returns((AppAiSettingsDocument?)null);
+        var controller = CreateController(cosmos, "admin-1", aiModels: CreateAiModelSettings(cosmos, "env-vision", "env-reasoning"));
+
+        var result = await controller.GetAiSettings();
+
+        var response = result.Result.Should().BeOfType<OkObjectResult>().Subject.Value.Should().BeOfType<AppAiSettingsResponse>().Subject;
+        response.EffectiveVisionModel.Should().Be("env-vision");
+        response.EffectiveReasoningModel.Should().Be("env-reasoning");
+        response.Source.Should().Be(AiModelSelection.SourceEnvironment);
+        response.IsConfigured.Should().BeTrue();
+        response.Settings.VisionModel.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UpdateAiSettings_WithInvalidModelName_ReturnsBadRequestAndDoesNotSave()
+    {
+        var cosmos = Substitute.For<ICosmosDbService>();
+        var provisioner = Substitute.For<IFoundryAgentProvisioner>();
+        var controller = CreateController(cosmos, "admin-1", aiModels: CreateAiModelSettings(cosmos), agentProvisioner: provisioner);
+
+        var result = await controller.UpdateAiSettings(new UpdateAppAiSettingsRequest
+        {
+            VisionModel = "gpt 4o; drop table",
+            ReasoningModel = "gpt-5-mini"
+        });
+
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
+        await cosmos.DidNotReceiveWithAnyArgs().UpsertAsync<AppAiSettingsDocument>(default!, default!, default!);
+        await provisioner.DidNotReceiveWithAnyArgs().SyncAsync(default!, default);
+    }
+
+    [Fact]
+    public async Task UpdateAiSettings_PersistsOverridesAndResyncsAgentsOnEffectiveModels()
+    {
+        var cosmos = Substitute.For<ICosmosDbService>();
+        cosmos.UpsertAsync("settings", Arg.Any<AppAiSettingsDocument>(), AppAiSettingsDocument.PartitionKeyValue)
+            .Returns(call => call.ArgAt<AppAiSettingsDocument>(1));
+        var provisioner = Substitute.For<IFoundryAgentProvisioner>();
+        provisioner.SyncAsync(Arg.Any<AiModelSelection>(), Arg.Any<CancellationToken>())
+            .Returns(call => new AgentSyncResult { Status = "ok", VisionModel = call.ArgAt<AiModelSelection>(0).VisionModel });
+        var foundryStatus = new FoundryStatusService();
+        var controller = CreateController(cosmos, "admin-1",
+            aiModels: CreateAiModelSettings(cosmos, "env-vision", "env-reasoning"),
+            agentProvisioner: provisioner,
+            foundryStatus: foundryStatus);
+
+        // Only the vision model is overridden; reasoning should keep the environment seed.
+        var result = await controller.UpdateAiSettings(new UpdateAppAiSettingsRequest
+        {
+            VisionModel = "  gpt-5.1  ",
+            ReasoningModel = ""
+        });
+
+        var response = result.Result.Should().BeOfType<OkObjectResult>().Subject.Value.Should().BeOfType<AppAiSettingsResponse>().Subject;
+        response.Settings.VisionModel.Should().Be("gpt-5.1");
+        response.Settings.ReasoningModel.Should().BeNull();
+        response.EffectiveVisionModel.Should().Be("gpt-5.1");
+        response.EffectiveReasoningModel.Should().Be("env-reasoning");
+        response.Source.Should().Be(AiModelSelection.SourceAdmin);
+        response.UpdatedBy.Should().Be("admin-1");
+        response.AgentSync.Should().NotBeNull();
+        response.AgentSync!.Status.Should().Be("ok");
+
+        await cosmos.Received(1).UpsertAsync("settings",
+            Arg.Is<AppAiSettingsDocument>(d => d.Settings.VisionModel == "gpt-5.1" && d.Settings.ReasoningModel == null && d.UpdatedBy == "admin-1"),
+            AppAiSettingsDocument.PartitionKeyValue);
+        await provisioner.Received(1).SyncAsync(
+            Arg.Is<AiModelSelection>(m => m.VisionModel == "gpt-5.1" && m.ReasoningModel == "env-reasoning"),
+            Arg.Any<CancellationToken>());
+        foundryStatus.GetStatus().VisionModel.Should().Be("gpt-5.1");
+        foundryStatus.GetStatus().ModelSource.Should().Be(AiModelSelection.SourceAdmin);
+    }
+
+    [Fact]
+    public async Task UpdateAiSettings_WithSyncAgentsFalse_SkipsProvisioning()
+    {
+        var cosmos = Substitute.For<ICosmosDbService>();
+        cosmos.UpsertAsync("settings", Arg.Any<AppAiSettingsDocument>(), AppAiSettingsDocument.PartitionKeyValue)
+            .Returns(call => call.ArgAt<AppAiSettingsDocument>(1));
+        var provisioner = Substitute.For<IFoundryAgentProvisioner>();
+        var controller = CreateController(cosmos, "admin-1", aiModels: CreateAiModelSettings(cosmos), agentProvisioner: provisioner);
+
+        var result = await controller.UpdateAiSettings(new UpdateAppAiSettingsRequest
+        {
+            VisionModel = "gpt-5.1",
+            ReasoningModel = "gpt-5.4-mini",
+            SyncAgents = false
+        });
+
+        var response = result.Result.Should().BeOfType<OkObjectResult>().Subject.Value.Should().BeOfType<AppAiSettingsResponse>().Subject;
+        response.AgentSync.Should().BeNull();
+        response.IsConfigured.Should().BeTrue();
+        await provisioner.DidNotReceiveWithAnyArgs().SyncAsync(default!, default);
+    }
+
+    private static IAiModelSettingsService CreateAiModelSettings(ICosmosDbService cosmos, string vision = "", string reasoning = "")
+    {
+        var options = Options.Create(new AiFoundryOptions { Models = new AiFoundryModelOptions { Vision = vision, Reasoning = reasoning } });
+        return new AiModelSettingsService(cosmos, options, TimeProvider.System, NullLogger<AiModelSettingsService>.Instance);
+    }
+
+    private static AdminController CreateController(
+        ICosmosDbService cosmos,
+        string userId,
+        IAuthService? authService = null,
+        McpSettingsService? mcpSettings = null,
+        IAiModelSettingsService? aiModels = null,
+        IFoundryAgentProvisioner? agentProvisioner = null,
+        FoundryStatusService? foundryStatus = null)
     {
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -122,8 +237,10 @@ public class AdminControllerTests
             authService ?? Substitute.For<IAuthService>(),
             Substitute.For<IPromptService>(),
             new DynamicLogLevelService(),
-            new FoundryStatusService(),
+            foundryStatus ?? new FoundryStatusService(),
             mcpSettings ?? new McpSettingsService(),
+            aiModels ?? CreateAiModelSettings(cosmos),
+            agentProvisioner ?? Substitute.For<IFoundryAgentProvisioner>(),
             configuration,
             NullLogger<AdminController>.Instance);
         var identity = new ClaimsIdentity([

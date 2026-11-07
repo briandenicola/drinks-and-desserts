@@ -26,6 +26,7 @@ public class WorkflowAgentService : IAgentService
     private readonly INotificationService _notificationService;
     private readonly ILogger<WorkflowAgentService> _logger;
     private readonly AiFoundryOptions _foundryOptions;
+    private readonly IAiModelSettingsService _aiModels;
     private readonly ILoggerFactory _loggerFactory;
     private readonly bool _isFoundryConfigured;
 
@@ -44,6 +45,7 @@ public class WorkflowAgentService : IAgentService
         INotificationService notificationService,
         ILogger<WorkflowAgentService> logger,
         IOptions<AiFoundryOptions> foundryOptions,
+        IAiModelSettingsService aiModels,
         ILoggerFactory loggerFactory)
     {
         _cosmosDb = cosmosDb;
@@ -53,6 +55,7 @@ public class WorkflowAgentService : IAgentService
         _notificationService = notificationService;
         _logger = logger;
         _foundryOptions = foundryOptions.Value;
+        _aiModels = aiModels;
         _loggerFactory = loggerFactory;
         _isFoundryConfigured = !string.IsNullOrEmpty(_foundryOptions.ProjectEndpoint);
     }
@@ -203,11 +206,14 @@ public class WorkflowAgentService : IAgentService
 
         var projectClient = new AIProjectClient(new Uri(endpoint), credential);
 
-        var visionModel = _foundryOptions.Models.Vision;
-        var reasoningModel = _foundryOptions.Models.Reasoning;
+        // Models are chosen in-app (Admin → Foundry) and may change at any time, so resolve per run.
+        var models = await _aiModels.GetEffectiveAsync();
+        if (!models.IsConfigured)
+            throw new InvalidOperationException("AI models are not configured. Set the vision and reasoning model deployments in Admin → Foundry.");
+        var visionModel = models.VisionModel;
 
-        _logger.LogInformation("Connected to Foundry project at {Endpoint} for capture {CaptureId}",
-            endpoint, capture.Id);
+        _logger.LogInformation("Connected to Foundry project at {Endpoint} for capture {CaptureId} (vision={VisionModel}, reasoning={ReasoningModel})",
+            endpoint, capture.Id, visionModel, models.ReasoningModel);
 
         var input = new CaptureInput
         {
@@ -260,8 +266,8 @@ public class WorkflowAgentService : IAgentService
             visionSummary, visionResult.Description);
 
         // ── Step 2: Domain Expert (Foundry agent via Responses API) ──
-        // Prompt is baked into the Foundry agent at init time (see AgentInitiator/Prompts/).
-        // To change the prompt, edit the file and re-run agent:init.
+        // Prompt is baked into the Foundry agent when it is provisioned (see src/api/AgentPrompts/).
+        // To change the prompt, edit the file, redeploy, and re-sync agents from Admin → Foundry.
         await LogStep(capture, "S02", "Domain Expert", WorkflowStepStatus.Running,
             $"Identifying products via Foundry agent...");
 
@@ -436,8 +442,9 @@ public class WorkflowAgentService : IAgentService
 
     /// <summary>
     /// Calls a Foundry agent by name using the Project Responses API.
-    /// The agent's system prompt (instructions) is baked in at init time via AgentInitiator.
-    /// To change an agent's prompt, edit the file in AgentInitiator/Prompts/ and re-run agent:init.
+    /// The agent's system prompt (instructions) and model are bound when the agent is provisioned
+    /// (Admin → Foundry → Save/Sync agents, or the AgentInitiator CLI). To change a prompt, edit the
+    /// file in src/api/AgentPrompts/ and re-sync the agents.
     /// </summary>
     private async Task<string> CallFoundryAgentAsync(
         AIProjectClient projectClient, string agentName, string prompt, string stepId)

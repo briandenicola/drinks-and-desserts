@@ -38,8 +38,9 @@ tasks:
     env:
       AiFoundry__Endpoint: "{{.FOUNDRY_ENDPOINT}}"
       AiFoundry__ProjectEndpoint: "{{.PROJECT_ENDPOINT}}"
-      AiFoundry__Models__Vision: gpt-4o
-      AiFoundry__Models__Reasoning: gpt-5-mini
+      # Optional first-boot seed from the deployments Terraform created; live values are managed in Admin → Foundry.
+      AiFoundry__Models__Vision: "{{.VISION_MODEL}}"
+      AiFoundry__Models__Reasoning: "{{.REASONING_MODEL}}"
       APPLICATIONINSIGHTS_CONNECTION_STRING: "{{.APPINSIGHTS_CONN}}"
       ASPIRE_DASHBOARD_OTLP_HTTP_ENDPOINT_URL: http://localhost:18889
       ASPIRE_ALLOW_UNSECURED_TRANSPORT: "true"
@@ -54,6 +55,10 @@ tasks:
         sh: terraform -chdir=./infrastructure/local output -raw FOUNDRY_PROJECT_ENDPOINT 2>/dev/null || echo ""
       APPINSIGHTS_CONN:
         sh: terraform -chdir=./infrastructure/local output -raw APPLICATION_INSIGHTS_CONNECTION_STRING 2>/dev/null || echo ""
+      VISION_MODEL:
+        sh: terraform -chdir=./infrastructure/local output -raw FOUNDRY_VISION_MODEL 2>/dev/null || echo ""
+      REASONING_MODEL:
+        sh: terraform -chdir=./infrastructure/local output -raw FOUNDRY_REASONING_MODEL 2>/dev/null || echo ""
 
   api:
     desc: Runs the .NET API standalone (without Aspire)
@@ -61,8 +66,9 @@ tasks:
     env:
       AiFoundry__Endpoint: "{{.FOUNDRY_ENDPOINT}}"
       AiFoundry__ProjectEndpoint: "{{.PROJECT_ENDPOINT}}"
-      AiFoundry__Models__Vision: gpt-4o
-      AiFoundry__Models__Reasoning: gpt-5-mini
+      # Optional first-boot seed from the deployments Terraform created; live values are managed in Admin → Foundry.
+      AiFoundry__Models__Vision: "{{.VISION_MODEL}}"
+      AiFoundry__Models__Reasoning: "{{.REASONING_MODEL}}"
       APPLICATIONINSIGHTS_CONNECTION_STRING: "{{.APPINSIGHTS_CONN}}"
       # Trust proxy/corporate root CAs for local dev (TLS inspection)
       SSL_CERT_DIR: /etc/ssl/certs
@@ -75,6 +81,10 @@ tasks:
         sh: terraform -chdir=./infrastructure/local output -raw FOUNDRY_PROJECT_ENDPOINT 2>/dev/null || echo ""
       APPINSIGHTS_CONN:
         sh: terraform -chdir=./infrastructure/local output -raw APPLICATION_INSIGHTS_CONNECTION_STRING 2>/dev/null || echo ""
+      VISION_MODEL:
+        sh: terraform -chdir=./infrastructure/local output -raw FOUNDRY_VISION_MODEL 2>/dev/null || echo ""
+      REASONING_MODEL:
+        sh: terraform -chdir=./infrastructure/local output -raw FOUNDRY_REASONING_MODEL 2>/dev/null || echo ""
 
   web:
     desc: Runs the Vue frontend dev server

@@ -35,4 +35,10 @@
     <InternalsVisibleTo Include="WhiskeyAndSmokes.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Foundry agent instructions. Embedded so the API can (re)provision agents at runtime
+         when an admin changes the model deployments in Admin → Foundry. -->
+    <EmbeddedResource Include="AgentPrompts\*.md" LogicalName="AgentPrompts/%(Filename)%(Extension)" />
+  </ItemGroup>
+
 </Project>

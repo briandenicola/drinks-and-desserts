@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { authApi, type OIDCAdminProvider, type OIDCAdminProviderInput, type OIDCProviderType } from '../services/auth'
 import { getErrorMessage } from '../services/errors'
 import { useAuthStore } from '../stores/auth'
-import { usersApi, type AdminAuthSettingsResponse, type AdminAuthSettingsUpdate, type FoundryStatus, type LoggingSettings, type LoggingSettingsResponse, type McpSettings, type Prompt, type User, type UserRole } from '../services/users'
+import { usersApi, type AdminAiSettingsResponse, type AdminAiSettingsUpdate, type AdminAuthSettingsResponse, type AdminAuthSettingsUpdate, type FoundryStatus, type LoggingSettings, type LoggingSettingsResponse, type McpSettings, type Prompt, type User, type UserRole } from '../services/users'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -48,6 +48,15 @@ const editedDefaultLevel = ref('Information')
 const loggingMessage = ref('')
 const loggingSaving = ref(false)
 const foundryTesting = ref(false)
+const foundrySyncing = ref(false)
+
+const aiSettings = ref<AdminAiSettingsResponse | null>(null)
+const aiForm = ref<AdminAiSettingsUpdate>({ visionModel: '', reasoningModel: '' })
+const aiLoading = ref(false)
+const aiSaving = ref(false)
+const aiMessage = ref('')
+const aiError = ref(false)
+const MODEL_NAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/
 
 const mcpSettings = ref<McpSettings | null>(null)
 const mcpLoading = ref(false)
@@ -70,7 +79,7 @@ onMounted(async () => {
     loggingData.value = loggingRes.data
     foundryStatus.value = foundryRes.data
     resetLoggingForm()
-    await Promise.all([loadOidcProviders(), loadAdminSettings(), loadMcpSettings()])
+    await Promise.all([loadOidcProviders(), loadAdminSettings(), loadMcpSettings(), loadAiSettings()])
   } finally {
     isLoading.value = false
   }
@@ -192,6 +201,51 @@ async function saveLoggingSettings() {
 }
 async function testFoundryConnectivity() { foundryTesting.value = true; try { foundryStatus.value = (await usersApi.testFoundryConnectivity()).data } finally { foundryTesting.value = false } }
 
+function resetAiForm() { aiForm.value = { visionModel: aiSettings.value?.settings.visionModel ?? '', reasoningModel: aiSettings.value?.settings.reasoningModel ?? '' } }
+async function loadAiSettings() {
+  aiLoading.value = true
+  try { aiSettings.value = (await usersApi.getAiSettings()).data; resetAiForm(); aiError.value = false; aiMessage.value = '' }
+  catch (e: unknown) { aiSettings.value = null; aiMessage.value = getErrorMessage(e, 'AI model settings are not available. Backend route expected: GET /api/admin/ai-settings.'); aiError.value = true }
+  finally { aiLoading.value = false }
+}
+function validateModelName(label: string, value: string) {
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  return MODEL_NAME_PATTERN.test(trimmed) ? null : `${label} must be a Foundry deployment name (letters, digits, '.', '_' or '-').`
+}
+function describeAgentSync(sync: { status: string; message: string } | null | undefined) {
+  if (!sync) return ''
+  return sync.status === 'ok' ? `Agents re-synced. ${sync.message}` : sync.status === 'skipped' ? `Saved. Agents not synced: ${sync.message}` : `Saved, but agent sync ${sync.status}: ${sync.message}`
+}
+async function saveAiSettings() {
+  const validationError = validateModelName('Vision model', aiForm.value.visionModel) ?? validateModelName('Reasoning model', aiForm.value.reasoningModel)
+  if (validationError) { aiMessage.value = validationError; aiError.value = true; return }
+  aiSaving.value = true; aiMessage.value = ''; aiError.value = false
+  try {
+    const payload: AdminAiSettingsUpdate = { visionModel: aiForm.value.visionModel.trim(), reasoningModel: aiForm.value.reasoningModel.trim(), syncAgents: true }
+    aiSettings.value = (await usersApi.updateAiSettings(payload)).data
+    resetAiForm()
+    const sync = aiSettings.value.agentSync
+    aiError.value = !!sync && (sync.status === 'error' || sync.status === 'partial')
+    aiMessage.value = sync ? describeAgentSync(sync) : 'AI model settings saved.'
+    foundryStatus.value = (await usersApi.getFoundryStatus()).data
+  }
+  catch (e: unknown) { aiMessage.value = getErrorMessage(e, 'Failed to save AI model settings. Backend route expected: PUT /api/admin/ai-settings.'); aiError.value = true }
+  finally { aiSaving.value = false }
+}
+async function syncFoundryAgents() {
+  foundrySyncing.value = true; aiMessage.value = ''; aiError.value = false
+  try {
+    foundryStatus.value = (await usersApi.syncFoundryAgents()).data
+    const sync = foundryStatus.value.lastAgentSync
+    aiError.value = !sync || sync.status !== 'ok'
+    aiMessage.value = sync ? `Agent sync ${sync.status}: ${sync.message}` : 'Agent sync did not report a result.'
+  }
+  catch (e: unknown) { aiMessage.value = getErrorMessage(e, 'Failed to sync Foundry agents.'); aiError.value = true }
+  finally { foundrySyncing.value = false }
+}
+function modelSourceLabel(source: string | undefined) { return source === 'admin' ? 'Set in app' : source === 'environment' ? 'Environment seed' : 'Not configured' }
+
 async function loadMcpSettings() {
   mcpLoading.value = true
   try { mcpSettings.value = (await usersApi.getMcpSettings()).data }
@@ -255,7 +309,7 @@ async function toggleMcpEnabled() {
     </template>
 
     <template v-else-if="activeTab === 'prompts'">
-      <div class="bg-th-inset/50 border border-th-line rounded-xl p-3 mb-4"><p class="text-xs text-th-accent">Agent prompts are managed as files in <code class="text-th-accent/80 bg-th-card px-1 rounded">AgentInitiator/Prompts/</code>. To change a prompt, edit the file and re-run <code class="text-th-accent/80 bg-th-card px-1 rounded">agent:init</code>.</p></div>
+      <div class="bg-th-inset/50 border border-th-line rounded-xl p-3 mb-4"><p class="text-xs text-th-accent">Agent prompts are managed as files in <code class="text-th-accent/80 bg-th-card px-1 rounded">src/api/AgentPrompts/</code>. To change a prompt, edit the file, redeploy, then use <strong>Foundry → Re-sync Agents</strong>. Which models the agents run on is set under <strong>Foundry</strong> too.</p></div>
       <div class="space-y-3"><div v-for="prompt in prompts" :key="prompt.id" class="bg-th-inset border border-th-line rounded-xl p-4"><div class="flex items-center justify-between mb-2 cursor-pointer" @click="togglePromptExpand(prompt.id)"><div><p class="font-medium text-th-text">{{ prompt.name }}</p><p class="text-xs text-th-accent/70">{{ prompt.description }}</p></div><span class="text-th-accent/70 text-sm">⌄</span></div><div v-if="expandedPromptId === prompt.id"><pre class="text-xs text-th-accent bg-th-page rounded-lg p-3 whitespace-pre-wrap max-h-60 overflow-y-auto border border-th-line">{{ prompt.content }}</pre><p class="text-xs text-th-muted/60 mt-2">Last updated {{ new Date(prompt.updatedAt).toLocaleString() }}<span v-if="prompt.updatedBy"> by {{ prompt.updatedBy }}</span></p></div></div><p v-if="prompts.length === 0" class="text-th-accent/70 text-center py-8">No prompts configured. Start the API to seed defaults.</p></div>
     </template>
     <template v-else-if="activeTab === 'oidc'">
@@ -288,8 +342,20 @@ async function toggleMcpEnabled() {
     </template>
     <template v-else-if="activeTab === 'foundry'">
       <div v-if="foundryStatus" class="space-y-4">
-        <div class="bg-th-inset border border-th-line rounded-xl p-4"><h3 class="text-sm font-semibold text-th-heading mb-3">Configuration</h3><div class="space-y-2"><div class="flex justify-between text-xs"><span class="text-th-accent/70">Project Endpoint</span><span class="text-th-text/80 font-mono truncate ml-4 max-w-[60%] text-right">{{ foundryStatus.projectEndpoint || 'Not configured' }}</span></div><div class="flex justify-between text-xs"><span class="text-th-accent/70">Vision Model</span><span class="text-th-text/80 font-mono">{{ foundryStatus.visionModel || '—' }}</span></div><div class="flex justify-between text-xs"><span class="text-th-accent/70">Reasoning Model</span><span class="text-th-text/80 font-mono">{{ foundryStatus.reasoningModel || '—' }}</span></div><div class="flex justify-between text-xs"><span class="text-th-accent/70">Status</span><span :class="foundryStatus.isProjectConfigured ? 'text-th-success' : 'text-th-danger'" class="font-medium">{{ foundryStatus.isProjectConfigured ? 'Configured' : 'Not Configured' }}</span></div></div></div>
-        <div v-if="foundryStatus.agentValidation" class="bg-th-inset border border-th-line rounded-xl p-4"><h3 class="text-sm font-semibold text-th-heading mb-3">Registered Agents</h3><div v-for="agentName in foundryStatus.agentValidation.foundAgents" :key="agentName" class="flex items-center justify-between text-xs py-1 border-b border-th-line last:border-b-0"><span class="text-th-text/80 font-mono">{{ agentName }}</span><span class="text-th-success font-medium">Valid</span></div><div v-for="agentName in foundryStatus.agentValidation.missingAgents" :key="agentName" class="flex items-center justify-between text-xs py-1 border-b border-th-line last:border-b-0"><span class="text-th-text/80 font-mono">{{ agentName }}</span><span class="text-th-danger font-medium">Not Found</span></div></div>
+        <div class="bg-th-inset border border-th-line rounded-xl p-4"><h3 class="text-sm font-semibold text-th-heading mb-3">Configuration</h3><div class="space-y-2"><div class="flex justify-between text-xs"><span class="text-th-accent/70">Project Endpoint</span><span class="text-th-text/80 font-mono truncate ml-4 max-w-[60%] text-right">{{ foundryStatus.projectEndpoint || 'Not configured' }}</span></div><div class="flex justify-between text-xs"><span class="text-th-accent/70">Vision Model</span><span class="text-th-text/80 font-mono">{{ foundryStatus.visionModel || '—' }}</span></div><div class="flex justify-between text-xs"><span class="text-th-accent/70">Reasoning Model</span><span class="text-th-text/80 font-mono">{{ foundryStatus.reasoningModel || '—' }}</span></div><div class="flex justify-between text-xs"><span class="text-th-accent/70">Model Source</span><span class="text-th-text/80">{{ modelSourceLabel(foundryStatus.modelSource) }}</span></div><div class="flex justify-between text-xs"><span class="text-th-accent/70">Status</span><span :class="foundryStatus.isProjectConfigured ? 'text-th-success' : 'text-th-danger'" class="font-medium">{{ foundryStatus.isProjectConfigured ? 'Configured' : 'Not Configured' }}</span></div></div></div>
+        <div class="bg-th-inset border border-th-line rounded-xl p-4 space-y-4">
+          <div><h3 class="text-sm font-semibold text-th-heading">AI Models</h3><p class="text-xs text-th-accent mt-1">Foundry model <em>deployment</em> names used by the app. Change these here when a model is retired: no code change or infrastructure redeploy is needed. Saving re-creates the Foundry agents on the new models.</p></div>
+          <div v-if="aiLoading" class="text-th-accent/70 text-center py-4">Loading AI model settings...</div>
+          <template v-else-if="aiSettings">
+            <label class="block"><span class="block text-xs text-th-accent mb-1">Vision model deployment</span><input v-model="aiForm.visionModel" :placeholder="aiSettings.fallbackVisionModel ? `Leave blank to use environment seed (${aiSettings.fallbackVisionModel})` : 'e.g. the deployment name of your vision-capable model'" class="w-full bg-th-card border border-th-edge/50 rounded-xl px-3 py-2.5 text-sm text-th-text placeholder-th-muted font-mono" /><span class="block text-xs text-th-accent/70 mt-1">Used for photo and menu analysis. In effect: <span class="font-mono text-th-text/80">{{ aiSettings.effectiveVisionModel || 'not configured' }}</span></span></label>
+            <label class="block"><span class="block text-xs text-th-accent mb-1">Reasoning model deployment</span><input v-model="aiForm.reasoningModel" :placeholder="aiSettings.fallbackReasoningModel ? `Leave blank to use environment seed (${aiSettings.fallbackReasoningModel})` : 'e.g. the deployment name of your reasoning model'" class="w-full bg-th-card border border-th-edge/50 rounded-xl px-3 py-2.5 text-sm text-th-text placeholder-th-muted font-mono" /><span class="block text-xs text-th-accent/70 mt-1">Used by the Domain Expert, Data Curator, Note Analyst, URL extractors, search and recommendations. In effect: <span class="font-mono text-th-text/80">{{ aiSettings.effectiveReasoningModel || 'not configured' }}</span></span></label>
+            <p class="text-xs text-th-accent/70">Source: {{ modelSourceLabel(aiSettings.source) }}<span v-if="aiSettings.updatedAt"> · last changed {{ new Date(aiSettings.updatedAt).toLocaleString() }}</span>. The deployment must already exist in the Foundry project.</p>
+            <div v-if="aiMessage" class="text-sm break-words" :class="aiError ? 'text-th-danger' : 'text-th-success'">{{ aiMessage }}</div>
+            <div class="flex flex-wrap gap-2 justify-end"><button @click="resetAiForm" class="text-xs px-4 py-2 rounded-xl bg-th-card text-th-accent hover:bg-th-brand hover:text-th-on-brand transition-colors">Reset</button><button @click="syncFoundryAgents" :disabled="foundrySyncing || aiSaving || !foundryStatus.isProjectConfigured" class="text-xs px-4 py-2 rounded-xl bg-th-card text-th-accent hover:bg-th-brand hover:text-th-on-brand transition-colors disabled:opacity-50">{{ foundrySyncing ? 'Syncing agents...' : 'Re-sync Agents' }}</button><button @click="saveAiSettings" :disabled="aiSaving || foundrySyncing" class="text-xs px-4 py-2 rounded-xl bg-th-brand text-th-on-brand hover:bg-th-brand-hover transition-colors disabled:opacity-50">{{ aiSaving ? 'Saving & syncing...' : 'Save & Sync Agents' }}</button></div>
+          </template>
+          <p v-else class="text-sm text-th-danger">{{ aiMessage || 'Could not load AI model settings.' }}</p>
+        </div>
+        <div v-if="foundryStatus.agentValidation" class="bg-th-inset border border-th-line rounded-xl p-4"><h3 class="text-sm font-semibold text-th-heading mb-3">Registered Agents</h3><p v-if="foundryStatus.lastAgentSync" class="text-xs mb-3 break-words" :class="foundryStatus.lastAgentSync.status === 'ok' ? 'text-th-success' : 'text-th-warning'">Last sync {{ new Date(foundryStatus.lastAgentSync.syncedAt).toLocaleString() }} — {{ foundryStatus.lastAgentSync.status }}: {{ foundryStatus.lastAgentSync.message }}</p><div v-for="agentName in foundryStatus.agentValidation.foundAgents" :key="agentName" class="flex items-center justify-between text-xs py-1 border-b border-th-line last:border-b-0"><span class="text-th-text/80 font-mono">{{ agentName }}</span><span class="text-th-success font-medium">Valid</span></div><div v-for="agentName in foundryStatus.agentValidation.missingAgents" :key="agentName" class="flex items-center justify-between text-xs py-1 border-b border-th-line last:border-b-0"><span class="text-th-text/80 font-mono">{{ agentName }}</span><span class="text-th-danger font-medium">Not Found</span></div></div>
         <div class="bg-th-inset border border-th-line rounded-xl p-4"><div class="flex items-center justify-between mb-3"><h3 class="text-sm font-semibold text-th-heading">Connectivity Test</h3><button @click="testFoundryConnectivity" :disabled="foundryTesting || !foundryStatus.isProjectConfigured" class="text-xs px-4 py-2 min-h-[44px] rounded-xl bg-th-brand text-th-on-brand hover:bg-th-brand-hover transition-colors disabled:opacity-50">{{ foundryTesting ? 'Testing...' : 'Test Connection' }}</button></div><div v-if="foundryStatus.connectivityTest" class="text-xs space-y-1"><div class="flex justify-between"><span class="text-th-accent/70">Status</span><span :class="foundryStatus.connectivityTest.status === 'ok' ? 'text-th-success' : 'text-th-danger'" class="font-medium">{{ foundryStatus.connectivityTest.status === 'ok' ? 'Connected' : 'Failed' }}</span></div><div class="flex justify-between"><span class="text-th-accent/70">Latency</span><span class="text-th-text/80">{{ foundryStatus.connectivityTest.latencyMs }}ms</span></div><p v-if="foundryStatus.connectivityTest.message" class="text-th-accent bg-th-page rounded-lg p-2 break-words">{{ foundryStatus.connectivityTest.message }}</p><p class="text-th-muted/60 mt-1">Tested {{ new Date(foundryStatus.connectivityTest.testedAt).toLocaleString() }}</p></div><p v-else class="text-xs text-th-accent/70">No test run yet. Click "Test Connection" to verify Foundry connectivity.</p></div>
       </div><p v-else class="text-th-accent/70 text-center py-8">Could not load Foundry status.</p>
     </template>
