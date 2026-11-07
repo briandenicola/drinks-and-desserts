@@ -48,13 +48,13 @@ Recommendations have **no such requirements**:
 ### 4. Different AI Capabilities Required
 
 **Capture agents** use:
-- **Vision model (gpt-4o)**: Analyze photos, read labels, identify products
-- **Reasoning model (gpt-5-mini)**: Domain expertise, tasting notes, quality assessment
+- **Vision model**: Analyze photos, read labels, identify products
+- **Reasoning model**: Domain expertise, tasting notes, quality assessment
 - **Structured extraction**: Parse JSON, validate fields, ensure completeness
 
 **Recommendation engine** uses:
-- **Vision model (gpt-4o)**: Menu photo OCR/analysis (optional, single-shot)
-- **Reasoning model (gpt-5-mini)**: Pattern matching on user history, similarity scoring, explanation generation
+- **Vision model**: Menu photo OCR/analysis (optional, single-shot)
+- **Reasoning model**: Pattern matching on user history, similarity scoring, explanation generation
 - **Natural language output**: Recommendations + reasoning (no strict schema)
 
 ### 5. Stateless vs Stateful Operations
@@ -99,14 +99,14 @@ The agent framework shines for stateful, multi-turn workflows. Recommendations a
 ┌────────────────────┐  ┌──────────────────────┐
 │ Extract Menu Items │  │ Skip to Generation   │
 │ (Vision Model)     │  └──────────────────────┘
-│ gpt-4o             │
+│ vision model       │
 │ Single inference   │
 └────────┬───────────┘
          │
          v
 ┌─────────────────────────────────────────────────┐
 │ Generate Recommendations                         │
-│ (Reasoning Model - gpt-5-mini)                  │
+│ (Reasoning Model)                               │
 │ Single inference with:                          │
 │  • User profile (ratings, preferences)          │
 │  • Menu items (if provided)                     │
@@ -188,7 +188,7 @@ public async Task<UserRatingProfile> BuildUserProfileAsync(string userId, ...)
 
 ### 2. Menu Photo Analysis (Optional, Vision AI)
 
-If user provides a menu photo, extract items using **gpt-4o vision model**:
+If user provides a menu photo, extract items using the **configured vision model**:
 
 ```csharp
 // src/api/Services/RecommendationService.cs:169-233
@@ -228,7 +228,7 @@ public async Task<List<string>> ExtractMenuItemsAsync(string photoUrl, ...)
 
 ### 3. Recommendation Generation (Reasoning AI)
 
-Core intelligence powered by **gpt-5-mini reasoning model**:
+Core intelligence powered by the **configured reasoning model**:
 
 ```csharp
 // src/api/Services/RecommendationService.cs:248-365
@@ -335,7 +335,7 @@ private async Task<RecommendationResponse> GenerateRecommendationsAsync(
 | **Retry Logic** | Refinement feedback loop (max 2 retries) | None (graceful failure with empty list) |
 | **Latency** | 10-30 seconds (multi-agent coordination) | 2-5 seconds (direct inference) |
 | **Output Format** | Strictly validated JSON (Item schema) | Flexible JSON (recommendation list) |
-| **AI Models Used** | Vision (gpt-4o) + Reasoning (gpt-5-mini) | Vision (gpt-4o) + Reasoning (gpt-5-mini) |
+| **AI Models Used** | Vision + Reasoning (deployments chosen in Admin → Foundry) | Vision + Reasoning (same settings) |
 | **Use Case** | Complex multi-step analysis requiring expert validation | Simple pattern matching and ranking |
 | **Failure Mode** | Reject capture if parsing fails | Return empty list with explanation |
 
@@ -365,13 +365,13 @@ Both systems use **Azure AI Foundry** but at different abstraction levels:
 ```csharp
 // Uses WorkflowAgentService with agent definitions
 var visionAgent = await projectClient.Agents.CreateAgentAsync(
-    "gpt-4o",
+    models.VisionModel,   // from IAiModelSettingsService (Admin → Foundry)
     visionPrompt,
     "Vision Analyst"
 );
 
 var expertAgent = await projectClient.Agents.CreateAgentAsync(
-    "gpt-5-mini",
+    models.ReasoningModel,
     expertPrompt,
     "Domain Expert"
 );
@@ -393,7 +393,7 @@ var response = await chatClient.GetResponseAsync(messages, cancellationToken);
 ```
 
 **Both approaches leverage Azure AI Foundry's**:
-- Managed model deployments (gpt-4o, gpt-5-mini)
+- Managed model deployments (vision + reasoning; names chosen in Admin → Foundry)
 - Authentication and authorization (Azure credentials)
 - Cost tracking and monitoring
 - Scaling and reliability infrastructure
@@ -404,15 +404,18 @@ The **only difference** is the abstraction level:
 
 ## Configuration
 
-AI Foundry configuration in `appsettings.json`:
+The model deployment names are managed in the app (**Admin → Foundry**) and stored in the Cosmos
+`settings` container as the `ai-settings` document. `IAiModelSettingsService` resolves the effective
+values at call time (admin values first, then the optional `AiFoundry__Models__*` environment seed),
+so a model can be swapped without a code change or redeploy:
 
 ```json
 {
   "AiFoundry": {
-    "ProjectEndpoint": "https://<project>.projects.api.azureml.ms",
+    "ProjectEndpoint": "https://<project>.services.ai.azure.com/api/projects/<project>",
     "Models": {
-      "Vision": "gpt-5.1",       // Used for menu photo analysis
-      "Reasoning": "gpt-5.4-mini" // Used for recommendation generation
+      "Vision": "",     // optional first-boot seed; used for menu photo analysis
+      "Reasoning": ""   // optional first-boot seed; used for recommendation generation
     }
   }
 }

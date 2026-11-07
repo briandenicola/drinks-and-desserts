@@ -61,3 +61,15 @@ variable "entra_audience" {
   type        = string
   default     = ""
 }
+
+variable "ai_vision_model_seed" {
+  description = "Optional first-boot seed for the vision model deployment name. The effective value is managed in-app (Admin → Foundry); leave empty to configure there."
+  type        = string
+  default     = ""
+}
+
+variable "ai_reasoning_model_seed" {
+  description = "Optional first-boot seed for the reasoning model deployment name. The effective value is managed in-app (Admin → Foundry); leave empty to configure there."
+  type        = string
+  default     = ""
+}

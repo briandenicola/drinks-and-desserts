@@ -15,8 +15,9 @@ services:
       - Jwt__Audience=whiskey-and-smokes
       - Oidc__PublicOrigin=${OIDC_PUBLIC_ORIGIN:-http://localhost:${WEB_PORT:-8080}}
       - AiFoundry__ProjectEndpoint=${AI_FOUNDRY_PROJECT_ENDPOINT:-}
-      - AiFoundry__Models__Vision=gpt-4o
-      - AiFoundry__Models__Reasoning=gpt-5-mini
+      # Optional first-boot seed only; live values are managed in Admin → Foundry.
+      - AiFoundry__Models__Vision=${AI_VISION_MODEL:-}
+      - AiFoundry__Models__Reasoning=${AI_REASONING_MODEL:-}
       - AZURE_CLIENT_ID=${AZURE_CLIENT_ID:-}
       - AZURE_TENANT_ID=${AZURE_TENANT_ID:-}
       - AZURE_CLIENT_SECRET=${AZURE_CLIENT_SECRET:-}

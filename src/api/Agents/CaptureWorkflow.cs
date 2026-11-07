@@ -19,22 +19,22 @@ public static class CaptureWorkflow
 {
     public static Workflow Build(
         IConfiguration config,
+        AiModelSelection models,
         IPromptService promptService,
         IBlobStorageService blobService,
         ILoggerFactory loggerFactory)
     {
         var endpoint = config["AiFoundry:ProjectEndpoint"]
             ?? throw new InvalidOperationException("AiFoundry:ProjectEndpoint is required for the capture workflow.");
+        if (!models.IsConfigured)
+            throw new InvalidOperationException("AI models are not configured. Set them in Admin → Foundry.");
 
         var credential = CredentialFactory.Create();
 
         var azureClient = new AzureOpenAIClient(new Uri(endpoint), credential);
 
-        var visionModel = config["AiFoundry:Models:Vision"] ?? "gpt-5.1";
-        var reasoningModel = config["AiFoundry:Models:Reasoning"] ?? "gpt-5.1-mini";
-
-        IChatClient visionChatClient = azureClient.GetChatClient(visionModel).AsIChatClient();
-        IChatClient reasoningChatClient = azureClient.GetChatClient(reasoningModel).AsIChatClient();
+        IChatClient visionChatClient = azureClient.GetChatClient(models.VisionModel).AsIChatClient();
+        IChatClient reasoningChatClient = azureClient.GetChatClient(models.ReasoningModel).AsIChatClient();
 
         var vision = new VisionExecutor(
             visionChatClient,

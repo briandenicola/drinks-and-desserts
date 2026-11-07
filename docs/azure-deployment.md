@@ -9,7 +9,7 @@ This project deploys to Azure using **Terraform** for infrastructure and **GitHu
 │  Azure Stack (infrastructure/azure/)                    │
 │                                                         │
 │  Resource Group ─┬─ AI Foundry Hub + Project            │
-│                  ├─ Model Deployments (gpt-4o, gpt-5-mini) │
+│                  ├─ Model Deployments (vision + reasoning)  │
 │                  ├─ Cosmos DB (items, captures, users, prompts, OIDC) │
 │                  ├─ Storage Account (photos blob)        │
 │                  ├─ Application Insights + Log Analytics │
@@ -226,8 +226,8 @@ echo "AZURE_SUBSCRIPTION_ID: $SUBSCRIPTION_ID"
 | Var | Source |
 |-----|--------|
 | `AiFoundry__ProjectEndpoint` | Derived from AI Foundry project |
-| `AiFoundry__Models__Vision` | `gpt-4o` |
-| `AiFoundry__Models__Reasoning` | `gpt-5-mini` |
+| `AiFoundry__Models__Vision` | Optional seed from `ai_vision_model_seed` (default: not set). Live value is managed in Admin → Foundry. |
+| `AiFoundry__Models__Reasoning` | Optional seed from `ai_reasoning_model_seed` (default: not set). Live value is managed in Admin → Foundry. |
 | `CosmosDb__Endpoint` | Terraform variable |
 | `CosmosDb__DatabaseName` | `whiskey-and-smokes` |
 | `BlobStorage__Endpoint` | Terraform variable |
@@ -297,3 +297,21 @@ git push origin main
 ```
 
 For subsequent deployments, just push to `main` — the workflow builds the API image and deploys the SWA automatically.
+
+## Changing AI models (model retirements)
+
+Model deployment names are **not** baked into the image or the Terraform for the Container App.
+The API reads them from the `ai-settings` document in the Cosmos `settings` container, which is
+edited in the app under **Admin → Foundry**. The `AiFoundry__Models__*` environment variables are
+only an optional first-boot seed and are ignored once an admin has saved values in the app.
+
+When a model is retired:
+
+1. Deploy the replacement model in the Foundry project (Foundry portal, or add it to the `models`
+   list in `infrastructure/azure/ai_foundry_projects.tf` and apply that stack).
+2. Open **Admin → Foundry** in the app, enter the new deployment name(s), and click
+   **Save & Sync Agents**. The app re-creates its Foundry agents on the new models; the change takes
+   effect immediately for every replica (settings are re-read within 30 seconds).
+3. Optionally remove the old deployment.
+
+No application code change, image rebuild, or `terraform apply` of the app stack is needed.

@@ -32,7 +32,7 @@ Track your drinks, coffee, desserts, and venues. Snap a photo, let AI do the res
 - **Orchestration**: .NET Aspire AppHost (OpenTelemetry dashboard)
 - **Database**: Azure CosmosDB (prod) / LiteDB (local dev) — 8 containers
 - **Storage**: Azure Blob Storage (prod) / local filesystem (local dev)
-- **AI Models**: Azure AI Foundry — gpt-4o (vision) + gpt-5-mini (reasoning)
+- **AI Models**: Azure AI Foundry — a vision-capable model + a reasoning model. The deployment names are chosen in-app (Admin → Foundry), not in code or infrastructure, so a retired model is swapped without a redeploy.
 - **Observability**: OpenTelemetry → Azure Application Insights + Aspire Dashboard
 - **Auth**: JWT with refresh tokens (local/self-hosted) / Azure Entra ID (prod) / API keys (external integrations)
 - **Infra**: Terraform → Azure Container Apps (API) + Static Web App (frontend)
@@ -68,13 +68,13 @@ The app uses a multi-agent graph workflow to analyze captured photos:
       |
       v
 +--------------+
-|   Vision     |  gpt-4o -- examines photos, describes visible items
+|   Vision     |  vision model -- examines photos, describes visible items
 |   Analyst    |  (labels, bottles, glasses, cigar bands)
 +------+-------+
        |
        v
 +--------------+
-|   Domain     |  gpt-5-mini -- identifies specific products,
+|   Domain     |  reasoning model -- identifies specific products,
 |   Expert     |  adds tasting notes, origins, flavor profiles
 +------+-------+
        |
@@ -89,7 +89,9 @@ The app uses a multi-agent graph workflow to analyze captured photos:
 
 The pipeline focuses on 1-3 primary items per capture. Related observations (e.g., a bottle and the glass poured from it) are combined into a single item. The system will not catalog background items like menu boards or shelf displays.
 
-Agent prompts are stored as markdown files in `src/AgentInitiator/Prompts/` and viewable (read-only) in the admin panel. To update prompts, edit the files and re-run `task local:agents`.
+Agent prompts are stored as markdown files in `src/api/AgentPrompts/` (embedded in the API) and viewable (read-only) in the admin panel. To update prompts, edit the files, redeploy, and re-sync the agents from **Admin → Foundry**.
+
+**Changing AI models** (for example when a model is retired): deploy the replacement model in the Foundry project, then open **Admin → Foundry**, enter the new vision and/or reasoning deployment names, and click **Save & Sync Agents**. The app stores the choice in the settings container and re-creates the Foundry agents on the new models. No code change, image rebuild, or Terraform apply is needed. The `AiFoundry__Models__*` environment variables are only an optional first-boot seed.
 
 When AI Foundry is not configured, the system falls back to keyword-based local extraction.
 
@@ -106,7 +108,7 @@ The app includes an AI-powered recommendation engine that suggests items you're 
 - Type filtering (whiskey, wine, dessert, etc.)
 - Confidence scores and personalized reasoning for each recommendation
 
-**Architecture**: Single-shot inference using gpt-5-mini (reasoning) and gpt-4o (menu OCR) directly through Azure AI Foundry SDK, without agent framework overhead. This design choice enables sub-3-second response times vs 10-30s for multi-agent workflows.
+**Architecture**: Single-shot inference using the configured reasoning model and vision model (menu OCR) directly through Azure AI Foundry SDK, without agent framework overhead. This design choice enables sub-3-second response times vs 10-30s for multi-agent workflows.
 
 **Why Not Agents?** Recommendations are a single-purpose pattern matching task with no need for validation, refinement, or multi-step orchestration. Direct inference provides the best balance of simplicity, performance, and cost efficiency.
 

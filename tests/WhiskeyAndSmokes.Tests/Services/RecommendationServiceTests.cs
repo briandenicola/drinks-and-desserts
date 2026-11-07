@@ -27,7 +27,10 @@ public class RecommendationServiceTests
         _foundryOptions = Substitute.For<IOptions<AiFoundryOptions>>();
         _foundryOptions.Value.Returns(new AiFoundryOptions());
         
-        _service = new RecommendationService(_cosmosDb, _blobStorage, _logger, _foundryOptions);
+        var aiModels = Substitute.For<IAiModelSettingsService>();
+        aiModels.Fallback.Returns(AiModelSelection.Empty);
+        aiModels.GetEffectiveAsync(Arg.Any<CancellationToken>()).Returns(AiModelSelection.Empty);
+        _service = new RecommendationService(_cosmosDb, _blobStorage, _logger, _foundryOptions, aiModels);
     }
 
     [Fact]

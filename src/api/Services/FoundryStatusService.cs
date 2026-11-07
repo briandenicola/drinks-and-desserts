@@ -46,6 +46,10 @@ public class FoundryStatus
     [JsonPropertyName("reasoningModel")]
     public string ReasoningModel { get; set; } = string.Empty;
 
+    /// <summary>Where the effective models came from: "admin", "environment" or "none".</summary>
+    [JsonPropertyName("modelSource")]
+    public string ModelSource { get; set; } = AiModelSelection.SourceNone;
+
     [JsonPropertyName("isEndpointConfigured")]
     public bool IsEndpointConfigured { get; set; }
 
@@ -57,6 +61,9 @@ public class FoundryStatus
 
     [JsonPropertyName("connectivityTest")]
     public ConnectivityTestResult? ConnectivityTest { get; set; }
+
+    [JsonPropertyName("lastAgentSync")]
+    public AgentSyncResult? LastAgentSync { get; set; }
 
     [JsonPropertyName("checkedAt")]
     public DateTime CheckedAt { get; set; }

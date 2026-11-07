@@ -8,3 +8,8 @@ output "PROJECT_ENDPOINT" {
   sensitive = false
 }
 
+
+output "MODEL_DEPLOYMENT_NAMES" {
+  description = "Names of the model deployments created in this project, in the order declared."
+  value       = [for m in var.foundry_project.models : m.name]
+}

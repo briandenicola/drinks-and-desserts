@@ -80,7 +80,45 @@ export interface FoundryStatus {
     latencyMs: number | null
     testedAt: string
   } | null
+  modelSource: AiModelSource
+  lastAgentSync: AgentSyncResult | null
   checkedAt: string
+}
+
+export type AiModelSource = 'admin' | 'environment' | 'none'
+
+export interface AgentSyncResult {
+  status: 'ok' | 'partial' | 'error' | 'skipped' | string
+  message: string
+  visionModel: string
+  reasoningModel: string
+  synced: string[]
+  failed: string[]
+  syncedAt: string
+}
+
+export interface AdminAiSettings {
+  visionModel: string | null
+  reasoningModel: string | null
+}
+
+export interface AdminAiSettingsUpdate {
+  visionModel: string
+  reasoningModel: string
+  syncAgents?: boolean
+}
+
+export interface AdminAiSettingsResponse {
+  settings: AdminAiSettings
+  effectiveVisionModel: string | null
+  effectiveReasoningModel: string | null
+  fallbackVisionModel: string | null
+  fallbackReasoningModel: string | null
+  source: AiModelSource
+  isConfigured: boolean
+  updatedAt: string | null
+  updatedBy: string | null
+  agentSync: AgentSyncResult | null
 }
 
 export interface ApiKeyResponse {
@@ -209,6 +247,14 @@ export const usersApi = {
   getFoundryStatus: () => api.get<FoundryStatus>('/admin/foundry'),
 
   testFoundryConnectivity: () => api.post<FoundryStatus>('/admin/foundry/test'),
+
+  syncFoundryAgents: () => api.post<FoundryStatus>('/admin/foundry/sync-agents'),
+
+  // Admin - AI model deployments (editable in-app; overrides the environment seed)
+  getAiSettings: () => api.get<AdminAiSettingsResponse>('/admin/ai-settings'),
+
+  updateAiSettings: (settings: AdminAiSettingsUpdate) =>
+    api.put<AdminAiSettingsResponse>('/admin/ai-settings', settings),
 
   // Admin - MCP server
   getMcpSettings: () => api.get<McpSettings>('/admin/mcp-settings'),

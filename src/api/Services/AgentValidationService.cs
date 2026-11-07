@@ -10,24 +10,20 @@ namespace WhiskeyAndSmokes.Api.Services;
 public class AgentValidationService : IHostedService
 {
     private readonly IConfiguration _config;
+    private readonly IAiModelSettingsService _aiModels;
     private readonly ILogger<AgentValidationService> _logger;
     private readonly FoundryStatusService _foundryStatus;
 
-    public static readonly string[] RequiredAgents =
-    [
-        "dd-vision-analyst",
-        "dd-domain-expert",
-        "dd-data-curator",
-        "dd-note-analyst",
-        "dd-wishlist-url-extractor",
-    ];
+    public static string[] RequiredAgents => FoundryAgentCatalog.Names;
 
     public AgentValidationService(
         IConfiguration config,
+        IAiModelSettingsService aiModels,
         ILogger<AgentValidationService> logger,
         FoundryStatusService foundryStatus)
     {
         _config = config;
+        _aiModels = aiModels;
         _logger = logger;
         _foundryStatus = foundryStatus;
     }
@@ -36,21 +32,31 @@ public class AgentValidationService : IHostedService
     {
         var endpoint = _config["AiFoundry:Endpoint"] ?? "";
         var projectEndpoint = _config["AiFoundry:ProjectEndpoint"] ?? "";
-        var visionModel = _config["AiFoundry:Models:Vision"] ?? "gpt-5.1";
-        var reasoningModel = _config["AiFoundry:Models:Reasoning"] ?? "gpt-5-mini";
+        var models = await _aiModels.GetEffectiveAsync(cancellationToken);
 
         _logger.LogInformation(
-            "Foundry configuration: Endpoint={Endpoint}, ProjectEndpoint={ProjectEndpoint}, Vision={Vision}, Reasoning={Reasoning}",
+            "Foundry configuration: Endpoint={Endpoint}, ProjectEndpoint={ProjectEndpoint}, Vision={Vision}, Reasoning={Reasoning}, ModelSource={ModelSource}",
             string.IsNullOrEmpty(endpoint) ? "(not set)" : endpoint,
             string.IsNullOrEmpty(projectEndpoint) ? "(not set)" : projectEndpoint,
-            visionModel, reasoningModel);
+            string.IsNullOrEmpty(models.VisionModel) ? "(not set)" : models.VisionModel,
+            string.IsNullOrEmpty(models.ReasoningModel) ? "(not set)" : models.ReasoningModel,
+            models.Source);
+
+        if (!models.IsConfigured)
+        {
+            _logger.LogWarning(
+                "AI models are not configured. Set the vision and reasoning model deployments in Admin → Foundry " +
+                "(or seed them with AiFoundry__Models__Vision / AiFoundry__Models__Reasoning). " +
+                "AI features will fall back to local extraction until then.");
+        }
 
         _foundryStatus.Update(s =>
         {
             s.Endpoint = endpoint;
             s.ProjectEndpoint = projectEndpoint;
-            s.VisionModel = visionModel;
-            s.ReasoningModel = reasoningModel;
+            s.VisionModel = models.VisionModel;
+            s.ReasoningModel = models.ReasoningModel;
+            s.ModelSource = models.Source;
             s.IsEndpointConfigured = !string.IsNullOrEmpty(endpoint);
             s.IsProjectConfigured = !string.IsNullOrEmpty(projectEndpoint);
         });
@@ -105,7 +111,7 @@ public class AgentValidationService : IHostedService
             {
                 _logger.LogWarning(
                     "{MissingCount}/{TotalCount} Foundry agents are MISSING: [{Missing}]. " +
-                    "Run 'task agent:init' to create them. The app will fall back to local extraction.",
+                    "Sync them from Admin → Foundry (or run the AgentInitiator). The app will fall back to local extraction.",
                     missing.Count,
                     RequiredAgents.Length,
                     string.Join(", ", missing));
