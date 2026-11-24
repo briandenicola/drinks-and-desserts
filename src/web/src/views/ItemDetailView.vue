@@ -324,6 +324,9 @@ async function save() {
       } catch { /* continue with other ops */ }
     }
 
+    // Saving the edit form is the review step: promote AI drafts and drop the review marker.
+    const wasDraft = item.value.status === 'ai-draft'
+
     // Save other fields
     const updated = await itemsStore.updateItem(item.value.id, {
       name: editName.value || undefined,
@@ -336,8 +339,8 @@ async function save() {
         address: editVenueAddress.value || undefined,
       } : undefined,
       userRating: editRating.value,
-      tags: editTags.value,
-      status: item.value.status,
+      tags: wasDraft ? editTags.value.filter(t => t !== 'needs-review') : editTags.value,
+      status: wasDraft ? 'reviewed' : item.value.status,
     })
     item.value = updated
     pendingPhotoDeletes.value = new Set()
