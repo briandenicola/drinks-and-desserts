@@ -317,6 +317,9 @@ var cosmosDb = app.Services.GetRequiredService<ICosmosDbService>();
 await logLevelService.LoadFromStoreAsync(cosmosDb);
 await mcpSettingsService.LoadFromStoreAsync(cosmosDb);
 
+// One-time fix for items stuck in "ai-draft" (no-op once its marker exists)
+await AiDraftResetMigration.RunOnceAsync(cosmosDb, app.Logger);
+
 app.Logger.LogInformation("Whiskey & Smokes API starting — log levels loaded from store");
 app.Logger.LogInformation("Storage provider: {Provider} ({Backend})",
     storageProvider, useLocalStorage ? "LiteDB + local filesystem" : "CosmosDB + Azure Blob Storage");
